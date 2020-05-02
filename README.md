@@ -1,4 +1,4 @@
-# Replay
+<img src="https://user-images.githubusercontent.com/15923595/80867852-59ea6680-8c8e-11ea-93ee-a17b922239f2.png" alt="Replay" align="center" width="250" />
 
 Replay is a cross-platform JavaScript game engine inspired by
 [React](https://reactjs.org/).
@@ -10,6 +10,8 @@ testing library built in, Replay is ideal for writing bug-free games.
 Build your game once and deploy it for web or iOS (with more platforms like
 Android coming in the future).
 
+[Docs](https://replay.js.org/docs/intro) · [Blog](https://replay.js.org/blog)
+
 ## ⚠️ Status
 
 Replay is still in early development and will go through many breaking changes.
@@ -20,15 +22,15 @@ shape Replay's future!
 
 Create a file, copy this in and open it in a browser:
 
-```html title="index.html"
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Load Replay through a CDN (TODO) -->
-  <script src="replay-core.min.js"></script>
-  <script src="replay-web.min.js"></script>
+  <!-- Load Replay through a CDN -->
+  <script src="https://unpkg.com/@replay/core@0.1.0/umd/replay-core.min.js"></script>
+  <script src="https://unpkg.com/@replay/web@0.1.0/umd/replay-web.min.js"></script>
   <title>Replay Game</title>
 </head>
 <body>
@@ -105,7 +107,7 @@ const Game = makeSprite({
           x: state.posX,
           y: state.posY,
         },
-        color: "blue",
+        color: "#147aff",
         radius: 10,
       }),
     ];

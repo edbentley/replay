@@ -5,8 +5,7 @@ title: iOS
 
 ## Swift Package
 
-<!-- TODO: GitHub link -->
-The Replay Swift package is hosted on GitHub. Once added as a dependency to your Xcode project, you can replace the `rootViewController`:
+The Replay Swift package is [hosted on GitHub](https://github.com/edbentley/replay-swift). Once [added as a package dependency](https://developer.apple.com/documentation/xcode/adding_package_dependencies_to_your_app) to your Xcode project, you can replace the `rootViewController`:
 
 ```swift {1,8}
 import Replay

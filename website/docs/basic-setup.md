@@ -11,9 +11,9 @@ Create a file, copy this in and open it in a browser:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Load Replay through a CDN (TODO) -->
-  <script src="replay-core.min.js"></script>
-  <script src="replay-web.min.js"></script>
+  <!-- Load Replay through a CDN -->
+  <script src="https://unpkg.com/@replay/core@0.1.0/umd/replay-core.min.js"></script>
+  <script src="https://unpkg.com/@replay/web@0.1.0/umd/replay-web.min.js"></script>
   <title>Replay Game</title>
 </head>
 <body>
@@ -90,7 +90,7 @@ const Game = makeSprite({
           x: state.posX,
           y: state.posY,
         },
-        color: "blue",
+        color: "#147aff",
         radius: 10,
       }),
     ];

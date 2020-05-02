@@ -13,7 +13,7 @@
     "build-swift": "webpack --config ./swift/webpack.config.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "ci": "npm run lint && npm run types && npm run build && npm run test"
+    "ci": "npm run lint && npm run build && npm run types && npm run test"
   },
   "dependencies": {
     "@replay/core": "0.1.0",

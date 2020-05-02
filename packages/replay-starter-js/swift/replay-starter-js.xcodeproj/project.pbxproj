@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2B6AEECC245DBB49008920A1 /* Replay in Frameworks */ = {isa = PBXBuildFile; productRef = 2B6AEECB245DBB49008920A1 /* Replay */; };
 		2BBEBE9E24599E8E00238EED /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BBEBE9D24599E8E00238EED /* AppDelegate.swift */; };
 		2BBEBEA024599E8E00238EED /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BBEBE9F24599E8E00238EED /* SceneDelegate.swift */; };
 		2BBEBEA424599E9000238EED /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2BBEBEA324599E9000238EED /* Assets.xcassets */; };
 		2BBEBEA724599E9000238EED /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2BBEBEA624599E9000238EED /* Preview Assets.xcassets */; };
 		2BBEBEAA24599E9000238EED /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2BBEBEA824599E9000238EED /* LaunchScreen.storyboard */; };
-		2BBEBEB424599EFA00238EED /* Replay in Frameworks */ = {isa = PBXBuildFile; productRef = 2BBEBEB324599EFA00238EED /* Replay */; };
 		2BBEBEB624599F3000238EED /* game.js in Resources */ = {isa = PBXBuildFile; fileRef = 2BBEBEB524599F3000238EED /* game.js */; };
 		2BBEBEB824599F4100238EED /* boop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2BBEBEB724599F4100238EED /* boop.wav */; };
 /* End PBXBuildFile section */
@@ -25,7 +25,6 @@
 		2BBEBEA624599E9000238EED /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		2BBEBEA924599E9000238EED /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		2BBEBEAB24599E9000238EED /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		2BBEBEB124599EEB00238EED /* Replay */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Replay; path = "../../replay-swift/Replay"; sourceTree = "<group>"; };
 		2BBEBEB524599F3000238EED /* game.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = game.js; sourceTree = SOURCE_ROOT; };
 		2BBEBEB724599F4100238EED /* boop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = boop.wav; path = ../../assets/audio/boop.wav; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -35,7 +34,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2BBEBEB424599EFA00238EED /* Replay in Frameworks */,
+				2B6AEECC245DBB49008920A1 /* Replay in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -45,7 +44,6 @@
 		2BBEBE9124599E8E00238EED = {
 			isa = PBXGroup;
 			children = (
-				2BBEBEB124599EEB00238EED /* Replay */,
 				2BBEBE9C24599E8E00238EED /* replay-starter-js */,
 				2BBEBE9B24599E8E00238EED /* Products */,
 				2BBEBEB224599EFA00238EED /* Frameworks */,
@@ -107,7 +105,7 @@
 			);
 			name = "replay-starter-js";
 			packageProductDependencies = (
-				2BBEBEB324599EFA00238EED /* Replay */,
+				2B6AEECB245DBB49008920A1 /* Replay */,
 			);
 			productName = "replay-starter-js";
 			productReference = 2BBEBE9A24599E8E00238EED /* replay-starter-js.app */;
@@ -137,6 +135,9 @@
 				Base,
 			);
 			mainGroup = 2BBEBE9124599E8E00238EED;
+			packageReferences = (
+				2B6AEECA245DBB49008920A1 /* XCRemoteSwiftPackageReference "replay-swift" */,
+			);
 			productRefGroup = 2BBEBE9B24599E8E00238EED /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -364,9 +365,21 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		2B6AEECA245DBB49008920A1 /* XCRemoteSwiftPackageReference "replay-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/edbentley/replay-swift";
+			requirement = {
+				kind = exactVersion;
+				version = 0.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
-		2BBEBEB324599EFA00238EED /* Replay */ = {
+		2B6AEECB245DBB49008920A1 /* Replay */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 2B6AEECA245DBB49008920A1 /* XCRemoteSwiftPackageReference "replay-swift" */;
 			productName = Replay;
 		};
 /* End XCSwiftPackageProductDependency section */

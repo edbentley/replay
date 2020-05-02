@@ -11,6 +11,7 @@ Welcome to your game!
 - `.eslintignore` / `.eslintrc.js`: Configure your linting rules.
 - `.gitignore`: List of files to ignore in git.
 - `babel.config.js`: Config for Babel compiler.
+- `jest.config.js`: Config file for Jest tests.
 - `package.json` / `package-lock.json`: Manage dependencies of your project.
 
 ## Setup
@@ -65,5 +66,3 @@ open swift/replay-starter-ts.xcodeproj/
 ```
 
 Assets like audio and images need to be dragged into your Xcode project.
-
-<!-- TODO: Swift PM dependency -->

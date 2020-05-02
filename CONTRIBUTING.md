@@ -53,3 +53,11 @@ git push origin --tags
 # Publish to npm
 npx lerna publish from-git
 ```
+
+#### Note
+
+- The file [ReplayCore.swift](./packages/replay-swift/Replay/Sources/Replay/ReplayCore.swift) needs to be manually updated for now.
+- On a new release, the following clone repos need to be updated and released:
+  - [replay-swift](https://github.com/edbentley/replay-swift)
+  - [replay-starter-ts](https://github.com/edbentley/replay-starter-ts)
+  - [replay-starter-js](https://github.com/edbentley/replay-starter-js)

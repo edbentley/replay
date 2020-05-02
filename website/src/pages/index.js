@@ -65,7 +65,8 @@ function Home() {
               className={classnames("button button--lg", styles.readDocs)}
               to={useBaseUrl("docs/intro")}
             >
-              Read Docs
+              {/* Read Docs */}
+              Get Started
             </Link>
           </div>
         </div>

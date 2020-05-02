@@ -6,6 +6,7 @@ module.exports = {
   favicon: "img/favicon.ico",
   organizationName: "edbentley",
   projectName: "replay",
+  plugins: ["@docusaurus/plugin-google-analytics"],
   themeConfig: {
     disableDarkMode: true,
     navbar: {
@@ -69,6 +70,9 @@ module.exports = {
           ],
         },
       ],
+    },
+    googleAnalytics: {
+      trackingID: "UA-165350226-1",
     },
   },
   presets: [

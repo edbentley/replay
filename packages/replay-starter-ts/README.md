@@ -74,5 +74,3 @@ open swift/replay-starter-ts.xcodeproj/
 ```
 
 Assets like audio and images need to be dragged into your Xcode project.
-
-<!-- TODO: Swift PM dependency -->
