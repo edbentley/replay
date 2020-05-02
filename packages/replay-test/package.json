@@ -1,10 +1,12 @@
 {
   "name": "@replay/test",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A cross-platform JS game engine inspired by React (test)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rm -rf dist/ && tsc -p ./tsconfig.json",
     "test": "jest",
@@ -21,11 +23,11 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "@replay/core": "~0.0.0",
+    "@replay/core": "~0.1.0",
     "jest": ">= 20"
   },
   "devDependencies": {
-    "@replay/core": "~0.0.0",
+    "@replay/core": "0.1.0",
     "jest": "^25.4.0",
     "typescript": "^3.8.3"
   }

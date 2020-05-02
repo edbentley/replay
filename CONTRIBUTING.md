@@ -39,9 +39,9 @@ npx lerna version --no-push --exact --no-git-tag-version
 # Need to manually update peer dependencies since lerna can't do that
 # You can grep for "@replay/core": "~0.1.0"
 
-# Then amend the commit
+# Then commit
 git add .
-git commit --amend
+git commit -m "v0.1.0"
 
 # Add the tag
 git tag v0.1.0
