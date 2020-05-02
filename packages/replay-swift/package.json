@@ -1,0 +1,30 @@
+{
+  "name": "@replay/swift",
+  "version": "0.0.0",
+  "description": "A cross-platform JS game engine inspired by React (Swift package)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p ./tsconfig.json",
+    "test": "./swift-tests.sh"
+  },
+  "author": "Ed Bentley",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edbentley/replay.git",
+    "directory": "packages/replay-swift"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@replay/core": "~0.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^3.8.3"
+  }
+}

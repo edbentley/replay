@@ -1,0 +1,21 @@
+{
+  "name": "dev-game",
+  "private": true,
+  "version": "0.0.0",
+  "description": "An example game for developing Replay",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "webpack-dev-server --config webpack.web.js --open",
+    "build": "npm run build-web && npm run build-swift",
+    "build-web": "webpack --config webpack.web.js",
+    "build-swift": "webpack --config webpack.swift.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "jest": "^25.4.0",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
+  }
+}

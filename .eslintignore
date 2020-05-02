@@ -1,0 +1,9 @@
+dist/
+umd/
+swift/
+**/test/build/**
+node_modules
+packages/replay-swift/Replay
+dev-game/swift
+website/build
+website/.docusaurus

@@ -1,0 +1,9 @@
+{
+  "packages": [
+    "packages/*",
+    "dev-game",
+    "packages/replay-swift/test-game",
+    "website"
+  ],
+  "version": "0.0.0"
+}

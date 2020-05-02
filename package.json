@@ -1,0 +1,39 @@
+{
+  "name": "root",
+  "private": true,
+  "scripts": {
+    "build": "lerna run build",
+    "test": "lerna run test",
+    "lint": "eslint --ext .js,.ts . && lerna run lint",
+    "types": "tsc --noEmit -p tsconfig.json && lerna run types",
+    "ci": "npm run lint && npm run build && npm run types && npm run test",
+    "prepublishOnly": "npm run ci"
+  },
+  "devDependencies": {
+    "@types/fetch-mock": "^7.3.2",
+    "@types/jest": "^25.2.1",
+    "@types/jest-image-snapshot": "^2.12.0",
+    "@types/node": "^13.13.1",
+    "@typescript-eslint/eslint-plugin": "^2.28.0",
+    "@typescript-eslint/parser": "^2.28.0",
+    "canvas": "^2.6.1",
+    "clean-webpack-plugin": "^3.0.0",
+    "copy-webpack-plugin": "^5.1.1",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.1",
+    "eslint-plugin-prettier": "^3.1.3",
+    "express": "^4.17.1",
+    "fetch-mock": "^9.4.0",
+    "html-webpack-plugin": "^4.2.0",
+    "jest": "^25.4.0",
+    "jest-image-snapshot": "^3.1.0",
+    "lerna": "^3.20.2",
+    "node-fetch": "^2.6.0",
+    "prettier": "2.0.4",
+    "ts-jest": "^25.4.0",
+    "ts-loader": "^7.0.1",
+    "typescript": "^3.8.3",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
+  }
+}

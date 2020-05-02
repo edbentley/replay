@@ -1,0 +1,10 @@
+node_modules/
+lerna-debug.log
+npm-debug.log
+.vscode
+dist/
+umd/
+**/test/build/**
+__diff_output__
+.DS_Store
+dev-game/**/game.js

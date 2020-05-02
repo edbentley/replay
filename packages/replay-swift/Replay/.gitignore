@@ -1,0 +1,7 @@
+/.build
+/Packages
+/*.xcodeproj
+xcuserdata/
+.swiftpm
+replay-core.js
+game.js

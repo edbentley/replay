@@ -1,0 +1,44 @@
+{
+  "name": "replay-starter-ts",
+  "private": true,
+  "version": "0.0.0",
+  "description": "A starter template for building a Replay game (TypeScript)",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "webpack-dev-server --config ./web/webpack.config.js --open",
+    "lint": "eslint --ext .js,.ts .",
+    "types": "tsc --noEmit -p tsconfig.json",
+    "build": "npm run build-web && npm run build-swift",
+    "build-web": "webpack --config ./web/webpack.config.js",
+    "build-swift": "webpack --config ./swift/webpack.config.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "ci": "npm run lint && npm run types && npm run build && npm run test"
+  },
+  "dependencies": {
+    "@replay/core": "~0.0.0",
+    "@replay/web": "~0.0.0",
+    "@replay/swift": "~0.0.0"
+  },
+  "devDependencies": {
+    "@replay/test": "~0.0.0",
+    "@types/jest": "^25.2.1",
+    "@types/node": "^13.13.4",
+    "@typescript-eslint/eslint-plugin": "^2.30.0",
+    "@typescript-eslint/parser": "^2.30.0",
+    "clean-webpack-plugin": "^3.0.0",
+    "copy-webpack-plugin": "^5.1.1",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.3",
+    "html-webpack-plugin": "^4.2.0",
+    "jest": "^25.4.0",
+    "prettier": "2.0.5",
+    "ts-jest": "^25.4.0",
+    "ts-loader": "^7.0.1",
+    "typescript": "^3.8.3",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
+  }
+}
