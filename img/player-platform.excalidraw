@@ -1,0 +1,187 @@
+{
+  "type": "excalidraw",
+  "version": 1,
+  "source": "https://excalidraw.com",
+  "elements": [
+    {
+      "id": "_v5K7oh6kYphDHzlgndZq",
+      "type": "rectangle",
+      "x": 48.33307549504951,
+      "y": 107.78434405940595,
+      "width": 499.4662747524753,
+      "height": 251.49288366336634,
+      "angle": 0,
+      "strokeColor": "#000000",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "roughness": 1,
+      "opacity": 100,
+      "seed": 1769705302,
+      "version": 78,
+      "versionNonce": 574996874,
+      "isDeleted": false
+    },
+    {
+      "id": "qRICnin-XF3qdHrmbxIFN",
+      "type": "rectangle",
+      "x": 209.88938737623744,
+      "y": 193.79919554455438,
+      "width": 40.551516089108986,
+      "height": 40.551516089108986,
+      "angle": 0.6110490373590398,
+      "strokeColor": "#000000",
+      "backgroundColor": "#fd7e14",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "roughness": 1,
+      "opacity": 100,
+      "seed": 1096870410,
+      "version": 254,
+      "versionNonce": 2112316426,
+      "isDeleted": false
+    },
+    {
+      "id": "JYu6eXt5Ke-1A0VQx8hES",
+      "type": "text",
+      "x": 116.12051361386136,
+      "y": 151.7137995049504,
+      "width": 57,
+      "height": 25,
+      "angle": 0,
+      "strokeColor": "#000000",
+      "backgroundColor": "#868e96",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "roughness": 1,
+      "opacity": 100,
+      "seed": 292866186,
+      "version": 77,
+      "versionNonce": 1777992714,
+      "isDeleted": false,
+      "text": "player",
+      "font": "20px Virgil",
+      "textAlign": "left",
+      "baseline": 18
+    },
+    {
+      "id": "hjl1hU40unOTfGa5tljJe",
+      "type": "arrow",
+      "x": 144.8019801980198,
+      "y": 189.4907178217822,
+      "width": 35.78279702970303,
+      "height": 26.00556930693068,
+      "angle": 0,
+      "strokeColor": "#000000",
+      "backgroundColor": "#868e96",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "roughness": 1,
+      "opacity": 100,
+      "seed": 1283298314,
+      "version": 108,
+      "versionNonce": 381759126,
+      "isDeleted": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -0.7851175742574696,
+          24.798886138613852
+        ],
+        [
+          34.997679455445564,
+          26.00556930693068
+        ]
+      ],
+      "lastCommittedPoint": [
+        34.997679455445564,
+        26.00556930693068
+      ]
+    },
+    {
+      "id": "GRykFlcd8LeMyDTkAUNhB",
+      "type": "rectangle",
+      "x": 215.16011757425747,
+      "y": 263.75696163366337,
+      "width": 303.44600866336634,
+      "height": 28.61231435643566,
+      "angle": 0,
+      "strokeColor": "#000000",
+      "backgroundColor": "#868e96",
+      "fillStyle": "cross-hatch",
+      "strokeWidth": 1,
+      "roughness": 1,
+      "opacity": 100,
+      "seed": 1550143382,
+      "version": 65,
+      "versionNonce": 386103190,
+      "isDeleted": false
+    },
+    {
+      "id": "kXSGUM14EUF6evpK8dbtw",
+      "type": "text",
+      "x": 131.37453589108907,
+      "y": 316.3188428217818,
+      "width": 150,
+      "height": 25,
+      "angle": 0,
+      "strokeColor": "#000000",
+      "backgroundColor": "#868e96",
+      "fillStyle": "cross-hatch",
+      "strokeWidth": 1,
+      "roughness": 1,
+      "opacity": 100,
+      "seed": 1525053834,
+      "version": 98,
+      "versionNonce": 14863882,
+      "isDeleted": false,
+      "text": "moving platform",
+      "font": "20px Virgil",
+      "textAlign": "left",
+      "baseline": 18
+    },
+    {
+      "id": "FakqtsVisxKkOYjHtEPSE",
+      "type": "arrow",
+      "x": 285.4030012376238,
+      "y": 340.81451113861385,
+      "width": 72.40099009900985,
+      "height": 39.669709158415856,
+      "angle": 0,
+      "strokeColor": "#000000",
+      "backgroundColor": "#868e96",
+      "fillStyle": "cross-hatch",
+      "strokeWidth": 1,
+      "roughness": 1,
+      "opacity": 100,
+      "seed": 625428810,
+      "version": 87,
+      "versionNonce": 1157532298,
+      "isDeleted": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          30.61185024752467,
+          5.418471534653463
+        ],
+        [
+          72.40099009900985,
+          -34.25123762376239
+        ]
+      ],
+      "lastCommittedPoint": [
+        72.40099009900985,
+        -34.25123762376239
+      ]
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff"
+  }
+}
