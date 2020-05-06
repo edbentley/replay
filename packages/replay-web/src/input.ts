@@ -57,6 +57,7 @@ export function getInputs(parentPosition: SpritePosition) {
 }
 
 export function keyDownHandler(e: KeyboardEvent) {
+  e.preventDefault();
   inputs.keysDown[e.key] = true;
   inputs.keysJustPressed[e.key] = true;
 }

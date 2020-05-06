@@ -6,8 +6,8 @@ import {
 } from "@replay/core/dist/sprite";
 import {
   getInputs,
-  keyUpHandler,
-  keyDownHandler,
+  keyUpHandler as inputKeyUpHandler,
+  keyDownHandler as inputKeyDownHandler,
   resetInputs,
   Inputs,
   pointerUpHandler,
@@ -51,15 +51,31 @@ export function renderCanvas<S>(
    * Preferred method of placing the game in the browser window
    */
   dimensions: Dimensions = "game-coords",
-  canvas = document.body.appendChild(document.createElement("canvas"))
+  userCanvas?: HTMLCanvasElement
 ) {
+  const canvas = userCanvas || document.createElement("canvas");
+  if (!userCanvas) {
+    document.body.appendChild(canvas);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const ctx = canvas.getContext("2d", { alpha: false })!;
+
+  let isInFocus = true;
+
+  const keyDownHandler = (e: KeyboardEvent) => {
+    if (!isInFocus) return;
+    inputKeyDownHandler(e);
+  };
+  const keyUpHandler = (e: KeyboardEvent) => {
+    if (!isInFocus) return;
+    inputKeyUpHandler(e);
+  };
 
   document.addEventListener("keydown", keyDownHandler, false);
   document.addEventListener("keyup", keyUpHandler, false);
 
-  window.addEventListener("resize", updateDeviceSize, false);
+  window.addEventListener("resize", updateDeviceSize as () => void, false);
 
   let prevDeviceSize: DeviceSize | undefined;
   let pointerDown: (e: PointerEvent) => void;
@@ -67,12 +83,15 @@ export function renderCanvas<S>(
   let pointerUp: (e: PointerEvent) => void;
   let scale: number;
 
-  function updateDeviceSize() {
+  function updateDeviceSize(cleanup?: boolean) {
     if (prevDeviceSize) {
       revertCanvasScale(ctx, prevDeviceSize, scale);
       document.removeEventListener("pointerdown", pointerDown);
       document.removeEventListener("pointermove", pointerMove);
       document.removeEventListener("pointerup", pointerUp);
+      if (cleanup) {
+        return;
+      }
     }
 
     const deviceSize = setDeviceSize(
@@ -109,14 +128,38 @@ export function renderCanvas<S>(
       scale,
     });
 
+    const isPointerOutsideGame = (x: number, y: number) =>
+      x > deviceSize.width / 2 + deviceSize.widthMargin ||
+      x < -deviceSize.width / 2 - deviceSize.widthMargin ||
+      y > deviceSize.height / 2 + deviceSize.heightMargin ||
+      y < -deviceSize.height / 2 + deviceSize.heightMargin;
+
     pointerDown = (e: PointerEvent) => {
-      pointerDownHandler(getX(e), getY(e));
+      const x = getX(e);
+      const y = getY(e);
+      if (isPointerOutsideGame(x, y)) {
+        isInFocus = false;
+        return;
+      }
+      isInFocus = true;
+
+      pointerDownHandler(x, y);
     };
     pointerMove = (e: PointerEvent) => {
-      pointerMoveHandler(getX(e), getY(e));
+      const x = getX(e);
+      const y = getY(e);
+      if (isPointerOutsideGame(x, y)) {
+        return;
+      }
+      pointerMoveHandler(x, y);
     };
     pointerUp = (e: PointerEvent) => {
-      pointerUpHandler(getX(e), getY(e));
+      const x = getX(e);
+      const y = getY(e);
+      if (isPointerOutsideGame(x, y)) {
+        return;
+      }
+      pointerUpHandler(x, y);
     };
     document.addEventListener("pointerdown", pointerDown, false);
     document.addEventListener("pointermove", pointerMove, false);
@@ -152,10 +195,11 @@ export function renderCanvas<S>(
   );
 
   let initTime: number | null = null;
+  let animationId = 0;
 
   function loop(textures: Texture[]) {
     render.ref?.(textures);
-    window.requestAnimationFrame((time) => {
+    animationId = window.requestAnimationFrame((time) => {
       if (initTime === null) {
         initTime = time - 1 / 60;
       }
@@ -218,7 +262,26 @@ export function renderCanvas<S>(
     loop(initTextures);
   });
 
-  return { loadPromise, audioElements }; // audioElements exported for testing
+  /**
+   * Unloads the game and removes all loops and event listeners
+   */
+  function cleanup() {
+    // hack to remove canvas content
+    canvas.width = canvas.width;
+
+    // Remove if we created canvas
+    if (!userCanvas) {
+      document.body.removeChild(canvas);
+    }
+
+    window.cancelAnimationFrame(animationId);
+    document.removeEventListener("keydown", inputKeyDownHandler, false);
+    document.removeEventListener("keyup", inputKeyUpHandler, false);
+    window.removeEventListener("resize", updateDeviceSize as () => void, false);
+    updateDeviceSize(true);
+  }
+
+  return { cleanup, loadPromise, audioElements }; // audioElements exported for testing
 }
 
 function deviceCreator(
