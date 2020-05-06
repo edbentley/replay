@@ -16,7 +16,7 @@ import {
   clientXToGameX,
   clientYToGameY,
 } from "./input";
-import { drawCanvas, revertCanvasScale } from "./draw";
+import { drawCanvas } from "./draw";
 import { getDeviceSize, setDeviceSize, calculateDeviceSize } from "./size";
 import { Dimensions } from "./dimensions";
 
@@ -51,7 +51,11 @@ export function renderCanvas<S>(
    * Preferred method of placing the game in the browser window
    */
   dimensions: Dimensions = "game-coords",
-  userCanvas?: HTMLCanvasElement
+  userCanvas?: HTMLCanvasElement,
+  /**
+   * Override the view size, instead of using the window size
+   */
+  windowSize?: { width: number; height: number }
 ) {
   const canvas = userCanvas || document.createElement("canvas");
   if (!userCanvas) {
@@ -85,18 +89,18 @@ export function renderCanvas<S>(
 
   function updateDeviceSize(cleanup?: boolean) {
     if (prevDeviceSize) {
-      revertCanvasScale(ctx, prevDeviceSize, scale);
+      ctx.restore();
       document.removeEventListener("pointerdown", pointerDown);
       document.removeEventListener("pointermove", pointerMove);
       document.removeEventListener("pointerup", pointerUp);
-      if (cleanup) {
+      if (cleanup === true) {
         return;
       }
     }
 
     const deviceSize = setDeviceSize(
-      window.innerWidth,
-      window.innerHeight,
+      windowSize?.width || window.innerWidth,
+      windowSize?.height || window.innerHeight,
       dimensions,
       gameSprite.props.size
     );
@@ -175,8 +179,8 @@ export function renderCanvas<S>(
     getGetDevice: deviceCreator(
       audioElements,
       calculateDeviceSize(
-        window.innerWidth,
-        window.innerHeight,
+        windowSize?.width || window.innerWidth,
+        windowSize?.height || window.innerHeight,
         dimensions,
         gameSprite.props.size
       )
