@@ -1,36 +1,43 @@
 import { Texture, DeviceSize, TextureFont } from "@replay/core";
 
-/**
- * Revert the initial scale, for applying a new scale on different device
- * dimensions
- */
-export function revertCanvasScale(
-  ctx: CanvasRenderingContext2D,
-  { width, height, widthMargin, heightMargin }: DeviceSize,
-  scale: number
-) {
-  ctx.scale(1 / scale, 1 / scale);
-  ctx.translate(-(widthMargin + width / 2), -(heightMargin + height / 2));
-}
-
 export function drawCanvas(
   ctx: CanvasRenderingContext2D,
-  { width, height, deviceWidth, deviceHeight }: DeviceSize,
+  {
+    width,
+    height,
+    widthMargin,
+    heightMargin,
+    deviceWidth,
+    deviceHeight,
+  }: DeviceSize,
   imageElements: { [fileName: string]: HTMLImageElement },
   defaultFont: TextureFont
 ) {
+  ctx.save();
   const scale = Math.min(deviceWidth / width, deviceHeight / height);
+  const fullWidth = width + widthMargin * 2;
+  const fullHeight = height + heightMargin * 2;
   ctx.translate(deviceWidth / 2, deviceHeight / 2);
   ctx.scale(scale, scale);
   return {
     scale,
     render: (textures: Texture[]) => {
+      // First clear rect
       ctx.clearRect(
-        -deviceWidth / 2,
-        -deviceHeight / 2,
-        deviceWidth,
-        deviceHeight
+        -deviceWidth / 2 / scale,
+        -deviceHeight / 2 / scale,
+        deviceWidth / scale,
+        deviceHeight / scale
       );
+      // Set white background for game
+      ctx.fillStyle = "white";
+      ctx.fillRect(
+        -fullWidth / 2 / scale,
+        -fullHeight / 2 / scale,
+        fullWidth / scale,
+        fullHeight / scale
+      );
+
       textures.forEach((texture) => {
         const position = texture.props.position || { x: 0, y: 0 };
         const drawUtilsCtx = drawUtils(ctx, {

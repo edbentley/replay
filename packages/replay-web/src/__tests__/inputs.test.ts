@@ -161,7 +161,7 @@ test("Pointer clicks and move", async () => {
     0
   );
 
-  movePointer(300, 300);
+  movePointer(150, 150);
 
   mockTime.nextFrame();
 
@@ -169,14 +169,14 @@ test("Pointer clicks and move", async () => {
     [
       "pointerPressed: true",
       "pointerJustPressed: false",
-      "pointerX: 200",
-      "pointerY: -200",
+      "pointerX: 50",
+      "pointerY: -50",
     ].join(),
     0,
     0
   );
 
-  releasePointer(400, 400);
+  releasePointer(100, 100);
 
   mockTime.nextFrame();
 
@@ -184,8 +184,8 @@ test("Pointer clicks and move", async () => {
     [
       "pointerPressed: false",
       "pointerJustPressed: false",
-      "pointerX: 300",
-      "pointerY: -300",
+      "pointerX: 0",
+      "pointerY: 0",
     ].join(),
     0,
     0
@@ -195,7 +195,8 @@ test("Pointer clicks and move", async () => {
 
   mockTime.nextFrame();
 
-  expect(textSpy).lastCalledWith(
+  // Moving outside of game size doesn't register
+  expect(textSpy).not.lastCalledWith(
     [
       "pointerPressed: false",
       "pointerJustPressed: false",

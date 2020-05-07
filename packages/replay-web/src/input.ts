@@ -57,6 +57,12 @@ export function getInputs(parentPosition: SpritePosition) {
 }
 
 export function keyDownHandler(e: KeyboardEvent) {
+  if (
+    ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].includes(e.key)
+  ) {
+    // avoid scrolling with space and arrow keys
+    e.preventDefault();
+  }
   inputs.keysDown[e.key] = true;
   inputs.keysJustPressed[e.key] = true;
 }
