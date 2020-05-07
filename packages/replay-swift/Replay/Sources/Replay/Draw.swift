@@ -89,9 +89,9 @@ class Draw {
 
         var userFont: UIFont?
         if let textFont = textFont {
-            userFont = UIFont(name: textFont.name, size: textFont.size)
+            userFont = UIFont(name: textFont.name, size: textFont.size) ?? UIFont.systemFont(ofSize: textFont.size)
         } else if let defaultFont = defaultFont {
-            userFont = UIFont(name: defaultFont.name, size: defaultFont.size)
+            userFont = UIFont(name: defaultFont.name, size: defaultFont.size) ?? UIFont.systemFont(ofSize: defaultFont.size)
         }
         let font = userFont ?? UIFont.systemFont(ofSize: DEFAULT_FONT_SIZE)
 

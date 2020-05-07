@@ -1,9 +1,29 @@
 import UIKit
 
 public class ReplayViewController: UIViewController {
+    var hideStatusBar: Bool
+
+    public init() {
+        self.hideStatusBar = false
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    public init(hideStatusBar: Bool) {
+        self.hideStatusBar = hideStatusBar
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     override public func viewDidLoad() {
         super.viewDidLoad()
         self.view = TopView(frame: UIScreen.main.bounds)
+    }
+
+    public override var prefersStatusBarHidden: Bool {
+        return hideStatusBar
     }
 
     public override func viewDidAppear(_ animated: Bool) {
