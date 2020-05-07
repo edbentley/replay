@@ -1,7 +1,7 @@
 {
   "name": "replay-starter-ts",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A starter template for building a Replay game (TypeScript)",
   "main": "src/index.ts",
   "scripts": {
@@ -16,12 +16,12 @@
     "ci": "npm run lint && npm run build && npm run types && npm run test"
   },
   "dependencies": {
-    "@replay/core": "0.1.0",
-    "@replay/swift": "0.1.0",
-    "@replay/web": "0.1.0"
+    "@replay/core": "0.1.1",
+    "@replay/swift": "0.1.1",
+    "@replay/web": "0.1.1"
   },
   "devDependencies": {
-    "@replay/test": "0.1.0",
+    "@replay/test": "0.1.1",
     "@types/jest": "^25.2.1",
     "@types/node": "^13.13.4",
     "@typescript-eslint/eslint-plugin": "^2.30.0",
