@@ -25,6 +25,7 @@ module.exports = {
           position: "left",
         },
         { to: "blog", label: "Blog", position: "left" },
+        { to: "games", label: "Games", position: "left" },
         {
           href: "https://github.com/edbentley/replay",
           label: "GitHub",
@@ -67,6 +68,10 @@ module.exports = {
             {
               label: "Blog",
               to: "blog",
+            },
+            {
+              label: "Games",
+              to: "games",
             },
           ],
         },

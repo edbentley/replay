@@ -1,0 +1,17 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.viewContainer {
+  width: 608px;
+  margin: 2rem 0;
+  min-height: 400px;
+}
+
+@media (max-width: 624px) {
+  .viewContainer {
+    width: calc(100% - 16px);
+    margin: 1rem 0;
+  }
+}

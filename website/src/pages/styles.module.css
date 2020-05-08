@@ -26,6 +26,11 @@
 .startTutorial {
   margin-right: 2em;
 }
+@media screen and (max-width: 480px) {
+  .startTutorial {
+    display: none;
+  }
+}
 
 .readDocs {
   background-color: unset;

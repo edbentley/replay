@@ -10,7 +10,9 @@ testing library built in, Replay is ideal for writing bug-free games.
 Build your game once and deploy it for web or iOS (with more platforms like
 Android coming in the future).
 
-[Docs](https://replay.js.org/docs/intro) · [Blog](https://replay.js.org/blog)
+[Tutorial](https://replay.js.org/tutorial) ·
+[Docs](https://replay.js.org/docs/intro) · [Blog](https://replay.js.org/blog) ·
+[Games](https://replay.js.org/games)
 
 ## ⚠️ Status
 
