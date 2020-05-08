@@ -31,12 +31,7 @@ export function drawCanvas(
       );
       // Set white background for game
       ctx.fillStyle = "white";
-      ctx.fillRect(
-        -fullWidth / 2 / scale,
-        -fullHeight / 2 / scale,
-        fullWidth / scale,
-        fullHeight / scale
-      );
+      ctx.fillRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
 
       textures.forEach((texture) => {
         const position = texture.props.position || { x: 0, y: 0 };

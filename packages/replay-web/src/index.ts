@@ -199,11 +199,14 @@ export function renderCanvas<S>(
   );
 
   let initTime: number | null = null;
-  let animationId = 0;
+  let isCleanedUp = false;
 
   function loop(textures: Texture[]) {
     render.ref?.(textures);
-    animationId = window.requestAnimationFrame((time) => {
+    window.requestAnimationFrame((time) => {
+      if (isCleanedUp) {
+        return;
+      }
       if (initTime === null) {
         initTime = time - 1 / 60;
       }
@@ -278,7 +281,7 @@ export function renderCanvas<S>(
       document.body.removeChild(canvas);
     }
 
-    window.cancelAnimationFrame(animationId);
+    isCleanedUp = true;
     document.removeEventListener("keydown", inputKeyDownHandler, false);
     document.removeEventListener("keyup", inputKeyUpHandler, false);
     window.removeEventListener("resize", updateDeviceSize as () => void, false);
