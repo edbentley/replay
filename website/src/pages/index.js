@@ -17,20 +17,17 @@ const features = [
     ),
   },
   {
-    title: <>Tooling</>,
+    title: <>Open Source</>,
     description: (
-      <>
-        Build your game once using the latest and greatest frontend tools. Then
-        deploy to web and iOS!
-      </>
+      <>Replay is free to use and developed in the open on GitHub.</>
     ),
   },
   {
-    title: <>Easy to test</>,
+    title: <>Tooling</>,
     description: (
       <>
-        Replay includes an intuitive testing library to ensure your game never
-        breaks.
+        Build your game once using the latest and greatest frontend tools. Avoid
+        bugs with a built-in testing library, then deploy to web and iOS!
       </>
     ),
   },
@@ -49,24 +46,23 @@ function Home() {
   const context = useDocusaurusContext();
   const { siteConfig = {} } = context;
   return (
-    <Layout description="Description will go into a meta tag in <head />">
+    <Layout description={siteConfig.tagline}>
       <header className={classnames("hero hero--primary", styles.heroBanner)}>
         <div className="container">
           <img src="/img/logo-dark.svg" height={100} />
           <p className="hero__subtitle">{siteConfig.tagline}</p>
           <div className={styles.buttons}>
-            {/* <Link
+            <Link
               className={classnames("button button--lg", styles.startTutorial)}
               to={useBaseUrl("tutorial")}
             >
               Start Tutorial
-            </Link> */}
+            </Link>
             <Link
               className={classnames("button button--lg", styles.readDocs)}
               to={useBaseUrl("docs/intro")}
             >
-              {/* Read Docs */}
-              Get Started
+              Read Docs
             </Link>
           </div>
         </div>

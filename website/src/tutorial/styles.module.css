@@ -1,0 +1,53 @@
+/* stylelint-disable docusaurus/copyright-header */
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.refresh {
+  position: absolute;
+  margin-top: 10px;
+  margin-left: -14%;
+  background-color: white;
+  border: 2px solid black;
+  padding: 10px;
+  border-radius: 10px;
+  user-select: none;
+}
+.refresh:hover {
+  background-color: lightgray;
+}
+
+.fileButton {
+  color: var(--ifm-tabs-color);
+  background-color: white;
+  font-size: 14px;
+  padding: 8px;
+  margin: 4px;
+  border: none;
+}
+.fileButton:hover {
+  opacity: 0.7;
+  cursor: pointer;
+}
+.fileButtonSelected {
+  color: var(--ifm-tabs-color-active);
+  border-bottom: 3px solid #147aff;
+}
+
+.codeBlockContent {
+  position: relative;
+}
+.codeBlock {
+  overflow: auto;
+  border-radius: var(--ifm-global-radius);
+}
+.codeBlockLines {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: inherit;
+  line-height: var(--ifm-pre-line-height);
+  white-space: pre;
+  float: left;
+  min-width: 100%;
+  padding: var(--ifm-pre-padding);
+}

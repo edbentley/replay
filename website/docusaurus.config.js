@@ -8,6 +8,7 @@ module.exports = {
   projectName: "replay",
   plugins: ["@docusaurus/plugin-google-analytics"],
   themeConfig: {
+    image: "/img/social-image.png",
     disableDarkMode: true,
     navbar: {
       // title: "Replay",
