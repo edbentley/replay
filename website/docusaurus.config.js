@@ -57,6 +57,10 @@ module.exports = {
               href: "https://github.com/edbentley/replay",
             },
             {
+              label: "Twitter",
+              href: "https://twitter.com/ReplayEngine",
+            },
+            {
               label: "Stack Overflow",
               href: "https://stackoverflow.com/questions/tagged/replayjs",
             },

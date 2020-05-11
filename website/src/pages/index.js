@@ -5,6 +5,7 @@ import Link from "@docusaurus/Link";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import styles from "./styles.module.css";
+import { EmailSignupForm } from "../components/EmailSignupForm";
 
 const features = [
   {
@@ -80,6 +81,16 @@ function Home() {
           </section>
         )}
       </main>
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          marginBottom: 32,
+        }}
+      >
+        <EmailSignupForm />
+      </div>
     </Layout>
   );
 }
