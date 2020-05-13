@@ -126,6 +126,11 @@ export function pointerUpHandler(x: number, y: number) {
   inputs.pointer.y = y;
 }
 
+export function pointerOutHandler() {
+  inputs.pointer.justPressed = false;
+  inputs.pointer.pressed = false;
+}
+
 export function resetInputs() {
   inputs = {
     keysDown: inputs.keysDown,
