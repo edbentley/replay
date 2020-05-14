@@ -15,6 +15,7 @@ import {
   pointerMoveHandler,
   clientXToGameX,
   clientYToGameY,
+  pointerOutHandler,
 } from "./input";
 import { drawCanvas } from "./draw";
 import { getDeviceSize, setDeviceSize, calculateDeviceSize } from "./size";
@@ -93,6 +94,7 @@ export function renderCanvas<S>(
       document.removeEventListener("pointerdown", pointerDown);
       document.removeEventListener("pointermove", pointerMove);
       document.removeEventListener("pointerup", pointerUp);
+      document.removeEventListener("pointerout", pointerOutHandler);
       if (cleanup === true) {
         return;
       }
@@ -161,6 +163,7 @@ export function renderCanvas<S>(
       const x = getX(e);
       const y = getY(e);
       if (isPointerOutsideGame(x, y)) {
+        pointerOutHandler();
         return;
       }
       pointerUpHandler(x, y);
@@ -168,6 +171,7 @@ export function renderCanvas<S>(
     document.addEventListener("pointerdown", pointerDown, false);
     document.addEventListener("pointermove", pointerMove, false);
     document.addEventListener("pointerup", pointerUp, false);
+    document.addEventListener("pointerout", pointerOutHandler, false);
 
     prevDeviceSize = deviceSize;
   }
