@@ -12,6 +12,7 @@ import {
   TestGameWithSprites,
   TestGame,
   resizeWindow,
+  TestGameThrowImageError,
 } from "./utils";
 import { t, GameProps } from "@replay/core";
 
@@ -181,4 +182,24 @@ test("Dimension 'scale-up' renders up to browser size and resizes", () => {
 
   expect(canvas.width).toBe(300);
   expect(canvas.height).toBe(360);
+});
+
+test("Unknown image name throws readable error", async () => {
+  const canvas = document.createElement("canvas");
+
+  let error = "";
+  try {
+    const { loadPromise } = renderCanvas(
+      TestGameThrowImageError(testGameProps),
+      undefined,
+      undefined,
+      "scale-up",
+      canvas
+    );
+    await loadPromise;
+  } catch (e) {
+    error = (e as Error).message;
+  }
+
+  expect(error).toBe(`Cannot find image file "unknown.png"`);
 });
