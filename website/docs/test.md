@@ -18,6 +18,7 @@ The `@replay/test` package is useful for writing tests in Jest for your Replay g
 - `gameProps`: The props defined for your top-level `Game`. This sets the device size during tests.
 - `options`: (Optional) An object with the following properties:
   - `initInputs`: (Optional) The inputs your `device` returns. Match with the platforms you're targeting.
+  - `mapInputCoordinates`: (Optional) A mapping function to adjust an input's (x, y) coordinate to its relative value within a Sprite. The [Web package](web.md) exports this for pointer values.
   - `initRandom`: (Optional) An array of numbers that `random()` will call, starting from index 0 and looping if it reaches the end. Allows for predictable randomness.
   - `size`: (Optional) Set the size parameter passed into Sprites.
   - `initStore`: (Optional) Set the init store for local storage.
@@ -69,7 +70,8 @@ updateInputs({
     justPressed: true,
     justReleased: false,
     // Here the pointer position will have the
-    // same coordinates in all sprites
+    // same coordinates in all Sprites unless
+    // you set mapInputCoordinates
     x: 0,
     y: 0,
   },
@@ -169,6 +171,7 @@ test("Can shoot bullet", () => {
 
   const { nextFrame, updateInputs, getTexture, textureExists } = testSprite(
     Game(gameProps),
+    gameProps,
     {
       initInputs,
     }

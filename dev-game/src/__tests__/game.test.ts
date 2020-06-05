@@ -1,4 +1,7 @@
-import { WebInputs } from "../../../packages/replay-web/src";
+import {
+  WebInputs,
+  mapInputCoordinates,
+} from "../../../packages/replay-web/src";
 import { iOSInputs } from "../../../packages/replay-swift";
 import { testSprite } from "../../../packages/replay-test/src";
 import { Game, gameProps } from "..";
@@ -24,8 +27,10 @@ test("gameplay", () => {
     getByText,
     audio,
     store,
+    log,
   } = testSprite(Game(gameProps), gameProps, {
     initInputs: inputs,
+    mapInputCoordinates,
     initRandom: [0.5],
     networkResponses: {
       get: {
@@ -126,4 +131,7 @@ test("gameplay", () => {
   jumpToFrame(() => getByText("Game Over")[0]);
 
   expect(store).toEqual({ highScore: "1" });
+
+  // check mapper function works
+  expect(log).toBeCalledWith("x: -100, y: -200");
 });

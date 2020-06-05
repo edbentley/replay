@@ -314,6 +314,24 @@ test("can test individual Sprites", () => {
   expect(getByText("Hello")).toBeTruthy();
 });
 
+test("can map input coordinates to relative coordinates within Sprite", () => {
+  const { log } = testSprite(Game(gameProps), gameProps, {
+    initInputs: {
+      x: 20,
+    },
+    mapInputCoordinates(parentPos, inputs) {
+      if (!parentPos || !inputs.x) return inputs;
+      return {
+        ...inputs,
+        x: inputs.x - parentPos.x,
+      };
+    },
+  });
+
+  // x is -100 from input due to mapping function
+  expect(log).toBeCalledWith("x in Text Sprite is -80");
+});
+
 // --- Mock Game
 
 interface State {
@@ -321,6 +339,7 @@ interface State {
   showEnemy: boolean;
 }
 interface Inputs {
+  x?: number;
   pressed?: boolean;
   testInput?: string;
 }
@@ -452,8 +471,11 @@ const Game = makeSprite<GameProps, State, Inputs>({
   },
 });
 
-const Text = makeSprite<{ text: string }>({
-  render({ props }) {
+const Text = makeSprite<{ text: string }, undefined, Inputs>({
+  render({ props, device }) {
+    if (device.inputs.x) {
+      device.log(`x in Text Sprite is ${device.inputs.x}`);
+    }
     return [
       t.text({
         text: props.text,

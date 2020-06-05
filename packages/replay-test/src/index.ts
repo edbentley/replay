@@ -1,6 +1,10 @@
 import { GameProps, Texture, Device, DeviceSize, Store } from "@replay/core";
 import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
-import { CustomSprite, makeSprite } from "@replay/core/dist/sprite";
+import {
+  CustomSprite,
+  makeSprite,
+  SpritePosition,
+} from "@replay/core/dist/sprite";
 
 interface Timer {
   gameTime: number;
@@ -9,6 +13,14 @@ interface Timer {
 
 interface Options<I> {
   initInputs?: I;
+  /**
+   * A mapping function to adjust an input's (x, y) coordinate to its relative
+   * value within a Sprite
+   */
+  mapInputCoordinates?: (
+    parentPosition: SpritePosition["position"],
+    inputs: I
+  ) => I;
   /**
    * Same as setRandomNumbers but for init call
    */
@@ -68,6 +80,7 @@ export function testSprite<P, S, I>(
     },
     initStore = {},
     networkResponses = {},
+    mapInputCoordinates = (_, inputs) => inputs,
   } = options;
   /**
    * Mock function for device log.
@@ -117,8 +130,8 @@ export function testSprite<P, S, I>(
   };
 
   let inputs: I = { ...initInputs };
-  function getInputs() {
-    return inputs;
+  function getInputs(parentPosition: SpritePosition["position"]) {
+    return mapInputCoordinates(parentPosition, inputs);
   }
   /**
    * Update the current input state in the game.
@@ -201,8 +214,9 @@ export function testSprite<P, S, I>(
       const now = () => {
         return new Date(Date.UTC(2000, 1, 1));
       };
-      return () => ({
-        inputs: getInputs(),
+      // called individually by each Sprite with their parent's absolute position
+      return (parentPosition) => ({
+        inputs: getInputs(parentPosition),
         size,
         log,
         random,

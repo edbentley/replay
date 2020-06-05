@@ -38,7 +38,7 @@ const hitX = inputs.pointer.x;
 ```
 
 :::tip Important
-The pointer is relative to the Sprite's position and rotation. If your Sprite has an `x` position of `100`, and you click at an `x` position of `50`, the value of `inputs.pointer.x` in the Sprite will be translated to `-50`. However this translation is _not_ done in [Replay Test](test.md).
+The pointer is relative to the Sprite's position and rotation. If your Sprite has an `x` position of `100`, and you click at an `x` position of `50`, the value of `inputs.pointer.x` in the Sprite will be translated to `-50`. To do this translation in [Replay Test](test.md) you can pass in a `mapInputCoordinates` function.
 :::
 
 ### `size`

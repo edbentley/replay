@@ -28,7 +28,6 @@ test("Can start game", () => {
       pressed: false,
       justPressed: false,
       justReleased: true,
-      // Note that the pointer position has the same coordinates in all Sprites
       x: 0,
       y: 0,
     },

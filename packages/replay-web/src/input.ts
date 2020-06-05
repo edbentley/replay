@@ -24,7 +24,7 @@ export interface Inputs {
   };
 }
 
-let inputs: Inputs = {
+let mutableInputs: Inputs = {
   keysDown: {},
   keysJustPressed: {},
   pointer: {
@@ -36,7 +36,13 @@ let inputs: Inputs = {
   },
 };
 
-export function getInputs(parentPosition: SpritePosition) {
+/**
+ * This can be used with @replay/test to map pointer (x, y) coordinates to its
+ * relative coordinate within each Sprite
+ */
+export function mapInputCoordinates<
+  I extends { pointer: { x: number; y: number } }
+>(parentPosition: SpritePosition, inputs: I) {
   if (!parentPosition) return inputs;
 
   // Need to convert point from absolute coordinates to sprite coordinates.
@@ -56,6 +62,10 @@ export function getInputs(parentPosition: SpritePosition) {
   };
 }
 
+export function getInputs(parentPosition: SpritePosition) {
+  return mapInputCoordinates(parentPosition, mutableInputs);
+}
+
 export function keyDownHandler(e: KeyboardEvent) {
   if (
     ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].includes(e.key)
@@ -63,12 +73,12 @@ export function keyDownHandler(e: KeyboardEvent) {
     // avoid scrolling with space and arrow keys
     e.preventDefault();
   }
-  inputs.keysDown[e.key] = true;
-  inputs.keysJustPressed[e.key] = true;
+  mutableInputs.keysDown[e.key] = true;
+  mutableInputs.keysJustPressed[e.key] = true;
 }
 
 export function keyUpHandler(e: KeyboardEvent) {
-  delete inputs.keysDown[e.key];
+  delete mutableInputs.keysDown[e.key];
 }
 
 /**
@@ -104,7 +114,7 @@ export const clientYToGameY = ({
   -(e.clientY - canvasOffsetTop) / scale + heightMargin + height / 2;
 
 export function pointerDownHandler(x: number, y: number) {
-  inputs.pointer = {
+  mutableInputs.pointer = {
     pressed: true,
     justPressed: true,
     justReleased: false,
@@ -114,29 +124,29 @@ export function pointerDownHandler(x: number, y: number) {
 }
 
 export function pointerMoveHandler(x: number, y: number) {
-  inputs.pointer.x = x;
-  inputs.pointer.y = y;
+  mutableInputs.pointer.x = x;
+  mutableInputs.pointer.y = y;
 }
 
 export function pointerUpHandler(x: number, y: number) {
-  inputs.pointer.justPressed = false;
-  inputs.pointer.pressed = false;
-  inputs.pointer.justReleased = true;
-  inputs.pointer.x = x;
-  inputs.pointer.y = y;
+  mutableInputs.pointer.justPressed = false;
+  mutableInputs.pointer.pressed = false;
+  mutableInputs.pointer.justReleased = true;
+  mutableInputs.pointer.x = x;
+  mutableInputs.pointer.y = y;
 }
 
 export function pointerOutHandler() {
-  inputs.pointer.justPressed = false;
-  inputs.pointer.pressed = false;
+  mutableInputs.pointer.justPressed = false;
+  mutableInputs.pointer.pressed = false;
 }
 
 export function resetInputs() {
-  inputs = {
-    keysDown: inputs.keysDown,
+  mutableInputs = {
+    keysDown: mutableInputs.keysDown,
     keysJustPressed: {},
     pointer: {
-      ...inputs.pointer,
+      ...mutableInputs.pointer,
       justPressed: false,
       justReleased: false,
     },

@@ -4,6 +4,7 @@ import { iOSInputs } from "../../packages/replay-swift";
 import { bulletX, bulletY } from "./utils";
 import { Score } from "./Score";
 import { WalkingGreenCapChar } from "./SpriteSheet";
+import { PosLogger } from "./PosLogger";
 
 interface State {
   playerRotation: number;
@@ -228,6 +229,7 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         id: "highScore",
         position: { x: 100, y: 0 },
       }),
+      PosLogger({ id: "posLogger", position: { x: 100, y: 200 } }),
     ];
   },
 });
