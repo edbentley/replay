@@ -1,6 +1,6 @@
 import { WebInputs } from "../../../packages/replay-web/src";
 import { iOSInputs } from "../../../packages/replay-swift";
-import { testGame } from "../../../packages/replay-test/src";
+import { testSprite } from "../../../packages/replay-test/src";
 import { Game, gameProps } from "..";
 
 test("gameplay", () => {
@@ -24,7 +24,7 @@ test("gameplay", () => {
     getByText,
     audio,
     store,
-  } = testGame(Game(gameProps), {
+  } = testSprite(Game(gameProps), gameProps, {
     initInputs: inputs,
     initRandom: [0.5],
     networkResponses: {

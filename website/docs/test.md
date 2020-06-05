@@ -10,11 +10,12 @@ Once you've worked on your game for a while, it's a good idea to add some tests 
 
 The `@replay/test` package is useful for writing tests in Jest for your Replay game. It provides a test platform, which works the same as any other like web and iOS, but returns helpful utility functions for testing.
 
-## `testGame(game, options)`
+## `testSprite(sprite, gameProps, options)`
 
 #### Parameters
 
-- `game`: Your top-level `Game` Sprite called with its props, e.g. `Game(gameProps)`.
+- `sprite`: The Sprite you want to test called with its props, e.g. `Player(playerProps)`.
+- `gameProps`: The props defined for your top-level `Game`. This sets the device size during tests.
 - `options`: (Optional) An object with the following properties:
   - `initInputs`: (Optional) The inputs your `device` returns. Match with the platforms you're targeting.
   - `initRandom`: (Optional) An array of numbers that `random()` will call, starting from index 0 and looping if it reaches the end. Allows for predictable randomness.
@@ -31,7 +32,7 @@ The `@replay/test` package is useful for writing tests in Jest for your Replay g
   },
   ```
 
-`testGame` returns an object with the following fields:
+`testSprite` returns an object with the following fields:
 
 ### `nextFrame()`
 
@@ -152,7 +153,7 @@ expect(store).toEqual({ highScore: 5 });
 <TabItem value="js">
 
 ```js
-import { testGame } from "@replay/test";
+import { testSprite } from "@replay/test";
 import { Game, gameProps } from "..";
 
 test("Can shoot bullet", () => {
@@ -166,7 +167,7 @@ test("Can shoot bullet", () => {
     },
   };
 
-  const { nextFrame, updateInputs, getTexture, textureExists } = testGame(
+  const { nextFrame, updateInputs, getTexture, textureExists } = testSprite(
     Game(gameProps),
     {
       initInputs,
@@ -198,7 +199,7 @@ test("Can shoot bullet", () => {
 <TabItem value="ts">
 
 ```ts
-import { testGame } from "@replay/test";
+import { testSprite } from "@replay/test";
 import { WebInputs } from "@replay/web";
 import { iOSInputs } from "@replay/swift";
 import { Game, gameProps } from "..";
@@ -214,7 +215,7 @@ test("Can shoot bullet", () => {
     },
   };
 
-  const { nextFrame, updateInputs, getTexture, textureExists } = testGame(
+  const { nextFrame, updateInputs, getTexture, textureExists } = testSprite(
     Game(gameProps),
     {
       initInputs,

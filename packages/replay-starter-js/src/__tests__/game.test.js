@@ -1,4 +1,4 @@
-import { testGame } from "@replay/test";
+import { testSprite } from "@replay/test";
 import { Game, gameProps } from "..";
 
 test("gameplay", () => {
@@ -18,7 +18,7 @@ test("gameplay", () => {
     updateInputs,
     getTexture,
     audio,
-  } = testGame(Game(gameProps), { initInputs });
+  } = testSprite(Game(gameProps), gameProps, { initInputs });
 
   expect(getTexture("icon").props.position).toEqual({
     x: 0,

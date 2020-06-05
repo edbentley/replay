@@ -1,6 +1,6 @@
 import { GameProps, Texture, Device, DeviceSize, Store } from "@replay/core";
 import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
-import { CustomSprite } from "@replay/core/dist/sprite";
+import { CustomSprite, makeSprite } from "@replay/core/dist/sprite";
 
 interface Timer {
   gameTime: number;
@@ -41,11 +41,12 @@ interface Options<I> {
 }
 
 /**
- * `testGame` provides a way of testing your gameplay with helper functions to
+ * `testSprite` provides a way of testing your gameplay with helper functions to
  * play and record the game.
  */
-export function testGame<S, I>(
-  gameSprite: CustomSprite<GameProps, S, I>,
+export function testSprite<P, S, I>(
+  sprite: CustomSprite<P, S, I>,
+  gameProps: GameProps,
   options: Options<I> = {}
 ) {
   const {
@@ -53,13 +54,13 @@ export function testGame<S, I>(
     initRandom = [0.5],
     size = {
       width:
-        "width" in gameSprite.props.size
-          ? gameSprite.props.size.width
-          : gameSprite.props.size.landscape.width,
+        "width" in gameProps.size
+          ? gameProps.size.width
+          : gameProps.size.landscape.width,
       height:
-        "height" in gameSprite.props.size
-          ? gameSprite.props.size.height
-          : gameSprite.props.size.landscape.height,
+        "height" in gameProps.size
+          ? gameProps.size.height
+          : gameProps.size.landscape.height,
       widthMargin: 0,
       heightMargin: 0,
       deviceWidth: 1000,
@@ -86,7 +87,7 @@ export function testGame<S, I>(
 
   /**
    * Mock functions for network calls. Pass in the responses as a parameter to
-   * testGame.
+   * testSprite.
    */
   const network: Device<I>["network"] = {
     get: jest.fn((url, cb) => {
@@ -214,9 +215,15 @@ export function testGame<S, I>(
     },
   };
 
-  const { initTextures, getNextFrameTextures } = replayCore<S, I>(
+  const TestContainer = makeSprite<GameProps>({
+    render() {
+      return [sprite];
+    },
+  });
+
+  const { initTextures, getNextFrameTextures } = replayCore(
     testPlatform,
-    gameSprite
+    TestContainer(gameProps)
   );
 
   function checkTimers() {
@@ -282,7 +289,7 @@ export function testGame<S, I>(
   function getTexture(testId: string) {
     const match = textures.find((texture) => texture.props.testId === testId);
     if (!match) {
-      throw Error(`No text textures found with test id "${testId}"`);
+      throw Error(`No textures found with test id "${testId}"`);
     }
     const { x, y } = match.props.position || { x: 0, y: 0 };
     return {

@@ -1,4 +1,4 @@
-import { testGame } from "@replay/test";
+import { testSprite } from "@replay/test";
 import { Game, gameProps } from "..";
 
 test("Can start game", () => {
@@ -13,9 +13,13 @@ test("Can start game", () => {
   };
   const mainMenuText = "Start";
 
-  const { nextFrame, updateInputs, getByText } = testGame(Game(gameProps), {
-    initInputs,
-  });
+  const { nextFrame, updateInputs, getByText } = testSprite(
+    Game(gameProps),
+    gameProps,
+    {
+      initInputs,
+    }
+  );
 
   expect(getByText(mainMenuText)).toBeDefined();
 
