@@ -5,7 +5,7 @@
   "description": "A starter template for building a Replay game (JavaScript)",
   "main": "src/index.js",
   "scripts": {
-    "start": "webpack-dev-server --config ./web/webpack.config.js --open",
+    "start": "webpack-dev-server --config ./web/webpack.config.js --open --mode=development",
     "lint": "eslint .",
     "build": "npm run build-web && npm run build-swift",
     "build-web": "webpack --config ./web/webpack.config.js",
