@@ -1,6 +1,10 @@
 import { GameProps, Texture, Device, DeviceSize, Store } from "@replay/core";
 import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
-import { CustomSprite } from "@replay/core/dist/sprite";
+import {
+  CustomSprite,
+  makeSprite,
+  SpritePosition,
+} from "@replay/core/dist/sprite";
 
 interface Timer {
   gameTime: number;
@@ -9,6 +13,14 @@ interface Timer {
 
 interface Options<I> {
   initInputs?: I;
+  /**
+   * A mapping function to adjust an input's (x, y) coordinate to its relative
+   * value within a Sprite
+   */
+  mapInputCoordinates?: (
+    parentPosition: SpritePosition["position"],
+    inputs: I
+  ) => I;
   /**
    * Same as setRandomNumbers but for init call
    */
@@ -41,11 +53,12 @@ interface Options<I> {
 }
 
 /**
- * `testGame` provides a way of testing your gameplay with helper functions to
+ * `testSprite` provides a way of testing your gameplay with helper functions to
  * play and record the game.
  */
-export function testGame<S, I>(
-  gameSprite: CustomSprite<GameProps, S, I>,
+export function testSprite<P, S, I>(
+  sprite: CustomSprite<P, S, I>,
+  gameProps: GameProps,
   options: Options<I> = {}
 ) {
   const {
@@ -53,13 +66,13 @@ export function testGame<S, I>(
     initRandom = [0.5],
     size = {
       width:
-        "width" in gameSprite.props.size
-          ? gameSprite.props.size.width
-          : gameSprite.props.size.landscape.width,
+        "width" in gameProps.size
+          ? gameProps.size.width
+          : gameProps.size.landscape.width,
       height:
-        "height" in gameSprite.props.size
-          ? gameSprite.props.size.height
-          : gameSprite.props.size.landscape.height,
+        "height" in gameProps.size
+          ? gameProps.size.height
+          : gameProps.size.landscape.height,
       widthMargin: 0,
       heightMargin: 0,
       deviceWidth: 1000,
@@ -67,6 +80,7 @@ export function testGame<S, I>(
     },
     initStore = {},
     networkResponses = {},
+    mapInputCoordinates = (_, inputs) => inputs,
   } = options;
   /**
    * Mock function for device log.
@@ -86,7 +100,7 @@ export function testGame<S, I>(
 
   /**
    * Mock functions for network calls. Pass in the responses as a parameter to
-   * testGame.
+   * testSprite.
    */
   const network: Device<I>["network"] = {
     get: jest.fn((url, cb) => {
@@ -116,8 +130,8 @@ export function testGame<S, I>(
   };
 
   let inputs: I = { ...initInputs };
-  function getInputs() {
-    return inputs;
+  function getInputs(parentPosition: SpritePosition["position"]) {
+    return mapInputCoordinates(parentPosition, inputs);
   }
   /**
    * Update the current input state in the game.
@@ -200,8 +214,9 @@ export function testGame<S, I>(
       const now = () => {
         return new Date(Date.UTC(2000, 1, 1));
       };
-      return () => ({
-        inputs: getInputs(),
+      // called individually by each Sprite with their parent's absolute position
+      return (parentPosition) => ({
+        inputs: getInputs(parentPosition),
         size,
         log,
         random,
@@ -214,9 +229,15 @@ export function testGame<S, I>(
     },
   };
 
-  const { initTextures, getNextFrameTextures } = replayCore<S, I>(
+  const TestContainer = makeSprite<GameProps>({
+    render() {
+      return [sprite];
+    },
+  });
+
+  const { initTextures, getNextFrameTextures } = replayCore(
     testPlatform,
-    gameSprite
+    TestContainer(gameProps)
   );
 
   function checkTimers() {
@@ -282,7 +303,7 @@ export function testGame<S, I>(
   function getTexture(testId: string) {
     const match = textures.find((texture) => texture.props.testId === testId);
     if (!match) {
-      throw Error(`No text textures found with test id "${testId}"`);
+      throw Error(`No textures found with test id "${testId}"`);
     }
     const { x, y } = match.props.position || { x: 0, y: 0 };
     return {

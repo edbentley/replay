@@ -1,4 +1,4 @@
-import { testGame } from "@replay/test";
+import { testSprite } from "@replay/test";
 import { Game, gameProps } from "..";
 
 test("Can start game", () => {
@@ -13,9 +13,13 @@ test("Can start game", () => {
   };
   const mainMenuText = "Start";
 
-  const { nextFrame, updateInputs, getByText } = testGame(Game(gameProps), {
-    initInputs,
-  });
+  const { nextFrame, updateInputs, getByText } = testSprite(
+    Game(gameProps),
+    gameProps,
+    {
+      initInputs,
+    }
+  );
 
   expect(getByText(mainMenuText)).toBeDefined();
 
@@ -24,7 +28,6 @@ test("Can start game", () => {
       pressed: false,
       justPressed: false,
       justReleased: true,
-      // Note that the pointer position has the same coordinates in all Sprites
       x: 0,
       y: 0,
     },

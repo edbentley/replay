@@ -40,6 +40,10 @@ renderCanvas(
 );
 ```
 
+### `mapInputCoordinates(parentPosition, inputs)`
+
+This can be used by [Replay Test](test.md), see the docs there for more info.
+
 ## Inputs
 
 The `device.inputs` parameter of Sprite methods is of type:

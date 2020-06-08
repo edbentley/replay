@@ -1,4 +1,4 @@
-import { testGame } from "@replay/test";
+import { testSprite } from "@replay/test";
 import { Game, gameProps } from "..";
 import { pipeGap } from "../pipe";
 import { birdHeight } from "../bird";
@@ -22,7 +22,7 @@ test("Can reach a score of 2", () => {
     getTexture,
     jumpToFrame,
     audio,
-  } = testGame(Game(gameProps), {
+  } = testSprite(Game(gameProps), gameProps, {
     initInputs,
     // First two pipes will have gap in middle, third pipe lower down
     initRandom: [0.5, 0.5, 0],
@@ -35,7 +35,6 @@ test("Can reach a score of 2", () => {
       pressed: false,
       justPressed: false,
       justReleased: true,
-      // Note that the pointer position has the same coordinates in all Sprites
       x: 0,
       y: 0,
     },

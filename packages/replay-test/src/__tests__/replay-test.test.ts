@@ -1,8 +1,8 @@
 import { makeSprite, t, GameProps } from "@replay/core";
-import { testGame } from "../index";
+import { testSprite } from "../index";
 
 test("getTextures, nextFrame", () => {
-  const { getTextures, nextFrame } = testGame(Game(gameProps), {
+  const { getTextures, nextFrame } = testSprite(Game(gameProps), gameProps, {
     initInputs: {
       pressed: true,
     },
@@ -80,7 +80,7 @@ test("getTextures, nextFrame", () => {
 });
 
 test("jumpToFrame, getTexture", () => {
-  const { jumpToFrame, getTexture } = testGame(Game(gameProps), {
+  const { jumpToFrame, getTexture } = testSprite(Game(gameProps), gameProps, {
     initInputs: {
       pressed: true,
     },
@@ -92,11 +92,15 @@ test("jumpToFrame, getTexture", () => {
 });
 
 test("setRandomNumbers, log", () => {
-  const { setRandomNumbers, log, nextFrame } = testGame(Game(gameProps), {
-    initInputs: {
-      testInput: "logRandom",
-    },
-  });
+  const { setRandomNumbers, log, nextFrame } = testSprite(
+    Game(gameProps),
+    gameProps,
+    {
+      initInputs: {
+        testInput: "logRandom",
+      },
+    }
+  );
   expect(log).not.toBeCalled();
 
   nextFrame();
@@ -120,7 +124,7 @@ test("setRandomNumbers, log", () => {
 });
 
 test("initRandom", () => {
-  const { log, nextFrame } = testGame(Game(gameProps), {
+  const { log, nextFrame } = testSprite(Game(gameProps), gameProps, {
     initInputs: {
       testInput: "logRandom",
     },
@@ -138,7 +142,10 @@ test("initRandom", () => {
 });
 
 test("textureExists, updateInputs", () => {
-  const { textureExists, updateInputs, nextFrame } = testGame(Game(gameProps));
+  const { textureExists, updateInputs, nextFrame } = testSprite(
+    Game(gameProps),
+    gameProps
+  );
   expect(textureExists("player")).toBe(true);
   expect(textureExists("enemy")).toBe(false);
 
@@ -149,7 +156,7 @@ test("textureExists, updateInputs", () => {
 });
 
 test("getByText", () => {
-  const { getByText, nextFrame } = testGame(Game(gameProps), {
+  const { getByText, nextFrame } = testSprite(Game(gameProps), gameProps, {
     initInputs: {
       pressed: true,
     },
@@ -165,7 +172,7 @@ test("getByText", () => {
 });
 
 test("now", () => {
-  const { log, nextFrame } = testGame(Game(gameProps), {
+  const { log, nextFrame } = testSprite(Game(gameProps), gameProps, {
     initInputs: {
       testInput: "logNow",
     },
@@ -177,7 +184,7 @@ test("now", () => {
 });
 
 test("timeout", () => {
-  const { jumpToFrame, getTexture } = testGame(Game(gameProps), {
+  const { jumpToFrame, getTexture } = testSprite(Game(gameProps), gameProps, {
     initInputs: {
       testInput: "timeout",
     },
@@ -187,11 +194,15 @@ test("timeout", () => {
 });
 
 test("audio", () => {
-  const { nextFrame, audio, log, updateInputs } = testGame(Game(gameProps), {
-    initInputs: {
-      testInput: "audioPlay",
-    },
-  });
+  const { nextFrame, audio, log, updateInputs } = testSprite(
+    Game(gameProps),
+    gameProps,
+    {
+      initInputs: {
+        testInput: "audioPlay",
+      },
+    }
+  );
 
   nextFrame();
   expect(audio.play).toBeCalledWith("sound.wav");
@@ -223,25 +234,29 @@ test("audio", () => {
 });
 
 test("network", () => {
-  const { nextFrame, network, log, updateInputs } = testGame(Game(gameProps), {
-    initInputs: {
-      testInput: "networkGET",
-    },
-    networkResponses: {
-      get: {
-        "/test-get": () => ({ got: "a get" }),
+  const { nextFrame, network, log, updateInputs } = testSprite(
+    Game(gameProps),
+    gameProps,
+    {
+      initInputs: {
+        testInput: "networkGET",
       },
-      put: {
-        "/test-put": (body: any) => ({ got: body.hi }),
+      networkResponses: {
+        get: {
+          "/test-get": () => ({ got: "a get" }),
+        },
+        put: {
+          "/test-put": (body: any) => ({ got: body.hi }),
+        },
+        post: {
+          "/test-post": (body: any) => ({ got: body.hi }),
+        },
+        delete: {
+          "/test-delete": () => ({ got: "a delete" }),
+        },
       },
-      post: {
-        "/test-post": (body: any) => ({ got: body.hi }),
-      },
-      delete: {
-        "/test-delete": () => ({ got: "a delete" }),
-      },
-    },
-  });
+    }
+  );
 
   nextFrame();
   expect(network.get).toBeCalled();
@@ -269,9 +284,13 @@ test("network", () => {
 });
 
 test("storage", () => {
-  const { nextFrame, store, updateInputs } = testGame(Game(gameProps), {
-    initStore: { origStore: "origValue" },
-  });
+  const { nextFrame, store, updateInputs } = testSprite(
+    Game(gameProps),
+    gameProps,
+    {
+      initStore: { origStore: "origValue" },
+    }
+  );
 
   nextFrame();
   expect(store).toEqual({ origStore: "origValue" });
@@ -285,6 +304,34 @@ test("storage", () => {
   expect(store).toEqual({ origStore: "origValue" });
 });
 
+test("can test individual Sprites", () => {
+  const { getByText, getTextures } = testSprite(
+    Text({ id: "Text", text: "Hello" }),
+    gameProps
+  );
+
+  expect(getTextures().length).toBe(1);
+  expect(getByText("Hello")).toBeTruthy();
+});
+
+test("can map input coordinates to relative coordinates within Sprite", () => {
+  const { log } = testSprite(Game(gameProps), gameProps, {
+    initInputs: {
+      x: 20,
+    },
+    mapInputCoordinates(parentPos, inputs) {
+      if (!parentPos || !inputs.x) return inputs;
+      return {
+        ...inputs,
+        x: inputs.x - parentPos.x,
+      };
+    },
+  });
+
+  // x is -100 from input due to mapping function
+  expect(log).toBeCalledWith("x in Text Sprite is -80");
+});
+
 // --- Mock Game
 
 interface State {
@@ -292,6 +339,7 @@ interface State {
   showEnemy: boolean;
 }
 interface Inputs {
+  x?: number;
   pressed?: boolean;
   testInput?: string;
 }
@@ -398,15 +446,14 @@ const Game = makeSprite<GameProps, State, Inputs>({
         radius: 10,
         color: "blue",
       }),
-      t.text({
+      Text({
+        id: "Text",
         position: {
           x: 100,
           y: 0,
           rotation: 0,
         },
         text: `x: ${state.x}`,
-        color: "red",
-        font: { name: "Arial", size: 12 },
       }),
       state.showEnemy
         ? t.circle({
@@ -420,6 +467,21 @@ const Game = makeSprite<GameProps, State, Inputs>({
             color: "red",
           })
         : null,
+    ];
+  },
+});
+
+const Text = makeSprite<{ text: string }, undefined, Inputs>({
+  render({ props, device }) {
+    if (device.inputs.x) {
+      device.log(`x in Text Sprite is ${device.inputs.x}`);
+    }
+    return [
+      t.text({
+        text: props.text,
+        color: "red",
+        font: { name: "Arial", size: 12 },
+      }),
     ];
   },
 });

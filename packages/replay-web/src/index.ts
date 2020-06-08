@@ -23,7 +23,7 @@ import { Dimensions } from "./dimensions";
 
 type SpritePosition = SpritePositionObj["position"];
 
-export { Inputs as WebInputs } from "./input";
+export { Inputs as WebInputs, mapInputCoordinates } from "./input";
 export { Dimensions } from "./dimensions";
 
 const DEFAULT_FONT = {

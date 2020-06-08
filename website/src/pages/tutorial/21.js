@@ -21,7 +21,7 @@ function Tutorial() {
         {
           file: "__tests__/game.test.ts",
           code: testTs,
-          highlight: [5, 6, 8, "24-26", 29, 30, "53-85"],
+          highlight: [5, 6, 8, "24-26", 29, 30, "52-84"],
         },
         {
           file: "bird.ts",
@@ -33,7 +33,7 @@ function Tutorial() {
         {
           file: "__tests__/game.test.js",
           code: testJs,
-          highlight: [3, 4, 6, "22-24", 27, 28, "51-83"],
+          highlight: [3, 4, 6, "22-24", 27, 28, "50-82"],
         },
         {
           file: "bird.js",
