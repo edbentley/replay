@@ -38,6 +38,7 @@ interface TestPlatformInputs {
       put: boolean;
       delete: boolean;
     };
+    moveWithUpdateState: boolean;
   };
 }
 
@@ -64,6 +65,7 @@ function getInitTestPlatformInputs(): TestPlatformInputs {
         put: false,
         delete: false,
       },
+      moveWithUpdateState: false,
     },
   };
 }
@@ -394,6 +396,10 @@ export const FullTestGame = makeSprite<
 
     if (state.testRenderTimeout) {
       device.log(state.testRenderTimeout);
+    }
+
+    if (device.inputs.buttonPressed.moveWithUpdateState) {
+      updateState((s) => ({ ...s, position: s.position + 5 }));
     }
 
     return {

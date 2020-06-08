@@ -252,12 +252,16 @@ function createSpriteContainer<P, S, I>(
 
       let extrapolateFactor = 0;
 
+      const runUpdateStateCallbacks = () => {
+        this.state = updateStateQueue.reduce(
+          (state, update) => update(state),
+          this.state
+        );
+        updateStateQueue.length = 0;
+      };
+
       // Run any updateState from callbacks in other sprites last render
-      this.state = updateStateQueue.reduce(
-        (state, update) => update(state),
-        this.state
-      );
-      updateStateQueue.length = 0;
+      runUpdateStateCallbacks();
 
       // Do not run loop on init creation of sprites
       if (!initCreation) {
@@ -275,6 +279,9 @@ function createSpriteContainer<P, S, I>(
         }
       }
 
+      // Run any updateState from callbacks in loop
+      runUpdateStateCallbacks();
+
       let render = spriteObj[renderMethod];
       if (!render) {
         // default to other renderXL or render method if not defined by user
@@ -291,11 +298,8 @@ function createSpriteContainer<P, S, I>(
         extrapolateFactor,
       });
 
-      this.state = updateStateQueue.reduce(
-        (state, update) => update(state),
-        this.state
-      );
-      updateStateQueue.length = 0;
+      // Run any updateState from callbacks in render
+      runUpdateStateCallbacks();
 
       return sprites;
     },
