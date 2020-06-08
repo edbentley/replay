@@ -324,6 +324,31 @@ test("supports updateState", () => {
   expect(logSpy).toBeCalledWith("updateState from timeout in render");
 });
 
+test("updateState in loop will update state in next render", () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+
+  const { initTextures, getNextFrameTextures } = replayCore(
+    platform,
+    FullTestGame(gameProps)
+  );
+
+  expect(initTextures[0].props.position!.x).toEqual(5);
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time);
+  };
+
+  mutableTestDevice.inputs.buttonPressed.move = true;
+  mutableTestDevice.inputs.buttonPressed.moveWithUpdateState = true;
+
+  const textures = getNextFrameTexturesOverTime();
+
+  // An extra 5 was added in sync
+  expect(textures[0].props.position!.x).toEqual(11);
+});
+
 test("supports playing audio", () => {
   const { platform, mutableTestDevice } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
