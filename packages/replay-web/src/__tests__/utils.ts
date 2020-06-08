@@ -170,6 +170,18 @@ export const TestGameWithAssets = makeSprite<
   },
 });
 
+export const TestGameThrowImageError = makeSprite<GameProps>({
+  render() {
+    return [
+      t.image({
+        fileName: "unknown.png",
+        width: 50,
+        height: 50,
+      }),
+    ];
+  },
+});
+
 /**
  * Assets used for test game
  */

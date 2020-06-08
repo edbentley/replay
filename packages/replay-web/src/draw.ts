@@ -90,12 +90,17 @@ function getDrawTexture(
           texture.props.color
         );
     case "image":
-      return () =>
+      return () => {
+        const imageElement = imageElements[texture.props.fileName];
+        if (!imageElement) {
+          throw Error(`Cannot find image file "${texture.props.fileName}"`);
+        }
         drawUtilsCtx.image(
-          imageElements[texture.props.fileName],
+          imageElement,
           texture.props.width,
           texture.props.height
         );
+      };
     case "spriteSheet":
       return () =>
         drawUtilsCtx.spriteSheet(

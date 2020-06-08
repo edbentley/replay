@@ -197,27 +197,7 @@ export function renderCanvas<S>(
 
   updateDeviceSize();
 
-  const { initTextures, getNextFrameTextures } = replayCore<S, Inputs>(
-    domPlatform,
-    gameSprite
-  );
-
-  let initTime: number | null = null;
   let isCleanedUp = false;
-
-  function loop(textures: Texture[]) {
-    render.ref?.(textures);
-    window.requestAnimationFrame((time) => {
-      if (isCleanedUp) {
-        return;
-      }
-      if (initTime === null) {
-        initTime = time - 1 / 60;
-      }
-      loop(getNextFrameTextures(time - initTime));
-      resetInputs();
-    });
-  }
 
   const preloadFiles = async () => {
     // Get every file load as a promise and wait for all before returning
@@ -270,6 +250,27 @@ export function renderCanvas<S>(
     document.addEventListener("keydown", handleAutoPlay, false);
     document.addEventListener("pointerdown", handleAutoPlay, false);
 
+    const { initTextures, getNextFrameTextures } = replayCore<S, Inputs>(
+      domPlatform,
+      gameSprite
+    );
+
+    let initTime: number | null = null;
+
+    function loop(textures: Texture[]) {
+      render.ref?.(textures);
+      window.requestAnimationFrame((time) => {
+        if (isCleanedUp) {
+          return;
+        }
+        if (initTime === null) {
+          initTime = time - 1 / 60;
+        }
+        loop(getNextFrameTextures(time - initTime));
+        resetInputs();
+      });
+    }
+
     loop(initTextures);
   });
 
@@ -312,11 +313,7 @@ function deviceCreator(
         if (!audioElement) {
           throw Error(`Cannot find audio file ${filename}`);
         }
-        if (
-          play &&
-          audioElement.currentTime > 0 &&
-          audioElement.currentTime < audioElement.duration
-        ) {
+        if (play && !audioElement.paused) {
           // it's being played somewhere else, need a new audio element
           audioElement = new Audio(filename);
         }
@@ -327,7 +324,7 @@ function deviceCreator(
         play: (fromPosition?: number, loop?: boolean) => {
           const audioElement = getAudioElement(true);
           audioElement.play();
-          if (fromPosition) {
+          if (fromPosition !== undefined) {
             audioElement.currentTime = fromPosition;
           }
           if (loop) {
