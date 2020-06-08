@@ -1,5 +1,6 @@
 import { Device } from "./device";
 import { Texture } from "./t";
+import { SpriteBaseProps } from "./props";
 
 /**
  * A `Sprite` is a texture or custom sprite with props applied to it.
@@ -23,9 +24,7 @@ export type Sprite<P = any, S = any, I = any> =
  */
 export function makeSprite<P, S = undefined, I = {}>(
   spriteObj: SpriteObj<P, S, I>
-): // props type is the same as CustomSpriteProps<P>,
-// but shows better in VS code tooltips
-(props: P & SpritePosition & { id: string }) => CustomSprite<P, S, I> {
+): (props: CustomSpriteProps<P>) => CustomSprite<P, S, I> {
   return (props) => ({
     type: "custom",
     spriteObj,
@@ -39,15 +38,13 @@ export interface CustomSprite<P, S, I> {
   props: CustomSpriteProps<P>;
 }
 
-export type CustomSpriteProps<P> = P & SpritePosition & { id: string };
-
-export interface SpritePosition {
-  position?: {
-    x: number;
-    y: number;
-    rotation?: number;
+export type CustomSpriteProps<P> = P &
+  Partial<SpriteBaseProps> & {
+    /**
+     * Identifier, must be unique within a single render function.
+     */
+    id: string;
   };
-}
 
 // make init function optional if no state is defined by user
 export type SpriteObj<P, S, I> = S extends undefined
@@ -130,3 +127,13 @@ interface SpriteObjBase<P, S, I> {
     updateState: (update: (state: S) => S) => void;
   }) => Sprite[];
 }
+
+/**
+ * A nesting of textures sent to the platform to render. The nesting allows for
+ * things like transforms on a Sprite.
+ */
+export type SpriteTextures = {
+  id: string;
+  baseProps: SpriteBaseProps;
+  textures: (SpriteTextures | Texture)[];
+};

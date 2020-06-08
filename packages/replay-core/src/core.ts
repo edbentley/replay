@@ -1,13 +1,12 @@
-import { Texture, TextureFont } from "./t";
+import { TextureFont } from "./t";
 import {
   CustomSprite,
   Sprite,
   CustomSpriteProps,
-  SpritePosition as SpritePositionObj,
+  SpriteTextures,
 } from "./sprite";
 import { Device, DeviceSize } from "./device";
-
-type SpritePosition = SpritePositionObj["position"];
+import { SpriteBaseProps, getDefaultProps } from "./props";
 
 /**
  * The props type a game should take.
@@ -69,7 +68,12 @@ export interface ReplayPlatform<I> {
    * `getDevice` can then be called individually by each Sprite to get inputs
    * relative to its position
    */
-  getGetDevice: () => (position: SpritePosition) => Device<I>;
+  getGetDevice: () => (
+    getLocalCoords: (globalCoords: {
+      x: number;
+      y: number;
+    }) => { x: number; y: number }
+  ) => Device<I>;
 }
 
 /**
@@ -89,14 +93,23 @@ export function replayCore<S, I>(
    * `gameSpriteArg` prop
    */
   gameSizeArg?: GameSize
-) {
+): {
+  initTextures: SpriteTextures;
+  getNextFrameTextures: (time: number) => SpriteTextures;
+} {
   const gameSprite =
     gameSpriteArg ||
     (game.Game(game.gameProps) as CustomSprite<GameProps, S, I>);
 
+  const globalToGameCoords = ({ x, y }: { x: number; y: number }) => ({ x, y });
+
   const getInitDevice = platform.getGetDevice();
-  const initDevice = getInitDevice(gameSprite.props.position);
-  const gameContainer = createSpriteContainer(gameSprite, getInitDevice, 0);
+  const initDevice = getInitDevice(globalToGameCoords);
+  const gameContainer = createSpriteContainer(
+    gameSprite,
+    getInitDevice(globalToGameCoords),
+    0
+  );
   const gameSize = gameSizeArg || gameSprite.props.size;
 
   const initRenderMethod = getRenderMethod(initDevice.size, gameSize);
@@ -106,21 +119,25 @@ export function replayCore<S, I>(
       gameContainer,
       gameSprite.props,
       getInitDevice,
+      globalToGameCoords,
       true,
       initRenderMethod,
-      0
+      0,
+      1
     ),
-    getNextFrameTextures(time: number) {
+    getNextFrameTextures(time) {
       const getDevice = platform.getGetDevice();
-      const device = getDevice(gameSprite.props.position);
+      const device = getDevice(globalToGameCoords);
       const renderMethod = getRenderMethod(device.size, gameSize);
       return traverseSpriteContainer<GameProps, I>(
         gameContainer,
         gameSprite.props,
         getDevice,
+        globalToGameCoords,
         false,
         renderMethod,
-        time
+        time,
+        1
       );
     },
   };
@@ -134,16 +151,34 @@ export function replayCore<S, I>(
 function traverseSpriteContainer<P, I>(
   spriteContainer: SpriteContainer<P, unknown, I>,
   spriteProps: CustomSpriteProps<P>,
-  getDevice: (position: SpritePosition) => Device<I>,
+  getDeviceGlobal: (
+    getLocalCoords: (globalCoords: {
+      x: number;
+      y: number;
+    }) => { x: number; y: number }
+  ) => Device<I>,
+  getParentCoords: (globalCoords: {
+    x: number;
+    y: number;
+  }) => { x: number; y: number },
   initCreation: boolean,
   renderMethod: RenderMethod,
-  time: number
-): Texture[] {
-  const parentPosition = defaultPosition(spriteProps.position);
+  time: number,
+  parentOpacity: number
+): SpriteTextures {
+  const baseProps = getDefaultProps(spriteProps);
+  baseProps.opacity *= parentOpacity;
+
+  const getLocalCoords = (globalCoords: { x: number; y: number }) => {
+    const parentCoords = getParentCoords(globalCoords);
+    const getParentToLocalCoords = getLocalCoordsForSprite(baseProps);
+    return getParentToLocalCoords(parentCoords);
+  };
+  const device = getDeviceGlobal(getLocalCoords);
+
   const sprites = spriteContainer.getSprites(
     spriteProps,
-    getDevice,
-    parentPosition,
+    device,
     initCreation,
     renderMethod,
     time
@@ -151,16 +186,7 @@ function traverseSpriteContainer<P, I>(
 
   const childIds: string[] = [];
 
-  const textures = sprites.filter(isNotNull).map((spriteLocal) => {
-    // translate sprite position to absolute coordinates
-    const sprite = {
-      ...spriteLocal,
-      props: {
-        ...spriteLocal.props,
-        position: addPositions(parentPosition, spriteLocal.props.position),
-      },
-    };
-
+  const textures = sprites.filter(isNotNull).map((sprite) => {
     if (sprite.type === "custom") {
       childIds.push(sprite.props.id);
       let spriteInitCreation = false;
@@ -168,18 +194,20 @@ function traverseSpriteContainer<P, I>(
         spriteInitCreation = true;
         spriteContainer.childContainers[
           sprite.props.id
-        ] = createSpriteContainer(sprite, getDevice, spriteContainer.prevTime);
+        ] = createSpriteContainer(sprite, device, spriteContainer.prevTime);
       }
       return traverseSpriteContainer(
         spriteContainer.childContainers[sprite.props.id],
         sprite.props,
-        getDevice,
+        getDeviceGlobal,
+        getLocalCoords,
         spriteInitCreation,
         renderMethod,
-        time
+        time,
+        baseProps.opacity
       );
     }
-    return [sprite as Texture];
+    return sprite;
   });
 
   // Clean up removed sprites
@@ -189,11 +217,11 @@ function traverseSpriteContainer<P, I>(
     }
   });
 
-  // Flatten into one array
-  return textures.reduce(
-    (flat: Texture[], texture) => flat.concat(texture),
-    []
-  );
+  return {
+    id: spriteProps.id,
+    baseProps,
+    textures,
+  };
 }
 
 /**
@@ -207,11 +235,10 @@ const REPLAY_TIME_PER_UPDATE_MS = 1000 * (1 / 60);
  */
 function createSpriteContainer<P, S, I>(
   sprite: CustomSprite<P, S, I>,
-  getInitDevice: (position: SpritePosition) => Device<I>,
+  initDevice: Device<I>,
   currentTime: number
 ): SpriteContainer<P, S, I> {
   const { spriteObj, props: initProps } = sprite;
-  const initDevice = getInitDevice(initProps.position);
 
   // Use a queue so state is updated after rendering
   const updateStateQueue: ((state: S) => S)[] = [];
@@ -238,8 +265,7 @@ function createSpriteContainer<P, S, I>(
     currentLag: 0,
     getSprites(
       props: CustomSpriteProps<P>,
-      getDevice: (position: SpritePosition) => Device<I>,
-      parentPosition: { x: number; y: number; rotation: number },
+      device: Device<I>,
       initCreation: boolean,
       renderMethod: RenderMethod,
       time: number
@@ -247,8 +273,6 @@ function createSpriteContainer<P, S, I>(
       const timeSinceLastFrame = time - this.prevTime;
       this.prevTime = time;
       this.currentLag += timeSinceLastFrame;
-
-      const device = getDevice(parentPosition);
 
       let extrapolateFactor = 0;
 
@@ -351,8 +375,7 @@ interface SpriteContainer<P, S, I> {
   currentLag: number;
   getSprites: (
     props: CustomSpriteProps<P>,
-    getDevice: (position: SpritePosition) => Device<I>,
-    parentPosition: { x: number; y: number; rotation: number },
+    device: Device<I>,
     initCreation: boolean,
     renderMethod: RenderMethod,
     time: number
@@ -363,36 +386,29 @@ function isNotNull<T>(arg: T | null): arg is T {
   return arg !== null;
 }
 
-function defaultPosition(position?: SpritePosition) {
-  if (!position) {
-    return { x: 0, y: 0, rotation: 0 };
-  }
-  return { ...position, rotation: position.rotation || 0 };
-}
-
-function addPositions(
-  parentPosition: { x: number; y: number; rotation: number },
-  position?: SpritePosition
-) {
-  if (!position) {
-    return parentPosition;
-  }
-  const { x, y, rotation } = defaultPosition(position);
+/**
+ * A mapping of the parent Sprite's (x, y) coordinate to local Sprite
+ * coordinates
+ */
+export function getLocalCoordsForSprite(baseProps: SpriteBaseProps) {
+  const h = baseProps.x;
+  const k = baseProps.y;
   const toRad = Math.PI / 180;
-  const parentRotRad = -parentPosition.rotation * toRad;
-  return {
-    x:
-      Math.round(
-        parentPosition.x +
-          x * Math.cos(parentRotRad) -
-          y * Math.sin(parentRotRad)
-      ) || 0, // || 0 to avoid -0
-    y:
-      Math.round(
-        parentPosition.y +
-          x * Math.sin(parentRotRad) +
-          y * Math.cos(parentRotRad)
-      ) || 0,
-    rotation: parentPosition.rotation + rotation,
+  const rotation = -(baseProps.rotation || 0) * toRad;
+
+  return ({ x, y }: { x: number; y: number }) => {
+    const scaledX = baseProps.x + (x - baseProps.x) / baseProps.scaleX;
+    const scaledY = baseProps.y + (y - baseProps.y) / baseProps.scaleY;
+
+    // This explains the equation for rotating: https://www.youtube.com/watch?v=AAx8JON4KeQ
+    const rotatedX =
+      (scaledX - h) * Math.cos(rotation) + (scaledY - k) * Math.sin(rotation);
+    const rotatedY =
+      -(scaledX - h) * Math.sin(rotation) + (scaledY - k) * Math.cos(rotation);
+
+    const anchoredX = rotatedX + baseProps.anchorX;
+    const anchoredY = rotatedY + baseProps.anchorY;
+
+    return { x: anchoredX, y: anchoredY };
   };
 }
