@@ -1,7 +1,3 @@
-import { SpritePosition as SpritePositionObj } from "@replay/core/dist/sprite";
-
-type SpritePosition = SpritePositionObj["position"];
-
 /**
  * Keys pressed based on the `key` value of browser keyboard events.
  *
@@ -42,28 +38,30 @@ let mutableInputs: Inputs = {
  */
 export function mapInputCoordinates<
   I extends { pointer: { x: number; y: number } }
->(parentPosition: SpritePosition, inputs: I) {
-  if (!parentPosition) return inputs;
-
-  // Need to convert point from absolute coordinates to sprite coordinates.
-  // This explains the equation: https://www.youtube.com/watch?v=AAx8JON4KeQ
-  const h = parentPosition.x;
-  const k = parentPosition.y;
-  const { x, y } = inputs.pointer;
-  const toRad = Math.PI / 180;
-  const rotation = -(parentPosition.rotation || 0) * toRad;
+>(
+  getLocalCoords: (globalCoords: {
+    x: number;
+    y: number;
+  }) => {
+    x: number;
+    y: number;
+  },
+  inputs: I
+): I {
+  const localPointer = getLocalCoords(inputs.pointer);
   return {
     ...inputs,
-    pointer: {
-      ...inputs.pointer,
-      x: (x - h) * Math.cos(rotation) + (y - k) * Math.sin(rotation),
-      y: -(x - h) * Math.sin(rotation) + (y - k) * Math.cos(rotation),
-    },
+    pointer: { ...inputs.pointer, x: localPointer.x, y: localPointer.y },
   };
 }
 
-export function getInputs(parentPosition: SpritePosition) {
-  return mapInputCoordinates(parentPosition, mutableInputs);
+export function getInputs(
+  getLocalCoords: (globalCoords: {
+    x: number;
+    y: number;
+  }) => { x: number; y: number }
+) {
+  return mapInputCoordinates(getLocalCoords, mutableInputs);
 }
 
 export function keyDownHandler(e: KeyboardEvent) {

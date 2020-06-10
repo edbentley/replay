@@ -9,6 +9,7 @@ import {
   MockTime,
   updateMockTime,
   resizeWindow,
+  canvasToImage,
 } from "./utils";
 import { makeSprite, GameProps, t } from "@replay/core";
 import { renderCanvas } from "../index";
@@ -212,7 +213,6 @@ test("Pointer position within sprite", async () => {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { alpha: false })!;
   (canvas as any).getContext = () => ctx;
-  const translateSpy = jest.spyOn(ctx, "translate");
 
   const { loadPromise } = renderCanvas(
     PointerGameWithSprite(testGameProps),
@@ -225,25 +225,24 @@ test("Pointer position within sprite", async () => {
   await loadPromise;
   mockTime.nextFrame();
 
-  // (100, -100) in game coordinates
-  movePointer(200, 200);
+  // (50, 50) in game coordinates
+  clickPointer(150, 50);
 
   mockTime.nextFrame();
 
-  const expectCircleInGameCoordinates = (x: number, y: number) => {
-    // 2nd last call is (x, y) position
-    expect(translateSpy).nthCalledWith(
-      translateSpy.mock.calls.length - 1,
-      x,
-      -y
-    );
-  };
+  const snapshotId = "inputs-test-ts-pointer-position-within-sprite-snap";
+  expect(canvasToImage(canvas)).toMatchImageSnapshot({
+    customSnapshotIdentifier: snapshotId,
+  });
 
   // circle, which is following pointer within Sprite, stays in same absolute
   // coordinates, even though its position and rotation is changing
   for (let i = 0; i < 36; i++) {
-    expectCircleInGameCoordinates(100, -100);
     mockTime.nextFrame();
+    expect(canvasToImage(canvas)).toMatchImageSnapshot({
+      customSnapshotIdentifier: snapshotId,
+      customDiffConfig: { threshold: 0.2 },
+    });
   }
 });
 
@@ -371,27 +370,35 @@ const PointerGame = makeSprite<GameProps, PointerState, Inputs>({
   },
 });
 
-const PointerGameWithSprite = makeSprite<GameProps, { rot: number }, Inputs>({
+const PointerGameWithSprite = makeSprite<
+  GameProps,
+  { rot: number; x: number },
+  Inputs
+>({
   init() {
     return {
       rot: 0,
+      x: -50,
     };
   },
   loop({ state }) {
     return {
       rot: state.rot + 10,
+      x: state.x + 5,
     };
   },
   render({ state }) {
     return [
+      // center point
+      t.circle({ color: "black", radius: 5 }),
       PointerSprite({
         id: "pointer-sprite",
-        position: {
-          x: 20,
-          y: 20,
-          rotation: state.rot,
-        },
+        x: state.x,
+        y: 20,
+        rotation: state.rot,
       }),
+      // where pointer should be
+      t.circle({ color: "black", radius: 3, x: 50, y: 50 }),
     ];
   },
 });
@@ -418,7 +425,8 @@ const PointerSprite = makeSprite<{}, PointerState, Inputs>({
       t.circle({
         color: "red",
         radius: 5,
-        position: { x: state.pointerX, y: state.pointerY },
+        x: state.pointerX,
+        y: state.pointerY,
       }),
     ];
   },

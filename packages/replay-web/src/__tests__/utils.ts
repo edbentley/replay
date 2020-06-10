@@ -60,11 +60,9 @@ export const TestGame = makeSprite<GameProps, TestGameState, Inputs>({
   render({ state }) {
     return [
       t.circle({
-        position: {
-          x: state.position,
-          y: 100,
-          rotation: 0,
-        },
+        x: state.position,
+        y: 100,
+        rotation: 0,
         radius: 50,
         color: "red",
       }),
@@ -77,11 +75,9 @@ export const TestGameWithSprites = makeSprite<GameProps, undefined, Inputs>({
     return [
       TestSprite({
         id: "player",
-        position: {
-          x: 0,
-          y: 10,
-          rotation: 45,
-        },
+        x: 0,
+        y: 10,
+        rotation: 45,
         color: "red",
       }),
     ];
@@ -101,11 +97,9 @@ const TestSprite = makeSprite<TestGameProps, TestGameState, Inputs>({
   render({ state, props }) {
     return [
       t.circle({
-        position: {
-          x: state.position,
-          y: 0,
-          rotation: 0,
-        },
+        x: state.position,
+        y: 0,
+        rotation: 0,
         radius: 10,
         color: props.color,
       }),
@@ -157,11 +151,9 @@ export const TestGameWithAssets = makeSprite<
   render({ state }) {
     return [
       t.image({
-        position: {
-          x: state.position,
-          y: 0,
-          rotation: state.rotation,
-        },
+        x: state.position,
+        y: 0,
+        rotation: state.rotation,
         fileName: "enemy.png",
         width: 50,
         height: 50,
