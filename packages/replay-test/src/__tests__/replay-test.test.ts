@@ -12,30 +12,38 @@ test("getTextures, nextFrame", () => {
     Array [
       Object {
         "props": Object {
+          "anchorX": 0,
+          "anchorY": 0,
           "color": "blue",
-          "position": Object {
-            "rotation": 0,
-            "x": 0,
-            "y": 100,
-          },
+          "opacity": 1,
           "radius": 10,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
           "testId": "player",
+          "x": 0,
+          "y": 100,
         },
         "type": "circle",
       },
       Object {
         "props": Object {
+          "align": "center",
+          "anchorX": 0,
+          "anchorY": 0,
           "color": "red",
           "font": Object {
             "name": "Arial",
             "size": 12,
           },
-          "position": Object {
-            "rotation": 0,
-            "x": 100,
-            "y": 0,
-          },
+          "opacity": 1,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "testId": undefined,
           "text": "x: 0",
+          "x": 100,
+          "y": 0,
         },
         "type": "text",
       },
@@ -48,30 +56,38 @@ test("getTextures, nextFrame", () => {
     Array [
       Object {
         "props": Object {
+          "anchorX": 0,
+          "anchorY": 0,
           "color": "blue",
-          "position": Object {
-            "rotation": 0,
-            "x": 1,
-            "y": 100,
-          },
+          "opacity": 1,
           "radius": 10,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
           "testId": "player",
+          "x": 1,
+          "y": 100,
         },
         "type": "circle",
       },
       Object {
         "props": Object {
+          "align": "center",
+          "anchorX": 0,
+          "anchorY": 0,
           "color": "red",
           "font": Object {
             "name": "Arial",
             "size": 12,
           },
-          "position": Object {
-            "rotation": 0,
-            "x": 100,
-            "y": 0,
-          },
+          "opacity": 1,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "testId": undefined,
           "text": "x: 1",
+          "x": 100,
+          "y": 0,
         },
         "type": "text",
       },
@@ -86,9 +102,9 @@ test("jumpToFrame, getTexture", () => {
     },
   });
 
-  jumpToFrame(() => getTexture("player").props.position.x > 10);
+  jumpToFrame(() => getTexture("player").props.x > 10);
 
-  expect(getTexture("player").props.position.x).toBe(11);
+  expect(getTexture("player").props.x).toBe(11);
 });
 
 test("setRandomNumbers, log", () => {
@@ -164,7 +180,7 @@ test("getByText", () => {
 
   nextFrame();
   expect(getByText("x: 1").length).toBe(1);
-  expect(getByText("X: 1")[0].props.position!.x).toBe(100);
+  expect(getByText("X: 1")[0].props.x).toBe(100);
 
   nextFrame();
   expect(getByText("x: 2").length).toBe(1);
@@ -190,7 +206,7 @@ test("timeout", () => {
     },
   });
 
-  jumpToFrame(() => getTexture("player").props.position.x === -10);
+  jumpToFrame(() => getTexture("player").props.x === -10);
 });
 
 test("audio", () => {
@@ -319,17 +335,29 @@ test("can map input coordinates to relative coordinates within Sprite", () => {
     initInputs: {
       x: 20,
     },
-    mapInputCoordinates(parentPos, inputs) {
-      if (!parentPos || !inputs.x) return inputs;
+    mapInputCoordinates(getLocalCoords, inputs) {
+      const { x = 0 } = inputs;
+      const localX = getLocalCoords({ x, y: 0 }).x;
       return {
         ...inputs,
-        x: inputs.x - parentPos.x,
+        x: localX,
       };
     },
   });
 
   // x is -100 from input due to mapping function
   expect(log).toBeCalledWith("x in Text Sprite is -80");
+});
+
+test("can get global position and rotation of deeply nested textures", () => {
+  const { getTextures } = testSprite(NestedSpriteGame(gameProps), gameProps);
+
+  const textures = getTextures();
+
+  expect(textures.length).toBe(1);
+  expect(textures[0].props.x).toBe(-10);
+  expect(textures[0].props.y).toBe(50);
+  expect(textures[0].props.rotation).toBe(0);
 });
 
 // --- Mock Game
@@ -438,31 +466,25 @@ const Game = makeSprite<GameProps, State, Inputs>({
     return [
       t.circle({
         testId: "player",
-        position: {
-          x: state.x,
-          y: 100,
-          rotation: 0,
-        },
+        x: state.x,
+        y: 100,
+        rotation: 0,
         radius: 10,
         color: "blue",
       }),
       Text({
         id: "Text",
-        position: {
-          x: 100,
-          y: 0,
-          rotation: 0,
-        },
+        x: 100,
+        y: 0,
+        rotation: 0,
         text: `x: ${state.x}`,
       }),
       state.showEnemy
         ? t.circle({
             testId: "enemy",
-            position: {
-              x: 100,
-              y: 100,
-              rotation: 0,
-            },
+            x: 100,
+            y: 100,
+            rotation: 0,
             radius: 10,
             color: "red",
           })
@@ -481,6 +503,48 @@ const Text = makeSprite<{ text: string }, undefined, Inputs>({
         text: props.text,
         color: "red",
         font: { name: "Arial", size: 12 },
+      }),
+    ];
+  },
+});
+
+/// -- Nested Sprite test
+
+export const NestedSpriteGame = makeSprite<GameProps>({
+  render() {
+    return [
+      NestedFirstSprite({
+        id: "first",
+        x: 20,
+        y: 20,
+        rotation: -90,
+      }),
+    ];
+  },
+});
+
+const NestedFirstSprite = makeSprite({
+  render() {
+    return [
+      NestedSecondSprite({
+        id: "second",
+        x: 50,
+        y: 20,
+        rotation: -90,
+      }),
+    ];
+  },
+});
+
+const NestedSecondSprite = makeSprite({
+  render() {
+    return [
+      t.text({
+        text: "nested",
+        color: "black",
+        x: 10,
+        y: 20,
+        rotation: 180,
       }),
     ];
   },
