@@ -41,6 +41,13 @@ export type SpriteBaseProps = {
   anchorY: number;
 };
 
+/**
+ * Avoid being able to use props with the same key as base props
+ */
+export type ExcludeSpriteBaseProps<P> = {
+  [K in keyof P]: K extends keyof SpriteBaseProps ? never : P[K];
+};
+
 export function getDefaultProps(
   props: Partial<SpriteBaseProps>
 ): SpriteBaseProps {

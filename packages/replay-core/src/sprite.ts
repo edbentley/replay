@@ -1,6 +1,6 @@
 import { Device } from "./device";
 import { Texture } from "./t";
-import { SpriteBaseProps } from "./props";
+import { SpriteBaseProps, ExcludeSpriteBaseProps } from "./props";
 
 /**
  * A `Sprite` is a texture or custom sprite with props applied to it.
@@ -22,7 +22,11 @@ export type Sprite<P = any, S = any, I = any> =
  * Player(props)
  * ```
  */
-export function makeSprite<P, S = undefined, I = {}>(
+export function makeSprite<
+  P extends ExcludeSpriteBaseProps<P>,
+  S = undefined,
+  I = {}
+>(
   spriteObj: SpriteObj<P, S, I>
 ): (props: CustomSpriteProps<P>) => CustomSprite<P, S, I> {
   return (props) => ({
