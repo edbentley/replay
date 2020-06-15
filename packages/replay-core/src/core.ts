@@ -397,17 +397,17 @@ export function getLocalCoordsForSprite(baseProps: SpriteBaseProps) {
   const rotation = -(baseProps.rotation || 0) * toRad;
 
   return ({ x, y }: { x: number; y: number }) => {
-    const scaledX = baseProps.x + (x - baseProps.x) / baseProps.scaleX;
-    const scaledY = baseProps.y + (y - baseProps.y) / baseProps.scaleY;
-
     // This explains the equation for rotating: https://www.youtube.com/watch?v=AAx8JON4KeQ
     const rotatedX =
-      (scaledX - h) * Math.cos(rotation) + (scaledY - k) * Math.sin(rotation);
+      (x - h) * Math.cos(rotation) + (y - k) * Math.sin(rotation);
     const rotatedY =
-      -(scaledX - h) * Math.sin(rotation) + (scaledY - k) * Math.cos(rotation);
+      -(x - h) * Math.sin(rotation) + (y - k) * Math.cos(rotation);
 
-    const anchoredX = rotatedX + baseProps.anchorX;
-    const anchoredY = rotatedY + baseProps.anchorY;
+    const scaledX = baseProps.x + (rotatedX - baseProps.x) / baseProps.scaleX;
+    const scaledY = baseProps.y + (rotatedY - baseProps.y) / baseProps.scaleY;
+
+    const anchoredX = scaledX + baseProps.anchorX;
+    const anchoredY = scaledY + baseProps.anchorY;
 
     return { x: anchoredX, y: anchoredY };
   };

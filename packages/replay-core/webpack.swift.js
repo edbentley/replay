@@ -19,4 +19,8 @@ module.exports = {
     path: path.resolve(__dirname, "../replay-swift/Replay"),
     library: "replay",
   },
+  optimization: {
+    // Add this to make it easier to debug
+    // minimize: false,
+  },
 };
