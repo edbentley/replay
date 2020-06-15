@@ -9,6 +9,8 @@ import {
   NestedSpriteGame,
   LocalStorageGame,
 } from "./utils";
+import { SpriteTextures } from "../sprite";
+import { TextTexture, CircleTexture } from "../t";
 
 test("can render simple game and getNextFrameTextures", () => {
   const { platform, mutableTestDevice } = getTestPlatform();
@@ -30,56 +32,72 @@ test("can render simple game and getNextFrameTextures", () => {
   };
 
   expect(platformSpy.getDevice).toBeCalledTimes(1);
-  expect(initTextures).toEqual([
-    {
-      type: "circle",
-      props: {
-        position: {
+  expect(initTextures).toEqual({
+    id: "Game",
+    baseProps: {
+      opacity: 1,
+      x: 0,
+      y: 0,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+      anchorX: 0,
+      anchorY: 0,
+    },
+    textures: [
+      {
+        type: "circle",
+        props: {
           x: 5,
           y: 50,
+          opacity: 1,
           rotation: 0,
+          radius: 10,
+          color: "#0095DD",
+          scaleX: 5,
+          scaleY: 1,
+          anchorX: 0,
+          anchorY: 0,
         },
-        radius: 10,
-        color: "#0095DD",
-        scaleX: 5,
-        anchorY: 0,
       },
-    },
-  ]);
+    ],
+  });
 
-  let textures = getNextFrameTexturesOverTime();
+  let { textures } = getNextFrameTexturesOverTime();
 
   expect(platformSpy.getDevice).toBeCalledTimes(2);
   expect(textures[0]).toEqual({
     type: "circle",
     props: {
-      position: {
-        x: 6,
-        y: 50,
-        rotation: 0,
-      },
+      x: 6,
+      y: 50,
+      rotation: 0,
+      opacity: 1,
       radius: 10,
       color: "#0095DD",
       scaleX: 5,
+      scaleY: 1,
+      anchorX: 0,
       anchorY: 0,
     },
   });
 
   mutableTestDevice.inputs.buttonPressed.move = true;
-  textures = getNextFrameTexturesOverTime();
+  textures = getNextFrameTexturesOverTime().textures;
 
   expect(platformSpy.getDevice).toBeCalledTimes(3);
   expect(textures[0]).toEqual({
     type: "circle",
     props: {
-      position: {
-        x: 7,
-        y: 50,
-        rotation: 0,
-      },
+      x: 7,
+      y: 50,
+      rotation: 0,
+      opacity: 1,
       radius: 10,
       color: "#0095DD",
       scaleX: 5,
+      scaleY: 1,
+      anchorX: 0,
       anchorY: 0,
     },
   });
@@ -106,57 +124,84 @@ test("can render simple game with sprites", () => {
 
   expect(platformSpy.getDevice).toBeCalledTimes(1);
 
-  expect(initTextures[0]).toEqual({
-    type: "circle",
-    props: {
-      position: {
-        x: 100,
-        y: 50,
-        rotation: 10,
-      },
-      color: "#0095DD",
-      radius: 10,
+  const initSpriteTextures = initTextures.textures[0] as SpriteTextures;
+  expect(initSpriteTextures).toEqual({
+    id: "test",
+    baseProps: {
+      anchorX: 0,
+      anchorY: 1,
+      opacity: 0.5,
+      rotation: 0,
+      scaleX: 5,
+      scaleY: 1,
+      x: 50,
+      y: 0,
     },
+    textures: [
+      {
+        type: "circle",
+        props: {
+          x: 50,
+          y: 50,
+          rotation: 10,
+          color: "#0095DD",
+          radius: 10,
+          opacity: 1,
+          anchorX: 0,
+          anchorY: 0,
+          scaleX: 1,
+          scaleY: 1,
+        },
+      },
+    ],
   });
 
-  let textures = getNextFrameTexturesOverTime();
+  let { textures } = getNextFrameTexturesOverTime();
+  let spriteTextures = (textures[0] as SpriteTextures).textures;
 
   expect(platformSpy.getDevice).toBeCalledTimes(2);
 
-  expect(textures[0]).toEqual({
+  expect(spriteTextures[0]).toEqual({
     type: "circle",
     props: {
-      position: {
-        x: 101,
-        y: 50,
-        rotation: 10,
-      },
+      x: 51,
+      y: 50,
+      rotation: 10,
       color: "#0095DD",
       radius: 10,
+      opacity: 1,
+      anchorX: 0,
+      anchorY: 0,
+      scaleX: 1,
+      scaleY: 1,
     },
   });
 
   mutableTestDevice.inputs.buttonPressed.show = false;
 
-  textures = getNextFrameTexturesOverTime();
+  textures = getNextFrameTexturesOverTime().textures;
 
   expect(textures).toEqual([]);
 
   mutableTestDevice.inputs.buttonPressed.show = true;
 
-  textures = getNextFrameTexturesOverTime();
+  textures = getNextFrameTexturesOverTime().textures;
+  spriteTextures = (textures[0] as SpriteTextures).textures;
 
   // sprite state reset after removed
-  expect(textures[0]).toEqual({
+  expect(spriteTextures[0]).toEqual({
     type: "circle",
     props: {
-      position: {
-        x: 100,
-        y: 50,
-        rotation: 10,
-      },
+      x: 50,
+      y: 50,
+      rotation: 10,
       color: "#0095DD",
       radius: 10,
+      opacity: 1,
+      anchorX: 0,
+      anchorY: 0,
+      scaleX: 1,
+      scaleY: 1,
     },
   });
 });
@@ -173,7 +218,8 @@ test("Can render simple game with sprites in landscape", () => {
 
   const { initTextures } = replayCore(platform, TestGameWithSprites(gameProps));
 
-  const { text } = (initTextures[1] as any).props;
+  const { text } = ((initTextures.textures[1] as SpriteTextures)
+    .textures[0] as TextTexture).props;
   expect(text).toBe("this is landscape");
 });
 
@@ -189,7 +235,8 @@ test("Can render simple game with sprites in portrait", () => {
 
   const { initTextures } = replayCore(platform, TestGameWithSprites(gameProps));
 
-  const { text } = (initTextures[1] as any).props;
+  const { text } = ((initTextures.textures[1] as SpriteTextures)
+    .textures[0] as TextTexture).props;
   expect(text).toBe("this is portrait");
 });
 
@@ -205,7 +252,8 @@ test("Can render simple game with sprites in XL landscape", () => {
 
   const { initTextures } = replayCore(platform, TestGameWithSprites(gameProps));
 
-  const { text } = (initTextures[1] as any).props;
+  const { text } = ((initTextures.textures[1] as SpriteTextures)
+    .textures[0] as TextTexture).props;
   expect(text).toBe("this is XL landscape");
 });
 
@@ -221,7 +269,8 @@ test("Can render simple game with sprites in XL portrait", () => {
 
   const { initTextures } = replayCore(platform, TestGameWithSprites(gameProps));
 
-  const { text } = (initTextures[1] as any).props;
+  const { text } = ((initTextures.textures[1] as SpriteTextures)
+    .textures[0] as TextTexture).props;
   expect(text).toBe("this is XL portrait");
 });
 
@@ -332,7 +381,7 @@ test("updateState in loop will update state in next render", () => {
     FullTestGame(gameProps)
   );
 
-  expect(initTextures[0].props.position!.x).toEqual(5);
+  expect((initTextures.textures[0] as CircleTexture).props.x).toEqual(5);
 
   let time = 1;
   const getNextFrameTexturesOverTime = () => {
@@ -343,10 +392,10 @@ test("updateState in loop will update state in next render", () => {
   mutableTestDevice.inputs.buttonPressed.move = true;
   mutableTestDevice.inputs.buttonPressed.moveWithUpdateState = true;
 
-  const textures = getNextFrameTexturesOverTime();
+  const spriteTextures = getNextFrameTexturesOverTime();
 
   // An extra 5 was added in sync
-  expect(textures[0].props.position!.x).toEqual(11);
+  expect((spriteTextures.textures[0] as CircleTexture).props.x).toEqual(11);
 });
 
 test("supports playing audio", () => {
@@ -452,13 +501,21 @@ test("supports local storage", () => {
   );
   expect(storageSpy.getStore).toBeCalled();
 
-  expect(initTextures).toEqual([
+  expect(initTextures.textures).toEqual([
     {
       type: "text",
       props: {
-        position: { rotation: 0, x: 0, y: 0 },
         text: "storage",
         color: "red",
+        align: "center",
+        x: 0,
+        y: 0,
+        rotation: 0,
+        opacity: 1,
+        anchorX: 0,
+        anchorY: 0,
+        scaleX: 1,
+        scaleY: 1,
       },
     },
   ]);
@@ -474,7 +531,6 @@ test("can define various texture shapes", () => {
       font: { name: "Arial", size: 12 },
       text: "Hello",
       color: "red",
-      position: { x: 0, y: 0 },
     }).type
   ).toBe("text");
 
@@ -482,7 +538,7 @@ test("can define various texture shapes", () => {
     t.circle({
       radius: 5,
       color: "red",
-      position: { x: 0, y: 0 },
+      x: 0,
     }).type
   ).toBe("circle");
 
@@ -491,7 +547,8 @@ test("can define various texture shapes", () => {
       width: 5,
       height: 5,
       color: "red",
-      position: { x: 0, y: 0 },
+      x: 0,
+      y: 0,
     }).type
   ).toBe("rectangle");
 
@@ -504,7 +561,6 @@ test("can define various texture shapes", () => {
         [15, 10],
         [20, 20],
       ],
-      position: { x: 0, y: 0 },
     }).type
   ).toBe("line");
 
@@ -513,30 +569,60 @@ test("can define various texture shapes", () => {
       fileName: "image.png",
       width: 20,
       height: 20,
-      position: { x: 0, y: 0 },
     }).type
   ).toBe("image");
 });
 
-test("resolves position and rotation of deeply nested sprites", () => {
+test("deeply nested sprites and input position", () => {
   const { platform, mutableTestDevice } = getTestPlatform();
+  const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  mutableTestDevice.inputs.buttonPressed.move = true;
+  mutableTestDevice.inputs.x = 50;
+  mutableTestDevice.inputs.y = 50;
 
   const { initTextures } = replayCore(platform, NestedSpriteGame(gameProps));
 
-  expect(initTextures).toEqual([
-    {
-      type: "text",
-      props: {
-        position: {
-          x: -10,
-          y: 50,
-          rotation: 45,
-        },
-        text: "nested",
-        color: "black",
-      },
+  // Sprite positions local
+
+  const nestedSpriteGame = initTextures;
+  const nestedFirstSprite = initTextures.textures[0] as SpriteTextures;
+  const nestedSecondSprite = nestedFirstSprite.textures[0] as SpriteTextures;
+  const textTexture = nestedSecondSprite.textures[0] as TextTexture;
+
+  expect(nestedSpriteGame.id).toBe("Game");
+
+  expect(nestedFirstSprite.id).toBe("first");
+  expect(nestedFirstSprite.baseProps.x).toBe(20);
+  expect(nestedFirstSprite.baseProps.y).toBe(20);
+  expect(nestedFirstSprite.baseProps.rotation).toBe(-90);
+  expect(nestedFirstSprite.baseProps.opacity).toBe(0.8);
+
+  expect(nestedSecondSprite.id).toBe("second");
+  expect(nestedSecondSprite.baseProps.x).toBe(50);
+  expect(nestedSecondSprite.baseProps.y).toBe(20);
+  expect(nestedSecondSprite.baseProps.rotation).toBe(-90);
+  expect(nestedSecondSprite.baseProps.opacity).toBeCloseTo(0.64);
+
+  expect(textTexture).toEqual({
+    type: "text",
+    props: {
+      x: 10,
+      y: 20,
+      rotation: 180,
+      text: "nested",
+      align: "center",
+      color: "black",
+      opacity: 0.8, // texture opacity is multiplied on platform side
+      anchorX: 0,
+      anchorY: 0,
+      scaleX: 1,
+      scaleY: 1,
     },
-  ]);
+  });
+
+  // Pointer positions global
+
+  expect(logSpy).toBeCalledWith("NestedSpriteGame x: 50, y: 50");
+  expect(logSpy).toBeCalledWith("NestedFirstSprite x: 30, y: -30");
+  expect(logSpy).toBeCalledWith("NestedSecondSprite x: -50, y: 20");
 });

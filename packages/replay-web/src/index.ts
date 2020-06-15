@@ -1,9 +1,6 @@
 import { GameProps, Texture, DeviceSize, Store } from "@replay/core";
 import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
-import {
-  CustomSprite,
-  SpritePosition as SpritePositionObj,
-} from "@replay/core/dist/sprite";
+import { CustomSprite, SpriteTextures } from "@replay/core/dist/sprite";
 import {
   getInputs,
   keyUpHandler as inputKeyUpHandler,
@@ -20,8 +17,7 @@ import {
 import { drawCanvas } from "./draw";
 import { getDeviceSize, setDeviceSize, calculateDeviceSize } from "./size";
 import { Dimensions } from "./dimensions";
-
-type SpritePosition = SpritePositionObj["position"];
+import { getDefaultProps } from "@replay/core/dist/props";
 
 export { Inputs as WebInputs, mapInputCoordinates } from "./input";
 export { Dimensions } from "./dimensions";
@@ -192,7 +188,7 @@ export function renderCanvas<S>(
   };
 
   const render: {
-    ref: ((textures: Texture[]) => void) | null;
+    ref: ((textures: SpriteTextures) => void) | null;
   } = { ref: null };
 
   updateDeviceSize();
@@ -229,7 +225,11 @@ export function renderCanvas<S>(
   };
 
   // Show initial loading scene
-  render.ref?.(loadingTextures);
+  render.ref?.({
+    id: "Loading",
+    baseProps: getDefaultProps({}),
+    textures: loadingTextures,
+  });
 
   const loadPromise = preloadFiles().then(() => {
     const handleAutoPlay = () => {
@@ -257,7 +257,7 @@ export function renderCanvas<S>(
 
     let initTime: number | null = null;
 
-    function loop(textures: Texture[]) {
+    function loop(textures: SpriteTextures) {
       render.ref?.(textures);
       window.requestAnimationFrame((time) => {
         if (isCleanedUp) {
@@ -301,7 +301,7 @@ function deviceCreator(
     [filename: string]: HTMLAudioElement;
   },
   defaultSize: DeviceSize
-) {
+): ReplayPlatform<Inputs>["getGetDevice"] {
   // called once
   const initDevice = {
     log: console.log,
@@ -397,10 +397,10 @@ function deviceCreator(
       now: () => new Date(),
     };
 
-    // called individually by each Sprite with their parent's absolute position
-    return (parentPosition: SpritePosition) => ({
+    // called individually by each Sprite to get inputs relative to position
+    return (getLocalCoords) => ({
       ...device,
-      inputs: getInputs(parentPosition),
+      inputs: getInputs(getLocalCoords),
     });
   };
 }

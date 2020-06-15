@@ -36,7 +36,7 @@ export const WalkingGreenCapChar = makeSprite<{}, State>({
         width: 48,
         height: 54,
         scaleX: -1,
-        anchorX: -1,
+        anchorX: -24,
       }),
     ];
   },

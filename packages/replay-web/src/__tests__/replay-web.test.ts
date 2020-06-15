@@ -38,11 +38,9 @@ test("Can render image moving across screen", async () => {
     TestGameWithAssets(testGameProps),
     [
       t.text({
-        position: {
-          x: 0,
-          y: 0,
-          rotation: 0,
-        },
+        x: 0,
+        y: 0,
+        rotation: 0,
         font: { name: "serif", size: 22 },
         text: "Loading...",
         color: "black",
@@ -88,20 +86,16 @@ test("Canvas elements are drawn in order of sprites passed in", () => {
     TestGameWithAssets(testGameProps),
     [
       t.circle({
-        position: {
-          x: 0,
-          y: 0,
-          rotation: 0,
-        },
+        x: 0,
+        y: 0,
+        rotation: 0,
         radius: 100,
         color: "red",
       }),
       t.circle({
-        position: {
-          x: 0,
-          y: 0,
-          rotation: 0,
-        },
+        x: 0,
+        y: 0,
+        rotation: 0,
         radius: 50,
         color: "blue",
       }),

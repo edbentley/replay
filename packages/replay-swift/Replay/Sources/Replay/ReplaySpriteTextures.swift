@@ -1,5 +1,16 @@
 import CoreGraphics
 
+struct ReplaySpriteTextures {
+    var id: String
+    var baseProps: BaseProps
+    var textures: [ReplaySpriteTexturesOrTexture]
+}
+
+enum ReplaySpriteTexturesOrTexture {
+    case spriteTextures(ReplaySpriteTextures)
+    case texture(ReplayTexture)
+}
+
 enum ReplayTexture {
     case text(BaseProps, TextProps)
     case circle(BaseProps, CircleProps)
@@ -25,10 +36,17 @@ struct TextureFont {
     var size: CGFloat
 }
 
+enum TextAlign {
+    case left
+    case center
+    case right
+}
+
 struct TextProps {
     var font: TextureFont?
     var text: String
     var color: String
+    var align: TextAlign
 }
 
 struct CircleProps {

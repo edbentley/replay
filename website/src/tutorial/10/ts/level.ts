@@ -50,10 +50,8 @@ export const Level = makeSprite<{}, LevelState, WebInputs | iOSInputs>({
       }),
       Bird({
         id: "bird",
-        position: {
-          x: birdX,
-          y: state.birdY,
-        },
+        x: birdX,
+        y: state.birdY,
       }),
     ];
   },

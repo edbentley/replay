@@ -83,17 +83,15 @@ export const Level = makeSprite<LevelProps, LevelState, WebInputs | iOSInputs>({
       }),
       Bird({
         id: "bird",
-        position: {
-          x: birdX,
-          y: state.birdY,
-          rotation: Math.max(-30, state.birdGravity * 3 - 30),
-        },
+        x: birdX,
+        y: state.birdY,
+        rotation: Math.max(-30, state.birdGravity * 3 - 30),
       }),
       ...state.pipes.map((pipe, index) =>
         Pipe({
           id: `pipe-${index}`,
           pipe,
-          position: { x: pipe.x, y: 0 },
+          x: pipe.x,
         })
       ),
     ];

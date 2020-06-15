@@ -141,10 +141,8 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
     const fullHeight = height + heightMargin * 2;
     const bullets = state.bullets.map((b, i) =>
       t.circle({
-        position: {
-          x: bulletX(b, extrapolateFactor * bulletSpeed),
-          y: bulletY(b, fullHeight / 2, extrapolateFactor * bulletSpeed),
-        },
+        x: bulletX(b, extrapolateFactor * bulletSpeed),
+        y: bulletY(b, fullHeight / 2, extrapolateFactor * bulletSpeed),
         testId: `bullet${i + 1}`,
         radius: 2,
         color: "#0095DD",
@@ -153,10 +151,8 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
     );
     const enemies = state.enemies.map((e, i) =>
       t.image({
-        position: {
-          x: e.x,
-          y: e.y,
-        },
+        x: e.x,
+        y: e.y,
         testId: `enemy${i + 1}`,
         fileName: "enemy.png",
         width: 20,
@@ -186,13 +182,12 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
       // }),
       WalkingGreenCapChar({
         id: "spritesheet",
-        position: { x: -100, y: 0 },
+        x: -100,
+        y: 0,
       }),
       t.line({
-        position: {
-          x: -100,
-          y: 0,
-        },
+        x: -100,
+        y: 0,
         color: "red",
         opacity: 0.5,
         thickness: 2,
@@ -205,11 +200,9 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
       }),
       t.rectangle({
         testId: "player",
-        position: {
-          x: 0,
-          y: -fullHeight / 2,
-          rotation: state.playerRotation,
-        },
+        x: 0,
+        y: -fullHeight / 2,
+        rotation: state.playerRotation,
         width: 50,
         height: 20,
         color: "#0095DD",
@@ -220,16 +213,18 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
       t.circle({
         radius: 4,
         color: "green",
-        position: state.pointer,
+        x: state.pointer.x,
+        y: state.pointer.y,
       }),
       Score({ score: state.score, id: "score" }),
       Score({
         preText: "High ",
         score: highScore,
         id: "highScore",
-        position: { x: 100, y: 0 },
+        x: 100,
+        y: 0,
       }),
-      PosLogger({ id: "posLogger", position: { x: 100, y: 200 } }),
+      PosLogger({ id: "posLogger", x: 100, y: 200 }),
     ];
   },
 });

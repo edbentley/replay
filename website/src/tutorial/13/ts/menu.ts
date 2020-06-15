@@ -24,7 +24,7 @@ export const Menu = makeSprite<MenuProps, undefined, WebInputs | iOSInputs>({
           ? "Click or Space Bar to Start"
           : "Tap to Start",
         color: "white",
-        position: { x: 0, y: 100 },
+        y: 100,
       }),
     ];
   },

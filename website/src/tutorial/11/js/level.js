@@ -43,11 +43,9 @@ export const Level = makeSprite({
       }),
       Bird({
         id: "bird",
-        position: {
-          x: birdX,
-          y: state.birdY,
-          rotation: Math.max(-30, state.birdGravity * 3 - 30),
-        },
+        x: birdX,
+        y: state.birdY,
+        rotation: Math.max(-30, state.birdGravity * 3 - 30),
       }),
     ];
   },

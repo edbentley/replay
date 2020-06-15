@@ -24,7 +24,7 @@ function Tutorial() {
         {
           file: "level.ts",
           code: levelTs,
-          highlight: [1, 4, 6, 13, 23, 27, 60, 61, 62, "119-185"],
+          highlight: [1, 4, 6, 13, 23, 27, 60, 61, 62, "117-183"],
         },
         {
           file: "index.ts",
@@ -36,7 +36,7 @@ function Tutorial() {
         {
           file: "level.js",
           code: levelJs,
-          highlight: [2, 4, 10, 14, "47-49", "106-169"],
+          highlight: [2, 4, 10, 14, "47-49", "104-167"],
         },
         { file: "index.js", code: indexJs, highlight: [7, 15, "17-24", 34] },
       ]}

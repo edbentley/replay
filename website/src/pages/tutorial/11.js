@@ -18,8 +18,8 @@ function Tutorial() {
     <Page
       part={11}
       MDXContent={MDXContent}
-      codesTs={[{ file: "level.ts", code: levelTs, highlight: [56] }]}
-      codesJs={[{ file: "level.js", code: levelJs, highlight: [49] }]}
+      codesTs={[{ file: "level.ts", code: levelTs, highlight: [55] }]}
+      codesJs={[{ file: "level.js", code: levelJs, highlight: [48] }]}
       Game={Game}
       gameProps={gameProps}
     />

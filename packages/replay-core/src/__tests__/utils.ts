@@ -1,4 +1,5 @@
 import { Device, makeSprite, t, GameProps, DeviceSize } from "../index";
+import { ReplayPlatform } from "../core";
 
 export const gameProps: GameProps = {
   id: "Game" as const,
@@ -17,6 +18,8 @@ export const gameProps: GameProps = {
 };
 
 interface TestPlatformInputs {
+  x: number;
+  y: number;
   buttonPressed: {
     move: boolean;
     show: boolean;
@@ -44,6 +47,8 @@ interface TestPlatformInputs {
 
 function getInitTestPlatformInputs(): TestPlatformInputs {
   return {
+    x: 0,
+    y: 0,
     buttonPressed: {
       move: false,
       show: true,
@@ -126,9 +131,15 @@ export function getTestPlatform(customSize?: DeviceSize) {
   return {
     platform: {
       getGetDevice() {
-        return () => mutableTestDevice;
+        return (globalToLocalCoords) => {
+          const local = globalToLocalCoords(mutableTestDevice.inputs);
+          return {
+            ...mutableTestDevice,
+            inputs: { ...mutableTestDevice.inputs, x: local.x, y: local.y },
+          };
+        };
       },
-    },
+    } as ReplayPlatform<TestPlatformInputs>,
     resetInputs,
     mutableTestDevice,
   };
@@ -159,11 +170,8 @@ export const TestGame = makeSprite<
   render({ state }) {
     return [
       t.circle({
-        position: {
-          x: state.position,
-          y: 50,
-          rotation: 0,
-        },
+        x: state.position,
+        y: 50,
         radius: 10,
         color: "#0095DD",
         scaleX: 5,
@@ -192,16 +200,16 @@ export const TestGameWithSprites = makeSprite<
       ? [
           TestSprite({
             id: "test",
-            position: {
-              x: 50,
-              y: 0,
-              rotation: 0,
-            },
+            x: 50,
             initPos: 50,
+            anchorY: 1,
+            scaleX: 5,
+            opacity: 0.5,
           }),
           MultipleRendersSprite({
             id: "multiple-renders",
-            position: { x: 0, y: 0 },
+            x: 0,
+            y: 0,
           }),
         ]
       : [];
@@ -225,11 +233,9 @@ const TestSprite = makeSprite<
   render({ state }) {
     return [
       t.circle({
-        position: {
-          x: state.position,
-          y: 50,
-          rotation: 10,
-        },
+        x: state.position,
+        y: 50,
+        rotation: 10,
         radius: 10,
         color: "#0095DD",
       }),
@@ -410,11 +416,9 @@ export const FullTestGame = makeSprite<
   render({ state }) {
     return [
       t.circle({
-        position: {
-          x: state.position,
-          y: 50,
-          rotation: 0,
-        },
+        x: state.position,
+        y: 50,
+        rotation: 0,
         radius: 10,
         color: "#0095DD",
       }),
@@ -424,35 +428,67 @@ export const FullTestGame = makeSprite<
 
 /// -- Nested Sprite test
 
-export const NestedSpriteGame = makeSprite<GameProps>({
-  render() {
+export const NestedSpriteGame = makeSprite<
+  GameProps,
+  undefined,
+  TestPlatformInputs
+>({
+  render({ device }) {
+    if (device.inputs.x) {
+      device.log(
+        `NestedSpriteGame x: ${device.inputs.x}, y: ${device.inputs.y}`
+      );
+    }
     return [
       NestedFirstSprite({
         id: "first",
-        position: { x: 20, y: 20, rotation: -90 },
+        x: 20,
+        y: 20,
+        rotation: -90,
+        opacity: 0.8,
       }),
     ];
   },
 });
 
-const NestedFirstSprite = makeSprite({
-  render() {
+const NestedFirstSprite = makeSprite<{}, undefined, TestPlatformInputs>({
+  render({ device }) {
+    if (device.inputs.x) {
+      device.log(
+        `NestedFirstSprite x: ${Math.round(device.inputs.x)}, y: ${Math.round(
+          device.inputs.y
+        )}`
+      );
+    }
     return [
       NestedSecondSprite({
         id: "second",
-        position: { x: 50, y: 20, rotation: -90 },
+        x: 50,
+        y: 20,
+        rotation: -90,
+        opacity: 0.8,
       }),
     ];
   },
 });
 
-const NestedSecondSprite = makeSprite({
-  render() {
+const NestedSecondSprite = makeSprite<{}, undefined, TestPlatformInputs>({
+  render({ device }) {
+    if (device.inputs.x) {
+      device.log(
+        `NestedSecondSprite x: ${Math.round(device.inputs.x)}, y: ${Math.round(
+          device.inputs.y
+        )}`
+      );
+    }
     return [
       t.text({
         text: "nested",
         color: "black",
-        position: { x: 10, y: 20, rotation: 225 },
+        x: 10,
+        y: 20,
+        rotation: 180,
+        opacity: 0.8,
       }),
     ];
   },

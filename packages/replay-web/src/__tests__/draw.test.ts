@@ -1,6 +1,8 @@
 import { drawCanvas } from "../draw";
 import { canvasToImage } from "./utils";
-import { t, DeviceSize, Texture } from "@replay/core";
+import { t, DeviceSize } from "@replay/core";
+import { SpriteTextures } from "@replay/core/dist/sprite";
+import { getDefaultProps } from "@replay/core/dist/props";
 
 const deviceSize: DeviceSize = {
   width: 300,
@@ -12,36 +14,37 @@ const deviceSize: DeviceSize = {
 };
 
 let canvas: HTMLCanvasElement;
-let render: (textures: Texture[]) => void;
+let render: (textures: SpriteTextures["textures"]) => void;
 
 beforeAll(() => {
-  canvas = document.body.appendChild(document.createElement("canvas"));
-  canvas.width = 500;
-  canvas.height = 500;
-  const ctx = canvas.getContext("2d", { alpha: false })!;
+  render = (textures) => {
+    canvas = document.body.appendChild(document.createElement("canvas"));
+    canvas.width = 500;
+    canvas.height = 500;
+    const ctx = canvas.getContext("2d", { alpha: false })!;
 
-  render = drawCanvas(ctx, deviceSize, {}, { name: "Courier", size: 12 })
-    .render;
+    drawCanvas(ctx, deviceSize, {}, { name: "Courier", size: 12 }).render({
+      id: "test",
+      baseProps: getDefaultProps({}),
+      textures,
+    });
+  };
 });
 
 test("Can draw text", () => {
   render([
     t.text({
-      position: {
-        x: -100,
-        y: 100,
-        rotation: 45,
-      },
+      x: -100,
+      y: 100,
+      rotation: 45,
       font: { name: "Arial", size: 10 },
       color: "blue",
       text: "Hello Test",
     }),
     t.text({
-      position: {
-        x: -100,
-        y: 0,
-        rotation: 0,
-      },
+      x: -100,
+      y: 0,
+      rotation: 0,
       opacity: 0.5,
       font: { name: "Arial", size: 40 },
       color: "red",
@@ -55,20 +58,16 @@ test("Can draw text", () => {
 test("Can draw circles", () => {
   render([
     t.circle({
-      position: {
-        x: 0,
-        y: 50,
-        rotation: 45,
-      },
+      x: 0,
+      y: 50,
+      rotation: 45,
       radius: 25,
       color: "blue",
     }),
     t.circle({
-      position: {
-        x: 0,
-        y: -50,
-        rotation: 0,
-      },
+      x: 0,
+      y: -50,
+      rotation: 0,
       opacity: 0.5,
       radius: 50,
       color: "red",
@@ -81,33 +80,27 @@ test("Can draw circles", () => {
 test("Can draw rectangles", () => {
   render([
     t.rectangle({
-      position: {
-        x: 0,
-        y: 50,
-        rotation: 45,
-      },
+      x: 0,
+      y: 50,
+      rotation: 45,
       opacity: 0.5,
       width: 50,
       height: 50,
       color: "blue",
     }),
     t.rectangle({
-      position: {
-        x: 0,
-        y: -50,
-        rotation: 0,
-      },
+      x: 0,
+      y: -50,
+      rotation: 0,
       opacity: 1,
       width: 100,
       height: 10,
       color: "red",
     }),
     t.rectangle({
-      position: {
-        x: 0,
-        y: 0,
-        rotation: 0,
-      },
+      x: 0,
+      y: 0,
+      rotation: 0,
       opacity: 0,
       width: 100,
       height: 10,
@@ -121,10 +114,8 @@ test("Can draw rectangles", () => {
 test("Can draw lines", () => {
   render([
     t.line({
-      position: {
-        x: 0,
-        y: 50,
-      },
+      x: 0,
+      y: 50,
       thickness: 1,
       color: "blue",
       opacity: 0.5,
@@ -135,11 +126,9 @@ test("Can draw lines", () => {
       ],
     }),
     t.line({
-      position: {
-        x: 0,
-        y: -50,
-        rotation: 90,
-      },
+      x: 0,
+      y: -50,
+      rotation: 90,
       thickness: 5,
       color: "red",
       path: [
@@ -148,10 +137,8 @@ test("Can draw lines", () => {
       ],
     }),
     t.line({
-      position: {
-        x: 0,
-        y: 0,
-      },
+      x: 0,
+      y: 0,
       thickness: 5,
       color: "red",
       path: [], // nothing drawn
@@ -166,11 +153,9 @@ test("Can scale X and Y", () => {
     // square rectangle first scaled tall
     // then rotated to be wide
     t.rectangle({
-      position: {
-        x: 0,
-        y: 0,
-        rotation: 90,
-      },
+      x: 0,
+      y: 0,
+      rotation: 90,
       scaleY: 2,
       width: 50,
       height: 50,
@@ -178,18 +163,14 @@ test("Can scale X and Y", () => {
     }),
     // blue circle should be half the size of red
     t.circle({
-      position: {
-        x: 0,
-        y: -50,
-      },
+      x: 0,
+      y: -50,
       radius: 5,
       color: "red",
     }),
     t.circle({
-      position: {
-        x: 50,
-        y: -50,
-      },
+      x: 50,
+      y: -50,
       scaleX: 0.5,
       scaleY: 0.5,
       radius: 5,
@@ -197,10 +178,8 @@ test("Can scale X and Y", () => {
     }),
     // very thick line
     t.line({
-      position: {
-        x: 0,
-        y: 50,
-      },
+      x: 0,
+      y: 50,
       thickness: 5,
       color: "red",
       scaleX: 20,
@@ -227,9 +206,9 @@ test("Can change anchor X and Y", () => {
       height: 50,
       color: "blue",
       opacity: 0.2,
-      anchorX: 1,
-      anchorY: 1,
-      position: { x: 0, y: 0, rotation: 10 },
+      anchorX: 25,
+      anchorY: 25,
+      rotation: 10,
     }),
     // top-left
     t.rectangle({
@@ -237,9 +216,9 @@ test("Can change anchor X and Y", () => {
       height: 50,
       color: "red",
       opacity: 0.2,
-      anchorX: 1,
-      anchorY: -1,
-      position: { x: 0, y: 0, rotation: 10 },
+      anchorX: 25,
+      anchorY: -25,
+      rotation: 10,
     }),
     // bottom-right
     t.rectangle({
@@ -247,9 +226,9 @@ test("Can change anchor X and Y", () => {
       height: 50,
       color: "green",
       opacity: 0.2,
-      anchorX: -1,
-      anchorY: 1,
-      position: { x: 0, y: 0, rotation: 10 },
+      anchorX: -25,
+      anchorY: 25,
+      rotation: 10,
     }),
     // top-right
     t.rectangle({
@@ -257,9 +236,9 @@ test("Can change anchor X and Y", () => {
       height: 50,
       color: "yellow",
       opacity: 0.2,
-      anchorX: -1,
-      anchorY: -1,
-      position: { x: 0, y: 0, rotation: 10 },
+      anchorX: -25,
+      anchorY: -25,
+      rotation: 10,
     }),
   ]);
 
@@ -271,25 +250,28 @@ test("Can change anchor X and Y", () => {
       width: 100,
       height: 10,
       color: "red",
-      anchorX: -1,
+      anchorX: -50,
       scaleX: 1,
-      position: { x: 0, y: 50 },
+      x: 0,
+      y: 50,
     }),
     t.rectangle({
       width: 100,
       height: 10,
       color: "red",
-      anchorX: -1,
+      anchorX: -50,
       scaleX: 0.5,
-      position: { x: 0, y: 0 },
+      x: 0,
+      y: 0,
     }),
     t.rectangle({
       width: 100,
       height: 10,
       color: "red",
-      anchorX: -1,
+      anchorX: -50,
       scaleX: 0.1,
-      position: { x: 0, y: -50 },
+      x: 0,
+      y: -50,
     }),
   ]);
 
@@ -299,9 +281,11 @@ test("Can change anchor X and Y", () => {
   render([
     t.text({
       text: "Hello",
+      align: "left",
       color: "red",
-      position: { x: 0, y: 50, rotation: 10 },
-      anchorX: -1,
+      x: 0,
+      y: 50,
+      rotation: 10,
     }),
     t.line({
       color: "black",
@@ -310,13 +294,16 @@ test("Can change anchor X and Y", () => {
         [100, 0],
       ],
       thickness: 1,
-      position: { x: 0, y: 50 },
+      x: 0,
+      y: 50,
     }),
 
     t.text({
       text: "Hello",
       color: "red",
-      position: { x: 0, y: 0, rotation: 10 },
+      x: 0,
+      y: 0,
+      rotation: 10,
     }),
     t.line({
       color: "black",
@@ -325,14 +312,17 @@ test("Can change anchor X and Y", () => {
         [100, 0],
       ],
       thickness: 1,
-      position: { x: 0, y: 0 },
+      x: 0,
+      y: 0,
     }),
 
     t.text({
       text: "Hello",
+      align: "right",
       color: "red",
-      position: { x: 0, y: -50, rotation: 10 },
-      anchorX: 1,
+      x: 0,
+      y: -50,
+      rotation: 10,
     }),
     t.line({
       color: "black",
@@ -341,22 +331,25 @@ test("Can change anchor X and Y", () => {
         [100, 0],
       ],
       thickness: 1,
-      position: { x: 0, y: -50 },
+      x: 0,
+      y: -50,
     }),
 
     t.text({
       text: "Hello",
       font: { name: "Calibri", size: 12 },
       color: "red",
-      position: { x: 0, y: 100 },
-      anchorY: 1,
+      x: 0,
+      y: 100,
+      anchorY: 6,
     }),
     t.text({
       text: "Hello",
       font: { name: "Calibri", size: 12 },
       color: "blue",
-      position: { x: 0, y: 100 },
-      anchorY: -1,
+      x: 0,
+      y: 100,
+      anchorY: -6,
     }),
   ]);
 
@@ -372,8 +365,8 @@ test("Can change anchor X and Y", () => {
         [-50, -50],
         [50, 50],
       ],
-      anchorX: 1,
-      anchorY: 1,
+      anchorX: 50,
+      anchorY: 50,
     }),
     // top-right
     t.line({
@@ -383,8 +376,8 @@ test("Can change anchor X and Y", () => {
         [-50, -50],
         [50, 50],
       ],
-      anchorX: -1,
-      anchorY: -1,
+      anchorX: -50,
+      anchorY: -50,
     }),
     t.line({
       color: "black",

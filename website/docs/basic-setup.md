@@ -83,13 +83,11 @@ const Game = makeSprite({
       t.text({
         color: "red",
         text: "Hello Replay!",
-        position: { x: 0, y: 50 },
+        y: 50,
       }),
       t.circle({
-        position: {
-          x: state.posX,
-          y: state.posY,
-        },
+        x: state.posX,
+        y: state.posY,
         color: "#147aff",
         radius: 10,
       }),

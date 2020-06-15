@@ -3,8 +3,10 @@ import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
 import {
   CustomSprite,
   makeSprite,
-  SpritePosition,
+  SpriteTextures,
 } from "@replay/core/dist/sprite";
+import { TextTexture } from "@replay/core/dist/t";
+import { getParentCoordsForSprite } from "./coords";
 
 interface Timer {
   gameTime: number;
@@ -18,7 +20,13 @@ interface Options<I> {
    * value within a Sprite
    */
   mapInputCoordinates?: (
-    parentPosition: SpritePosition["position"],
+    globalToLocalCoords: (globalCoords: {
+      x: number;
+      y: number;
+    }) => {
+      x: number;
+      y: number;
+    },
     inputs: I
   ) => I;
   /**
@@ -130,8 +138,16 @@ export function testSprite<P, S, I>(
   };
 
   let inputs: I = { ...initInputs };
-  function getInputs(parentPosition: SpritePosition["position"]) {
-    return mapInputCoordinates(parentPosition, inputs);
+  function getInputs(
+    globalToLocalCoords: (globalCoords: {
+      x: number;
+      y: number;
+    }) => {
+      x: number;
+      y: number;
+    }
+  ) {
+    return mapInputCoordinates(globalToLocalCoords, inputs);
   }
   /**
    * Update the current input state in the game.
@@ -214,9 +230,9 @@ export function testSprite<P, S, I>(
       const now = () => {
         return new Date(Date.UTC(2000, 1, 1));
       };
-      // called individually by each Sprite with their parent's absolute position
-      return (parentPosition) => ({
-        inputs: getInputs(parentPosition),
+      // called individually by each Sprite
+      return (globalToLocalCoords) => ({
+        inputs: getInputs(globalToLocalCoords),
         size,
         log,
         random,
@@ -255,12 +271,47 @@ export function testSprite<P, S, I>(
     });
   }
 
-  function render(newTextures: Texture[]) {
+  function render(newTextures: SpriteTextures) {
     // Mutably replace textures with new textures
     textures.length = 0;
-    newTextures.forEach((texture) => {
-      textures.push(texture);
-    });
+
+    type Pos = { x: number; y: number; rotation: number };
+
+    const traverseSpriteTextures = (
+      spriteTextures: SpriteTextures | Texture,
+      getParentGlobalPos: (localCoords: Pos) => Pos
+    ) => {
+      if ("type" in spriteTextures) {
+        // is a Texture
+        const { x, y, rotation } = getParentGlobalPos(spriteTextures.props);
+
+        // Output textures with global coordinates and rotation
+        textures.push({
+          ...spriteTextures,
+          props: {
+            ...spriteTextures.props,
+            x: Math.round(x),
+            y: Math.round(y),
+            rotation: Math.round(rotation),
+          },
+        } as Texture);
+
+        return;
+      }
+
+      const { baseProps } = spriteTextures;
+      const getParentCoords = getParentCoordsForSprite(baseProps);
+      const getGlobalPos = ({ x, y, rotation }: Pos) =>
+        getParentGlobalPos({
+          ...getParentCoords({ x, y }),
+          rotation: rotation + baseProps.rotation,
+        });
+
+      spriteTextures.textures.forEach((childSpriteTextures) => {
+        traverseSpriteTextures(childSpriteTextures, getGlobalPos);
+      });
+    };
+    traverseSpriteTextures(newTextures, (pos) => pos);
   }
 
   /**
@@ -305,18 +356,7 @@ export function testSprite<P, S, I>(
     if (!match) {
       throw Error(`No textures found with test id "${testId}"`);
     }
-    const { x, y } = match.props.position || { x: 0, y: 0 };
-    return {
-      ...match,
-      props: {
-        ...match.props,
-        position: {
-          ...match.props.position,
-          x,
-          y,
-        },
-      },
-    };
+    return match;
   }
 
   /**
@@ -332,16 +372,20 @@ export function testSprite<P, S, I>(
     }
   }
 
+  function isTextTexture(texture: Texture): texture is TextTexture {
+    return texture.type === "text";
+  }
+
   /**
    * Get an array of text textures which include text content. Case insensitive.
    * Throws if no matches found.
    */
   function getByText(text: string) {
-    const matches = textures.filter(
-      (texture) =>
-        texture.type === "text" &&
+    const matches = textures
+      .filter(isTextTexture)
+      .filter((texture) =>
         texture.props.text.toLowerCase().includes(text.toLowerCase())
-    );
+      );
     if (matches.length === 0) {
       throw Error(`No text textures found with content "${text}"`);
     }

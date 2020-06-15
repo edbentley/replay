@@ -44,7 +44,7 @@ final class ReplayTests: XCTestCase {
 
     func testDevice() {
         var getDevice = view.getGetDevice()
-        var pointer = getDevice(["x": 0, "y": 0]).inputs.pointer
+        var pointer = getDevice(mockGetLocalCoords()).inputs.pointer
         XCTAssertEqual(pointer.pressed, false)
         XCTAssertEqual(pointer.justPressed, false)
         XCTAssertEqual(pointer.justReleased, false)
@@ -52,7 +52,7 @@ final class ReplayTests: XCTestCase {
         view.touchDown(atPoint: CGPoint(x: width / 2 + 10, y: height / 2 + 20))
 
         getDevice = view.getGetDevice()
-        pointer = getDevice(nil).inputs.pointer
+        pointer = getDevice(mockGetLocalCoords()).inputs.pointer
         XCTAssertEqual(pointer.pressed, true)
         XCTAssertEqual(pointer.justPressed, true)
         XCTAssertEqual(pointer.justReleased, false)
@@ -62,7 +62,7 @@ final class ReplayTests: XCTestCase {
         view.loop(currentTime: oneFrame * 1)
 
         getDevice = view.getGetDevice()
-        pointer = getDevice(nil).inputs.pointer
+        pointer = getDevice(mockGetLocalCoords()).inputs.pointer
         XCTAssertEqual(pointer.pressed, true)
         XCTAssertEqual(pointer.justPressed, false)
         XCTAssertEqual(pointer.justReleased, false)
@@ -72,7 +72,7 @@ final class ReplayTests: XCTestCase {
         view.touchUp(atPoint: CGPoint(x: width / 2 + 20, y: height / 2 + 30))
 
         getDevice = view.getGetDevice()
-        pointer = getDevice(nil).inputs.pointer
+        pointer = getDevice(mockGetLocalCoords()).inputs.pointer
         XCTAssertEqual(pointer.pressed, false)
         XCTAssertEqual(pointer.justPressed, false)
         XCTAssertEqual(pointer.justReleased, true)
@@ -82,7 +82,7 @@ final class ReplayTests: XCTestCase {
         view.loop(currentTime: oneFrame * 2)
 
         getDevice = view.getGetDevice()
-        pointer = getDevice(nil).inputs.pointer
+        pointer = getDevice(mockGetLocalCoords()).inputs.pointer
         XCTAssertEqual(pointer.justReleased, false)
 
 
@@ -91,43 +91,38 @@ final class ReplayTests: XCTestCase {
         view.touchDown(atPoint: CGPoint(x: width / 2, y: height / 2))
 
         getDevice = view.getGetDevice()
-        pointer = getDevice(["x": 0, "y": 0]).inputs.pointer
+        pointer = getDevice(mockGetLocalCoords()).inputs.pointer
         XCTAssertEqual(pointer.x, 0)
         XCTAssertEqual(pointer.y, 0)
 
         getDevice = view.getGetDevice()
-        pointer = getDevice(["x": 10.0, "y": -5.0]).inputs.pointer
+        pointer = getDevice(mockGetLocalCoords(subtractX: "10", subtractY: "20")).inputs.pointer
         XCTAssertEqual(pointer.x, -10)
-        XCTAssertEqual(pointer.y, 5)
-
-        getDevice = view.getGetDevice()
-        pointer = getDevice(["x": 10.0, "y": -5.0, "rotation": 90]).inputs.pointer
-        XCTAssertEqual(Int(truncating: pointer.x), -5)
-        XCTAssertEqual(Int(truncating: pointer.y), -10)
+        XCTAssertEqual(pointer.y, -20)
     }
 
     func testRender() {
-        XCTAssertEqual(view.textures.count, 2) // text & player
-        XCTAssertEqual(getProps(view.textures[1]).x, CGFloat(100 + width / 2)) // player
+        XCTAssertEqual(view.spriteTextures.textures.count, 2) // text & player
+        XCTAssertEqual(getProps(view.spriteTextures.textures[1]).x, CGFloat(100)) // player
 
         view.loop(currentTime: oneFrame * 1)
 
-        XCTAssertEqual(getProps(view.textures[1]).x, CGFloat(100 + width / 2))
+        XCTAssertEqual(getProps(view.spriteTextures.textures[1]).x, CGFloat(100))
 
         view.touchDown(atPoint: CGPoint(x: 100 + width / 2, y: 10))
         view.loop(currentTime: oneFrame * 2)
         view.touchUp(atPoint: CGPoint(x: 20, y: 20))
 
-        XCTAssertEqual(view.textures.count, 2)
-        XCTAssertEqual(getProps(view.textures[1]).x, CGFloat(101 + width / 2))
+        XCTAssertEqual(view.spriteTextures.textures.count, 2)
+        XCTAssertEqual(getProps(view.spriteTextures.textures[1]).x, CGFloat(101))
 
         let promise = expectation(description: "Enemy spawns 50 ms after tap")
 
         DispatchQueue.main.asyncAfter(deadline: .now() + DispatchTimeInterval.milliseconds(50)) {
             self.view.loop(currentTime: self.oneFrame * 3)
             self.view.loop(currentTime: self.oneFrame * 4)
-            XCTAssertEqual(self.view.textures.count, 3)
-            XCTAssertEqual(getProps(self.view.textures[2]).x, CGFloat(100 + self.width / 2))
+            XCTAssertEqual(self.view.spriteTextures.textures.count, 3)
+            XCTAssertEqual(getProps(self.view.spriteTextures.textures[2]).x, CGFloat(100))
             promise.fulfill()
         }
 
@@ -248,8 +243,8 @@ final class ReplayTests: XCTestCase {
         view.loop(currentTime: oneFrame * 2)
 
         // New enemy at random position mocked to 200
-        XCTAssertEqual(view.textures.count, 3)
-        XCTAssertEqual(getProps(view.textures[2]).x, CGFloat(width / 2 + 200))
+        XCTAssertEqual(view.spriteTextures.textures.count, 3)
+        XCTAssertEqual(getProps(view.spriteTextures.textures[2]).x, CGFloat( 200))
     }
 
     func testNetwork() {
@@ -258,11 +253,11 @@ final class ReplayTests: XCTestCase {
         view.loop(currentTime: oneFrame * 2)
 
         // New enemies spawn at network response x value
-        XCTAssertEqual(view.textures.count, 6)
-        XCTAssertEqual(getProps(view.textures[2]).x, CGFloat(width / 2 + 20))
-        XCTAssertEqual(getProps(view.textures[3]).x, CGFloat(width / 2 + 21))
-        XCTAssertEqual(getProps(view.textures[4]).x, CGFloat(width / 2 + 22))
-        XCTAssertEqual(getProps(view.textures[5]).x, CGFloat(width / 2 + 23))
+        XCTAssertEqual(view.spriteTextures.textures.count, 6)
+        XCTAssertEqual(getProps(view.spriteTextures.textures[2]).x, CGFloat( 20))
+        XCTAssertEqual(getProps(view.spriteTextures.textures[3]).x, CGFloat( 21))
+        XCTAssertEqual(getProps(view.spriteTextures.textures[4]).x, CGFloat( 22))
+        XCTAssertEqual(getProps(view.spriteTextures.textures[5]).x, CGFloat( 23))
     }
 
     func testDate() {
@@ -271,8 +266,8 @@ final class ReplayTests: XCTestCase {
         view.loop(currentTime: oneFrame * 2)
 
         // New enemy spawns at current seconds count
-        XCTAssertEqual(view.textures.count, 3)
-        XCTAssertEqual(getProps(view.textures[2]).x, CGFloat(width / 2 + 15))
+        XCTAssertEqual(view.spriteTextures.textures.count, 3)
+        XCTAssertEqual(getProps(view.spriteTextures.textures[2]).x, CGFloat( 15))
     }
 
     // This only tests the calls from replay-core, not the audio code in replay-ios itself
@@ -308,8 +303,8 @@ final class ReplayTests: XCTestCase {
         view.loop(currentTime: oneFrame * 6)
 
         // New enemy at value of getPosition
-        XCTAssertEqual(view.textures.count, 3)
-        XCTAssertEqual(getProps(view.textures[2]).x, CGFloat(width / 2 + 35))
+        XCTAssertEqual(view.spriteTextures.textures.count, 3)
+        XCTAssertEqual(getProps(view.spriteTextures.textures[2]).x, CGFloat( 35))
     }
 
     func testLog() {
