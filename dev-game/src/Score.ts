@@ -5,10 +5,9 @@ export const Score = makeSprite<{ score: number; preText?: string }>({
     return [
       t.text({
         text: `${preText}Score ${score}`,
-        position: {
-          x: -size.width / 2 + 50,
-          y: -size.height / 2 + 10,
-        },
+        align: "left",
+        x: -size.width / 2 + 50,
+        y: -size.height / 2 + 10,
         color: "black",
       }),
     ];
@@ -17,10 +16,9 @@ export const Score = makeSprite<{ score: number; preText?: string }>({
     return [
       t.text({
         text: `${preText}Score ${score}`,
-        position: {
-          x: -size.width / 2 + 50,
-          y: size.height / 2 - 10,
-        },
+        align: "left",
+        x: -size.width / 2 + 50,
+        y: size.height / 2 - 10,
         color: "black",
       }),
     ];

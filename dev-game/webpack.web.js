@@ -40,6 +40,16 @@ module.exports = {
   devServer: {
     host: "0.0.0.0",
   },
+  resolve: {
+    // Ensure import of core from web is also local package
+    alias: {
+      "@replay/core/dist": path.resolve(
+        __dirname,
+        "../packages/replay-core/src"
+      ),
+    },
+    extensions: [".wasm", ".mjs", ".js", ".json", ".ts"],
+  },
 };
 
 function getAssetNames() {

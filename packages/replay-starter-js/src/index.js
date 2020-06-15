@@ -54,14 +54,12 @@ export const Game = makeSprite({
       t.text({
         color: "red",
         text: "Hello Replay! To get started, edit src/index.js",
-        position: { x: 0, y: 50 },
+        y: 50,
       }),
       t.image({
         testId: "icon",
-        position: {
-          x: state.posX,
-          y: state.posY,
-        },
+        x: state.posX,
+        y: state.posY,
         fileName: "icon.png",
         width: 50,
         height: 50,
