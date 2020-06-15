@@ -20,13 +20,13 @@ export const Pipe = makeSprite({
         color: "green",
         width: pipeWidth,
         height: yUpperTop - yUpperBottom,
-        position: { x: 0, y: (yUpperTop + yUpperBottom) / 2 },
+        y: (yUpperTop + yUpperBottom) / 2,
       }),
       t.rectangle({
         color: "green",
         width: pipeWidth,
         height: yLowerTop - yLowerBottom,
-        position: { x: 0, y: (yLowerTop + yLowerBottom) / 2 },
+        y: (yLowerTop + yLowerBottom) / 2,
       }),
     ];
   },

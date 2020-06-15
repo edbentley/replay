@@ -102,11 +102,8 @@ export const Level = makeSprite({
     return [
       Player({
         id: "player",
-        position: {
-          x: state.playerX,
-          y: 0,
-          rotation: 10,
-        },
+        x: state.playerX,
+        rotation: 10,
         color: "red",
       }),
     ];
@@ -144,11 +141,8 @@ export const Level = makeSprite<Props, State, WebInputs | iOSInputs>({
     return [
       Player({
         id: "player",
-        position: {
-          x: state.playerX,
-          y: 0,
-          rotation: 10,
-        },
+        x: state.playerX,
+        rotation: 10,
         color: "red",
       }),
     ];
@@ -172,11 +166,8 @@ Lastly our `render` method takes our existing `state` and returns the `Player` S
     return [
       Player({
         id: "player",
-        position: {
-          x: state.playerX,
-          y: 0,
-          rotation: 10,
-        },
+        x: state.playerX,
+        rotation: 10,
         color: "red",
       }),
     ];
@@ -186,18 +177,37 @@ Lastly our `render` method takes our existing `state` and returns the `Player` S
 `Player` (which we created above using `makeSprite`) is just a function we can call with its `props`:
 
 - `id`: Every custom Sprite (not Textures) requires an `id` prop, which is a string of any value you want. The `id` **must be unique within a single render function**, but doesn't need to be unique globally. The unique `id` is how Replay tracks the `state` of different Sprites.
-- `position`: Every Sprite (including Textures) has an optional `position` prop. If set, you must include an `x` and `y` value, but the `rotation` (in degrees) is optional.
+- `x`: Every Sprite (including Textures) has an optional `x` and `y` prop to set its position.
+- `rotation`: Like the `x` prop, you can set the Sprite's rotation in degrees.
 - `color`: This is the prop defined in the `Player` Sprite itself.
 
 ## Anchor Point
 
-When Sprites are positioned, the position is relative the _anchor point_, which is in the middle of the Sprite. [Game Size](game-size.md) covers the coordinate system in more detail.
+When Sprites are positioned, the position is relative the _anchor point_, which is in the middle of the Sprite. You can then adjust this anchor point using the `anchorX` and `anchorY` props (see [Common Props](#common-props) below). [Game Size](game-size.md) covers the coordinate system in more detail.
 
 <img src="/img/anchor-point.png" width="50%" />
 
+## Common Props
+
+All Sprites can be given the following props:
+
+- `id`: (Required) Identifier, must be unique within a single render function.
+- `x`: x coordinate of Sprite. Default `0`.
+- `y`: y coordinate of Sprite. Default `0`.
+- `rotation`: Rotation of Sprite around anchor point in degrees (clockwise). Default `0`.
+- `opacity`: A number between 0 and 1. Default `1`.
+- `scaleX`: Scale the Texture horizontally around the anchor point. Default `1`.
+- `scaleY`: Scale the Texture vertically around the anchor point. Default `1`.
+- `anchorX`: Move the `x` anchor point in game coordinates from the center point of the Sprite. Default `0`.
+- `anchorY`: Move the `y` anchor point in game coordinates from the center point of the Sprite. Default `0`.
+
+Here's how you could combine `anchorX` and `scaleX` for a health bar effect:
+
+![anchorX and scaleX usage for health bar](/img/anchor-scale.png)
+
 ## Sprite Methods
 
-`render` is the only _required_ Sprite method. `init` is required if your Sprite has `state`.
+Sprite methods are the fields of the object you pass into `makeSprite`. `render` is the only _required_ Sprite method. `init` is required if your Sprite has `state`.
 
 ### Common Parameters
 

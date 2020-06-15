@@ -48,7 +48,7 @@ nextFrame();
 Synchronously progress frames of the game until condition is met and no errors are thrown. Condition can also return a Texture (useful for throwing methods like `getByText`). Throws if 1000 gameplay seconds (60,000 loops) pass and condition not met / still errors.
 
 ```js
-jumpToFrame(() => position.x > 10);
+jumpToFrame(() => props.x > 10);
 ```
 
 ### `setRandomNumbers(array)`
@@ -194,7 +194,7 @@ test("Can shoot bullet", () => {
   nextFrame();
 
   expect(textureExists("bullet")).toBe(true);
-  expect(getTexture("bullet").props.position.y).toBe(100);
+  expect(getTexture("bullet").props.y).toBe(100);
 });
 ```
 
@@ -242,7 +242,7 @@ test("Can shoot bullet", () => {
   nextFrame();
 
   expect(textureExists("bullet")).toBe(true);
-  expect(getTexture("bullet").props.position.y).toBe(100);
+  expect(getTexture("bullet").props.y).toBe(100);
 });
 ```
 

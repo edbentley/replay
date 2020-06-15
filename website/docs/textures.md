@@ -9,27 +9,7 @@ Textures are the basic building blocks of things to render on the screen, like a
 
 ## Common Props
 
-All Textures share common optional `props`:
-
-- `position`: Set the `x` and `y` position, and optionally rotation (in degrees) around the anchor point.
-  ```js
-  // E.g.
-  { x: 5, y: 10}
-  // or
-  { x: 5, y: 10, rotation: 90 }
-  // Default:
-  { x: 0, y: 0, rotation: 0 }
-  ```
-- `opacity`: A number between 0 and 1. Default `1`.
-- `scaleX`: Scale the Texture horizontally around the anchor point. Default `1`.
-- `scaleY`: Scale the Texture vertically around the anchor point. Default `1`.
-- `anchorX`: Move the `x` anchor point. A value of `1` would move it to the right edge, `-1` to the left edge. Default `0`.
-- `anchorY`: Move the `y` anchor point. A value of `1` would move it to the top edge, `-1` to the bottom edge. Default `0`.
-- `testId`: Used by [Replay Test](test.md).
-
-For example, you could combine `anchorX` and `scaleX` for a health bar effect:
-
-![anchorX and scaleX usage for health bar](/img/anchor-scale.png)
+Textures share the same [common props as Sprites](sprites.md#common-props), except for `id` which isn't required. Textures also accept a `testId` prop which is used by [Replay Test](test.md).
 
 ## Circle
 
@@ -94,6 +74,7 @@ t.line({
 ```js
 t.text({
   font: { name: "Calibri", size: 16 },
+  align: "left",
   text: "Hello Replay",
   color: "#ff0000",
 })
@@ -101,6 +82,7 @@ t.text({
 #### Props
 
 - `font`: (Optional) Set the font name and size. If not provided, will use the game's default font (see [Top-Level Game](top-level-game.md)).
+- `align`: (Optional) Alignment of text around x position, can be `"left"`, `"center"` or `"right"`. `"left"` will put the left edge of the text at the Texture's x position. Default `"center"`.
 - `text`: A string to display.
 - `color`: An RGB hex value (e.g. `#ff0000`) or [CSS Level 1 keyword](https://developer.mozilla.org/docs/Web/CSS/color_value) (e.g. `green`).
 

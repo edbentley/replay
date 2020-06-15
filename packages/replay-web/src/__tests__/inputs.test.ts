@@ -16,7 +16,6 @@ import { renderCanvas } from "../index";
 
 const defaultProps = {
   color: "black",
-  position: { x: 0, y: 0 },
 };
 
 const mockTime: MockTime = { nextFrame: () => undefined };

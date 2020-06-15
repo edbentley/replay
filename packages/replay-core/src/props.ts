@@ -10,7 +10,7 @@ export type SpriteBaseProps = {
    */
   y: number;
   /**
-   * Rotation of Sprite around anchor point.
+   * Rotation of Sprite around anchor point in degrees (clockwise).
    * @default 0
    */
   rotation: number;

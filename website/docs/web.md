@@ -40,7 +40,7 @@ renderCanvas(
 );
 ```
 
-### `mapInputCoordinates(parentPosition, inputs)`
+### `mapInputCoordinates(getLocalCoords, inputs)`
 
 This can be used by [Replay Test](test.md), see the docs there for more info.
 
