@@ -3,7 +3,7 @@ import UIKit
 let DEFAULT_FONT_SIZE = CGFloat(12)
 
 class Draw {
-    static func rectangle(context: CGContext, baseProps: BaseProps, rectProps: RectangleProps) {
+    static func transformContext(context: CGContext, baseProps: BaseProps, parentOpacity: CGFloat = 1) {
         let x = baseProps.x
         let y = baseProps.y
         let rotation = baseProps.rotation
@@ -12,20 +12,22 @@ class Draw {
         let scaleY = baseProps.scaleY
         let anchorX = baseProps.anchorX
         let anchorY = baseProps.anchorY
+        
+        context.translateBy(x: x, y: y)
+        context.rotate(by: deg2rad(rotation))
+        context.scaleBy(x: scaleX, y: scaleY)
+        context.translateBy(x: -anchorX, y: anchorY)
+        context.setAlpha(opacity * parentOpacity)
+    }
+    
+    static func rectangle(context: CGContext, baseProps: BaseProps, rectProps: RectangleProps, parentOpacity: CGFloat) {
         let color = UIColor(hex: rectProps.color).cgColor
         let width = rectProps.width
         let height = rectProps.height
 
-        let offsetX = (width / 2) * anchorX;
-        let offsetY = (height / 2) * anchorY;
-
         context.saveGState()
-
-        context.translateBy(x: x, y: y)
-        context.rotate(by: deg2rad(rotation))
-        context.scaleBy(x: scaleX, y: scaleY)
-        context.translateBy(x: -offsetX, y: offsetY)
-        context.setAlpha(opacity)
+        
+        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
 
         context.setFillColor(color)
         context.fill(CGRect(x: -width / 2, y: -height / 2, width: width, height: height))
@@ -33,30 +35,14 @@ class Draw {
         context.restoreGState()
     }
 
-    static func line(context: CGContext, baseProps: BaseProps, lineProps: LineProps) {
-        let x = baseProps.x
-        let y = baseProps.y
-        let rotation = baseProps.rotation
-        let opacity = baseProps.opacity
-        let scaleX = baseProps.scaleX
-        let scaleY = baseProps.scaleY
-        let anchorX = baseProps.anchorX
-        let anchorY = baseProps.anchorY
+    static func line(context: CGContext, baseProps: BaseProps, lineProps: LineProps, parentOpacity: CGFloat) {
         let color = UIColor(hex: lineProps.color).cgColor
         let thickness = lineProps.thickness
         let path = lineProps.path
 
-        let (width, height) = Draw.getPathSize(path)
-        let offsetX = (width / 2) * anchorX;
-        let offsetY = (height / 2) * anchorY;
-
         context.saveGState()
 
-        context.translateBy(x: x, y: y)
-        context.rotate(by: deg2rad(rotation))
-        context.scaleBy(x: scaleX, y: scaleY)
-        context.translateBy(x: -offsetX, y: offsetY)
-        context.setAlpha(opacity)
+        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
 
         context.setStrokeColor(color)
         context.setLineWidth(thickness)
@@ -74,18 +60,11 @@ class Draw {
         context.restoreGState()
     }
 
-    static func text(context: CGContext, baseProps: BaseProps, textProps: TextProps, defaultFont: TextureFont?) {
-        let x = baseProps.x
-        let y = baseProps.y
-        let rotation = baseProps.rotation
-        let opacity = baseProps.opacity
-        let scaleX = baseProps.scaleX
-        let scaleY = baseProps.scaleY
-        let anchorX = baseProps.anchorX
-        let anchorY = baseProps.anchorY
+    static func text(context: CGContext, baseProps: BaseProps, textProps: TextProps, defaultFont: TextureFont?, parentOpacity: CGFloat) {
         let color = UIColor(hex: textProps.color)
         let text = textProps.text
         let textFont = textProps.font
+        let align = textProps.align
 
         var userFont: UIFont?
         if let textFont = textFont {
@@ -107,44 +86,30 @@ class Draw {
         )
         let width = textSize.width
         let height = textSize.height
-        let offsetX = (width / 2) * anchorX;
-        let offsetY = (height / 2) * anchorY;
 
         context.saveGState()
 
-        context.translateBy(x: x, y: y)
-        context.rotate(by: deg2rad(rotation))
-        context.scaleBy(x: scaleX, y: scaleY)
-        context.translateBy(x: -offsetX, y: offsetY)
-        context.setAlpha(opacity)
+        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
+        
+        let xOffset: CGFloat
+        switch align {
+        case .left: xOffset = 0
+        case .center: xOffset = -width / 2
+        case .right: xOffset = -width
+        }
 
-        attributedText.draw(at: CGPoint(x: -width / 2, y: -height / 2))
+        attributedText.draw(at: CGPoint(x: xOffset, y: -height / 2))
 
         context.restoreGState()
     }
 
-    static func circle(context: CGContext, baseProps: BaseProps, circleProps: CircleProps) {
-        let x = baseProps.x
-        let y = baseProps.y
-        let rotation = baseProps.rotation
-        let opacity = baseProps.opacity
-        let scaleX = baseProps.scaleX
-        let scaleY = baseProps.scaleY
-        let anchorX = baseProps.anchorX
-        let anchorY = baseProps.anchorY
+    static func circle(context: CGContext, baseProps: BaseProps, circleProps: CircleProps, parentOpacity: CGFloat) {
         let color = UIColor(hex: circleProps.color).cgColor
         let radius = circleProps.radius
 
-        let offsetX = radius * anchorX;
-        let offsetY = radius * anchorY;
-
         context.saveGState()
 
-        context.translateBy(x: x, y: y)
-        context.rotate(by: deg2rad(rotation))
-        context.scaleBy(x: scaleX, y: scaleY)
-        context.translateBy(x: -offsetX, y: offsetY)
-        context.setAlpha(opacity)
+        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
 
         context.setFillColor(color)
         let rect = CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2)
@@ -154,29 +119,14 @@ class Draw {
         context.restoreGState()
     }
 
-    static func image(context: CGContext, baseProps: BaseProps, imageProps: ImageProps) {
-        let x = baseProps.x
-        let y = baseProps.y
-        let rotation = baseProps.rotation
-        let opacity = baseProps.opacity
-        let scaleX = baseProps.scaleX
-        let scaleY = baseProps.scaleY
-        let anchorX = baseProps.anchorX
-        let anchorY = baseProps.anchorY
+    static func image(context: CGContext, baseProps: BaseProps, imageProps: ImageProps, parentOpacity: CGFloat) {
         let width = imageProps.width
         let height = imageProps.height
         let fileName = imageProps.fileName
 
-        let offsetX = (width / 2) * anchorX;
-        let offsetY = (height / 2) * anchorY;
-
         context.saveGState()
 
-        context.translateBy(x: x, y: y)
-        context.rotate(by: deg2rad(rotation))
-        context.scaleBy(x: scaleX, y: scaleY)
-        context.translateBy(x: -offsetX, y: offsetY)
-        context.setAlpha(opacity)
+        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
 
         guard let image = UIImage(named: fileName)
             else {
@@ -187,15 +137,7 @@ class Draw {
         context.restoreGState()
     }
 
-    static func spriteSheet(context: CGContext, baseProps: BaseProps, spriteSheetProps: SpriteSheetProps) {
-        let x = baseProps.x
-        let y = baseProps.y
-        let rotation = baseProps.rotation
-        let opacity = baseProps.opacity
-        let scaleX = baseProps.scaleX
-        let scaleY = baseProps.scaleY
-        let anchorX = baseProps.anchorX
-        let anchorY = baseProps.anchorY
+    static func spriteSheet(context: CGContext, baseProps: BaseProps, spriteSheetProps: SpriteSheetProps, parentOpacity: CGFloat) {
         let columns = spriteSheetProps.columns
         let rows = spriteSheetProps.rows
         let index = spriteSheetProps.index
@@ -203,16 +145,9 @@ class Draw {
         let height = spriteSheetProps.height
         let fileName = spriteSheetProps.fileName
 
-        let offsetX = (width / 2) * anchorX;
-        let offsetY = (height / 2) * anchorY;
-
         context.saveGState()
 
-        context.translateBy(x: x, y: y)
-        context.rotate(by: deg2rad(rotation))
-        context.scaleBy(x: scaleX, y: scaleY)
-        context.translateBy(x: -offsetX, y: offsetY)
-        context.setAlpha(opacity)
+        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
 
         guard let image = UIImage(named: fileName)
             else {
@@ -238,31 +173,5 @@ class Draw {
             .draw(in: CGRect(x: -width / 2, y: -width / 2, width: width, height: height))
 
         context.restoreGState()
-    }
-
-    private static func getPathSize(_ path: [CGPoint]) -> (CGFloat, CGFloat) {
-        if (path.count < 2) { return (0, 0) }
-
-        var minX = CGFloat(Int.max)
-        var maxX = -CGFloat(Int.max)
-        var minY = CGFloat(Int.max)
-        var maxY = -CGFloat(Int.max)
-
-        for point in path {
-            if (point.x > maxX) {
-                maxX = point.x
-            }
-            if (point.x < minX) {
-                minX = point.x
-            }
-            if (point.y > maxY) {
-                maxY = point.y
-            }
-            if (point.y < minY) {
-                minY = point.y
-            }
-        }
-
-        return (maxX - minX, maxY - minY)
     }
 }

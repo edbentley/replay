@@ -88,31 +88,19 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
   render({ state }) {
     return [
       t.text({
-        position: {
-          x: -100,
-          y: 0,
-          rotation: 0,
-        },
+        x: -100,
         font: { name: "serif", size: 22 },
         color: "red",
         text: "Test text",
       }),
       t.circle({
-        position: {
-          x: state.playerX,
-          y: 0,
-          rotation: 0,
-        },
+        x: state.playerX,
         radius: 10,
         color: "#0095DD",
       }),
       ...state.enemiesX.map((x) =>
         t.circle({
-          position: {
-            x,
-            y: 0,
-            rotation: 0,
-          },
+          x,
           radius: 10,
           color: "#0095DD",
         })

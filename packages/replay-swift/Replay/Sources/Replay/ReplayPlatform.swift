@@ -3,10 +3,24 @@ import JavaScriptCore
 
 // matches interface ReplayPlatform in replay-core
 @objc protocol ReplayPlatform : JSExport {
-    func getGetDevice() -> (ReplayPosition) -> iOSDevice
+    func getGetDevice() -> (GetLocalCoords) -> iOSDevice
 }
 
-typealias ReplayPosition = [AnyHashable: Any]?
+// A JS function to be called
+typealias GetLocalCoords = JSValue
+
+@objc protocol XYCoordsJS : JSExport {
+    var x: NSNumber { get set }
+    var y: NSNumber { get set }
+}
+@objc class XYCoords : NSObject, XYCoordsJS {
+    var x: NSNumber
+    var y: NSNumber
+    init(x: NSNumber, y: NSNumber) {
+        self.x = x
+        self.y = y
+    }
+}
 
 @objc protocol iOSDeviceJS : JSExport {
     var inputs: Inputs { get set }
@@ -94,25 +108,13 @@ typealias ReplayPosition = [AnyHashable: Any]?
 }
 @objc class Inputs : NSObject, InputsJS {
     var pointer: Pointer
-    init(pointer: Pointer, parentPosition: ReplayPosition) {
+    init(pointer: Pointer, getLocalCoords: GetLocalCoords) {
         self.pointer = pointer
+        
+        let localCoords = ReplayJS.callGetLocalCoords(getLocalCoords: getLocalCoords, coords: XYCoords(x: pointer.x, y: pointer.y))
 
-        guard let parentPosObj = parentPosition else { return }
-
-        // Need to convert point from absolute coordinates to sprite coordinates.
-        // This explains the equation: https://www.youtube.com/watch?v=AAx8JON4KeQ
-
-        let h = Double(truncating: parentPosObj["x"] as? NSNumber ?? 0)
-        let k = Double(truncating: parentPosObj["y"] as? NSNumber ?? 0)
-        let x = Double(truncating: pointer.x)
-        let y = Double(truncating: pointer.y)
-        let rotation = deg2rad(-Double(truncating: parentPosObj["rotation"] as? NSNumber ?? 0))
-
-        let pointerX = (x - h) * cos(rotation) + (y - k) * sin(rotation)
-        let pointerY = -(x - h) * sin(rotation) + (y - k) * cos(rotation)
-
-        self.pointer.x = NSNumber(value: pointerX)
-        self.pointer.y = NSNumber(value: pointerY)
+        self.pointer.x = localCoords.x
+        self.pointer.y = localCoords.y
     }
 }
 
