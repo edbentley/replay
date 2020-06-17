@@ -36,15 +36,15 @@ SemVer.
 # Bump versions
 npx lerna version --no-push --exact --no-git-tag-version
 
-# Need to manually update peer dependencies since lerna can't do that
-# You can grep for "@replay/core": "~0.1.0"
+# Need to manually update peer dependencies and docs since lerna can't do that
+# You can grep for previous version number "0.x.0"
 
 # Then commit
 git add .
-git commit -m "v0.1.0"
+git commit -m "v0.x.0"
 
 # Add the tag
-git tag v0.1.0
+git tag v0.x.0
 
 # Push to remote
 git push

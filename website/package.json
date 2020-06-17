@@ -1,6 +1,6 @@
 {
   "name": "website",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "start": "docusaurus start",
@@ -11,9 +11,9 @@
   "dependencies": {
     "@docusaurus/core": "^2.0.0-alpha.54",
     "@docusaurus/preset-classic": "^2.0.0-alpha.54",
-    "@replay/core": "0.1.1",
-    "@replay/swift": "0.1.1",
-    "@replay/web": "0.1.1",
+    "@replay/core": "0.2.0",
+    "@replay/swift": "0.2.0",
+    "@replay/web": "0.2.0",
     "classnames": "^2.2.6",
     "react": "^16.8.4",
     "react-dom": "^16.8.4"
@@ -31,7 +31,7 @@
     ]
   },
   "devDependencies": {
-    "@replay/test": "0.1.1",
+    "@replay/test": "0.2.0",
     "raw-loader": "^4.0.1"
   }
 }

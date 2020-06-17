@@ -1,6 +1,6 @@
 {
   "name": "@replay/web",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A cross-platform JS game engine inspired by React (web)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -26,10 +26,10 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "@replay/core": "~0.1.1"
+    "@replay/core": "~0.2.0"
   },
   "devDependencies": {
-    "@replay/core": "0.1.1",
+    "@replay/core": "0.2.0",
     "jest": "^25.4.0",
     "typescript": "^3.8.3",
     "webpack": "^4.43.0",
