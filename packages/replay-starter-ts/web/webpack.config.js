@@ -11,8 +11,13 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
-        use: "ts-loader",
+        test: /\.ts?$/,
+        use: [
+          {
+            loader: "ts-loader",
+            options: { reportFiles: ["!**/*.test.ts"] },
+          },
+        ],
         exclude: /node_modules/,
       },
     ],
