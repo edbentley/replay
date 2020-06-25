@@ -134,7 +134,7 @@ export function renderCanvas<S>(
       x > deviceSize.width / 2 + deviceSize.widthMargin ||
       x < -deviceSize.width / 2 - deviceSize.widthMargin ||
       y > deviceSize.height / 2 + deviceSize.heightMargin ||
-      y < -deviceSize.height / 2 + deviceSize.heightMargin;
+      y < -deviceSize.height / 2 - deviceSize.heightMargin;
 
     pointerDown = (e: PointerEvent) => {
       const x = getX(e);
