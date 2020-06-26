@@ -7,5 +7,10 @@
   {
     "name": "Skwish",
     "link": "https://pawprints.itch.io/skwish"
+  },
+  {
+    "name": "Sloops",
+    "link": "https://jovial-hamilton-be7838.netlify.app",
+    "source": "https://github.com/pajicv/sloops"
   }
 ]
