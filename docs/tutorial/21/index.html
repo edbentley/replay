@@ -21,27 +21,27 @@
 <link rel="stylesheet" href="/styles.b3d2797d.css">
 
 
-<link rel="preload" href="/styles.faa60459.js" as="script">
+<link rel="preload" href="/styles.4b6e06bc.js" as="script">
 
-<link rel="preload" href="/runtime~main.97d63c71.js" as="script">
+<link rel="preload" href="/runtime~main.bbc7168d.js" as="script">
 
-<link rel="preload" href="/main.2b6c508d.js" as="script">
+<link rel="preload" href="/main.c719f1d3.js" as="script">
 
-<link rel="preload" href="/1.6a280fee.js" as="script">
+<link rel="preload" href="/1.86419163.js" as="script">
 
-<link rel="preload" href="/2.29085c43.js" as="script">
+<link rel="preload" href="/2.8146533f.js" as="script">
 
-<link rel="preload" href="/4.0771ff37.js" as="script">
+<link rel="preload" href="/4.f35b9d0b.js" as="script">
 
-<link rel="preload" href="/1be78505.ebd1248c.js" as="script">
+<link rel="preload" href="/1be78505.bb8b4c93.js" as="script">
 
 <link rel="preload" href="/20ac7829.43b0cefb.js" as="script">
 
-<link rel="preload" href="/17896441.d79e1d90.js" as="script">
+<link rel="preload" href="/17896441.e9809978.js" as="script">
 
-<link rel="preload" href="/3.315af39a.js" as="script">
+<link rel="preload" href="/3.ae7de1f6.js" as="script">
 
-<link rel="preload" href="/ccaa2ff1.1f7a1b40.js" as="script">
+<link rel="preload" href="/ccaa2ff1.068a90ea.js" as="script">
 
 </head>
 <body>
@@ -50,27 +50,27 @@
 <nav class="navbar navbar--light navbar--fixed-top"><div class="navbar__inner"><div class="navbar__items"><div aria-label="Navigation bar toggle" class="navbar__toggle" role="button" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30" role="img" focusable="false"><title>Menu</title><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></div><a class="navbar__brand" href="/"><img class="navbar__logo" src="/img/logo.svg" alt="Replay Logo"></a><a class="navbar__item navbar__link" href="/tutorial">Tutorial</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/docs/intro">Docs</a><a class="navbar__item navbar__link" href="/blog">Blog</a><a class="navbar__item navbar__link" href="/games">Games</a></div><div class="navbar__items navbar__items--right"><a target="_blank" rel="noopener noreferrer" href="https://github.com/edbentley/replay" class="navbar__item navbar__link">GitHub</a></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div><div class="navbar-sidebar"><div class="navbar-sidebar__brand"><a class="navbar__brand" href="/"><img class="navbar__logo" src="/img/logo.svg" alt="Replay Logo"></a></div><div class="navbar-sidebar__items"><div class="menu"><ul class="menu__list"><li class="menu__list-item"><a class="menu__link" position="left" href="/tutorial">Tutorial</a></li><li class="menu__list-item"><a aria-current="page" class="menu__link navbar__link--active" position="left" href="/docs/intro">Docs</a></li><li class="menu__list-item"><a class="menu__link" position="left" href="/blog">Blog</a></li><li class="menu__list-item"><a class="menu__link" position="left" href="/games">Games</a></li><li class="menu__list-item"><a target="_blank" rel="noopener noreferrer" href="https://github.com/edbentley/replay" class="menu__link" position="right">GitHub</a></li></ul></div></div></div></nav><div class="main-wrapper"><div class="docPage_1kjD"><main class="docMainContainer_FFX1"><div class="container padding-vert--lg docItemWrapper_1cc7"><div class="row"><div class="col docItemCol_2GOA"><div class="docItemContainer_2cwg"><article><header><h1 class="docTitle_1vWb">21</h1></header><div class="markdown"><h1><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_ZqCz" id="21---gameplay-test"></a><a aria-hidden="true" tabindex="-1" class="hash-link" href="#21---gameplay-test" title="Direct link to heading">#</a>21 - Gameplay Test</h1><p>Let&#x27;s expand our test to play the game. We&#x27;re going to check the bird can fly past 2 pipes, then crash into one, ending up with a score of <code>2</code>.</p><p>We pass an <code>initRandom</code> field into <code>testSprite</code>. This ensures <code>device.random()</code> calls always produce the same result, in this case <code>0.5</code>, then <code>0.5</code>, then <code>0</code>. With this we can ensure our bird knows what height to fly at.</p><p>We create a function <code>keepBirdInMiddle</code> which is going to keep clicking the screen when the bird&#x27;s <code>y</code> position is too low, to keep the bird jumping at the right height.</p><p>We can access the bird Texture through the <code>getTexture(&quot;bird&quot;)</code> call in order to read its <code>y</code> value. Here <code>&quot;bird&quot;</code> is the <code>testId</code> <code>prop</code> which we need to pass into the <code>t.image</code> Texture in our <code>Bird</code> Sprite. The <code>testId</code> prop can be passed into any Texture to reference it in a test.</p><p>We loop through the game&#x27;s frames with <code>jumpToFrame</code>, which will keep running until a condition returns either a Texture or <code>true</code>. When that exits (bird hit a pipe!) we confirm the score shows as expected.</p><p>Lastly we can even confirm the sound effect played as expected after we crashed.</p></div></article><div class="margin-vert--xl"><div class="row"><div class="col"><a href="https://github.com/edbentley/replay/edit/master/website/docs/tutorial/21.md" target="_blank" rel="noreferrer noopener"><svg fill="currentColor" height="1.2em" width="1.2em" preserveAspectRatio="xMidYMid meet" viewBox="0 0 40 40" style="margin-right:0.3em;vertical-align:sub"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div></div></div><div class="margin-vert--lg"><nav class="pagination-nav"><div class="pagination-nav__item"></div><div class="pagination-nav__item pagination-nav__item--next"></div></nav></div></div></div><div class="col col--3"><div class="tableOfContents_TbNY"></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container"><div class="row footer__links"><div class="col footer__col"><h4 class="footer__title">Learn</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/tutorial">Tutorial</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/intro">Docs</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Channels</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://github.com/edbentley/replay">GitHub</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://twitter.com/ReplayEngine">Twitter</a></li><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="https://stackoverflow.com/questions/tagged/replayjs">Stack Overflow</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">More</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/blog">Blog</a></li><li class="footer__item"><a class="footer__link-item" href="/games">Games</a></li></ul></div></div><div class="text--center"><div></div></div></div></footer>
 </div>
 
-<script src="/styles.faa60459.js"></script>
+<script src="/styles.4b6e06bc.js"></script>
 
-<script src="/runtime~main.97d63c71.js"></script>
+<script src="/runtime~main.bbc7168d.js"></script>
 
-<script src="/main.2b6c508d.js"></script>
+<script src="/main.c719f1d3.js"></script>
 
-<script src="/1.6a280fee.js"></script>
+<script src="/1.86419163.js"></script>
 
-<script src="/2.29085c43.js"></script>
+<script src="/2.8146533f.js"></script>
 
-<script src="/4.0771ff37.js"></script>
+<script src="/4.f35b9d0b.js"></script>
 
-<script src="/1be78505.ebd1248c.js"></script>
+<script src="/1be78505.bb8b4c93.js"></script>
 
 <script src="/20ac7829.43b0cefb.js"></script>
 
-<script src="/17896441.d79e1d90.js"></script>
+<script src="/17896441.e9809978.js"></script>
 
-<script src="/3.315af39a.js"></script>
+<script src="/3.ae7de1f6.js"></script>
 
-<script src="/ccaa2ff1.1f7a1b40.js"></script>
+<script src="/ccaa2ff1.068a90ea.js"></script>
 
 
 </body>
