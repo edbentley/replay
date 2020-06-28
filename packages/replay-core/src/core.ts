@@ -85,6 +85,11 @@ declare const game: {
   gameProps: GameProps;
 };
 
+declare let __REPLAY_DEVTOOLS_GLOBAL_HOOK__: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  state: SpriteContainer<GameProps, unknown, any>
+}
+
 export function replayCore<S, I>(
   platform: ReplayPlatform<I>,
   gameSpriteArg?: CustomSprite<GameProps, S, I>,
@@ -129,6 +134,10 @@ export function replayCore<S, I>(
       const getDevice = platform.getGetDevice();
       const device = getDevice(globalToGameCoords);
       const renderMethod = getRenderMethod(device.size, gameSize);
+      const devtoolsHookInstalled = typeof __REPLAY_DEVTOOLS_GLOBAL_HOOK__ !== 'undefined';
+      if (devtoolsHookInstalled) {
+        __REPLAY_DEVTOOLS_GLOBAL_HOOK__.state = gameContainer;
+      }
       return traverseSpriteContainer<GameProps, I>(
         gameContainer,
         gameSprite.props,
