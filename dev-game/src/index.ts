@@ -2,12 +2,14 @@ import { GameProps, t, makeSprite } from "../../packages/replay-core/src";
 import { WebInputs } from "../../packages/replay-web/src";
 import { iOSInputs } from "../../packages/replay-swift";
 import { PlayStage } from "./PlayStage";
+import { TextInput } from "../../packages/replay-text-input/src";
 
 interface State {
   stage: GameStage;
   bulletSpeed: number;
   gameOverText: string;
   highScore: number;
+  text: string;
 }
 
 enum GameStage {
@@ -20,6 +22,7 @@ const initState: Omit<State, "highScore"> = {
   stage: GameStage.Query,
   bulletSpeed: 0, // updated in query
   gameOverText: "",
+  text: "Hello",
 };
 
 export const gameProps: GameProps = {
@@ -78,6 +81,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
         stage: GameStage.Play,
         bulletSpeed: state.bulletSpeed,
         highScore: state.highScore,
+        text: state.text,
       };
     }
 
@@ -92,6 +96,21 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
   },
 
   render({ state, updateState, device }) {
+    const input = TextInput({
+      id: "TestInput",
+      fontName: "Calibri",
+      fontSize: 20,
+      text: state.text,
+      onChangeText: (text) => {
+        if (state.stage === GameStage.Play) {
+          updateState((s) => ({ ...s, text }));
+        }
+      },
+      width: 200,
+      x: -device.size.width / 2 + 100,
+      y: device.size.height / 2 - 20,
+      numberOfLines: 1,
+    });
     switch (state.stage) {
       case GameStage.Query:
         return [
@@ -107,6 +126,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
             text: state.gameOverText,
             scaleX: 0.8,
           }),
+          input,
         ];
       case GameStage.Play:
         return [
@@ -126,6 +146,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
             },
             highScore: state.highScore,
           }),
+          input,
         ];
     }
   },
