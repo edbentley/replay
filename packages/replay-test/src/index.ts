@@ -330,7 +330,7 @@ export function testSprite<P, S, I>(
    * pass and condition not met / still errors.
    */
   function jumpToFrame(condition: () => boolean | Texture) {
-    let lastError: Error | null = null;
+    let lastErrorMsg: string | null = null;
 
     for (let i = 0; i < 60000; i++) {
       nextFrame();
@@ -339,16 +339,18 @@ export function testSprite<P, S, I>(
           return;
         }
       } catch (e) {
-        lastError = e;
+        lastErrorMsg = (e as Error)?.message;
         // continue trying
       }
     }
 
-    if (lastError) {
-      throw lastError;
+    if (lastErrorMsg) {
+      throw Error(
+        `Timeout of 1000 gameplay seconds reached on jumpToFrame with error:\n\n${lastErrorMsg}`
+      );
+    } else {
+      throw Error("Timeout of 1000 gameplay seconds reached on jumpToFrame");
     }
-
-    throw Error("Timeout of 1000 gameplay seconds reached on jumpToFrame");
   }
 
   function getTextures() {

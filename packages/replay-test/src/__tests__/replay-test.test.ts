@@ -366,7 +366,7 @@ test("jumpToFrame throws last error", () => {
   });
 
   expect(() => jumpToFrame(() => getTexture("i-dont-exist"))).toThrowError(
-    `No textures found with test id "i-dont-exist"`
+    `Timeout of 1000 gameplay seconds reached on jumpToFrame with error:\n\nNo textures found with test id "i-dont-exist"`
   );
 });
 
