@@ -360,6 +360,16 @@ test("can get global position and rotation of deeply nested textures", () => {
   expect(textures[0].props.rotation).toBe(0);
 });
 
+test("jumpToFrame throws last error", () => {
+  const { jumpToFrame, getTexture } = testSprite(Game(gameProps), gameProps, {
+    initInputs: {},
+  });
+
+  expect(() => jumpToFrame(() => getTexture("i-dont-exist"))).toThrowError(
+    `No textures found with test id "i-dont-exist"`
+  );
+});
+
 // --- Mock Game
 
 interface State {
