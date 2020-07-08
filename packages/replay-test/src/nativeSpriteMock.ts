@@ -5,7 +5,7 @@ import { NativeSpriteImplementation } from "@replay/core";
  * replay-test platform.
  */
 export const NativeSpriteMock: NativeSpriteImplementation<{}, {}> = {
-  init: () => {
+  create: () => {
     return {};
   },
   loop: ({ state }) => {

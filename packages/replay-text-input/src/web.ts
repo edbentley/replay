@@ -15,7 +15,7 @@ export const TextInputWeb: NativeSpriteImplementation<
   TextInputProps,
   TextInputState
 > = {
-  init: ({ props, parentGlobalId, getState, updateState, utils }) => {
+  create: ({ props, parentGlobalId, getState, updateState, utils }) => {
     const domId = `${parentGlobalId}--${props.id}`;
 
     let inputElement;
@@ -41,7 +41,7 @@ export const TextInputWeb: NativeSpriteImplementation<
       const selectionEnd = thisInput.selectionEnd;
 
       // Store previous cursor position
-      updateState((s) => ({ ...s, selectionEnd }));
+      updateState({ selectionEnd });
 
       const state = getState();
 

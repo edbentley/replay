@@ -15,6 +15,8 @@
 		2BBA143E2451AA7D00C68FAD /* Replay in Frameworks */ = {isa = PBXBuildFile; productRef = 2BBA143D2451AA7D00C68FAD /* Replay */; };
 		2BBA14402451FE5300C68FAD /* game.js in Resources */ = {isa = PBXBuildFile; fileRef = 2BBA143F2451FE5300C68FAD /* game.js */; };
 		2BBA1444245358F800C68FAD /* shoot.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2BBA1443245358F800C68FAD /* shoot.wav */; };
+		6498DAF624AF96EE007A5A9F /* ReplayTextInput in Resources */ = {isa = PBXBuildFile; fileRef = 6498DAF524AF96ED007A5A9F /* ReplayTextInput */; };
+		6498DAF824AF97B6007A5A9F /* ReplayTextInput in Frameworks */ = {isa = PBXBuildFile; productRef = 6498DAF724AF97B6007A5A9F /* ReplayTextInput */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +30,7 @@
 		2BBA143B2451A8A500C68FAD /* Replay */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Replay; path = "../../packages/replay-swift/Replay"; sourceTree = "<group>"; };
 		2BBA143F2451FE5300C68FAD /* game.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = game.js; sourceTree = "<group>"; };
 		2BBA1443245358F800C68FAD /* shoot.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = shoot.wav; path = ../../assets/audio/shoot.wav; sourceTree = "<group>"; };
+		6498DAF524AF96ED007A5A9F /* ReplayTextInput */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ReplayTextInput; path = "../../packages/replay-text-input/ReplayTextInput"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,6 +39,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2BBA143E2451AA7D00C68FAD /* Replay in Frameworks */,
+				6498DAF824AF97B6007A5A9F /* ReplayTextInput in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -45,6 +49,7 @@
 		2BBA141B24519F9D00C68FAD = {
 			isa = PBXGroup;
 			children = (
+				6498DAF524AF96ED007A5A9F /* ReplayTextInput */,
 				2BBA143B2451A8A500C68FAD /* Replay */,
 				2BBA142624519F9D00C68FAD /* dev-game */,
 				2BBA142524519F9D00C68FAD /* Products */,
@@ -108,6 +113,7 @@
 			name = "dev-game";
 			packageProductDependencies = (
 				2BBA143D2451AA7D00C68FAD /* Replay */,
+				6498DAF724AF97B6007A5A9F /* ReplayTextInput */,
 			);
 			productName = "dev-game";
 			productReference = 2BBA142424519F9D00C68FAD /* dev-game.app */;
@@ -156,6 +162,7 @@
 				2BBA143124519F9E00C68FAD /* Preview Assets.xcassets in Resources */,
 				2BBA1444245358F800C68FAD /* shoot.wav in Resources */,
 				2BBA142E24519F9E00C68FAD /* Assets.xcassets in Resources */,
+				6498DAF624AF96EE007A5A9F /* ReplayTextInput in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -305,7 +312,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"dev-game/Preview Content\"";
-				DEVELOPMENT_TEAM = V4C6C6LR83;
+				DEVELOPMENT_TEAM = KK56C386H8;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = "dev-game/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -325,7 +332,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"dev-game/Preview Content\"";
-				DEVELOPMENT_TEAM = V4C6C6LR83;
+				DEVELOPMENT_TEAM = KK56C386H8;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = "dev-game/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -366,6 +373,10 @@
 		2BBA143D2451AA7D00C68FAD /* Replay */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Replay;
+		};
+		6498DAF724AF97B6007A5A9F /* ReplayTextInput */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ReplayTextInput;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

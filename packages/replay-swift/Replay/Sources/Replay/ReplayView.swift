@@ -1,6 +1,6 @@
 import UIKit
 
-class ReplayView: UIView, ReplayPlatform {
+public class ReplayView: UIView, ReplayPlatform {
     var touchDown = false
     var touchJustDown = false
     var touchJustReleased = false
@@ -22,6 +22,7 @@ class ReplayView: UIView, ReplayPlatform {
     
     init(
         frame: CGRect,
+        nativeSpriteMap: ReplayNativeSpriteMap? = nil,
         gameJsString: String? = nil,
         mockSession: ReplayNetworkSession? = nil,
         mockRandom: Double? = nil,
@@ -61,7 +62,8 @@ class ReplayView: UIView, ReplayPlatform {
         let (initTextures, getNextFrameTextures) = ReplayJS.getTextures(
             platform: self,
             replayJsRuntime: replayJsRuntime,
-            deviceSize: deviceSize
+            deviceSize: deviceSize,
+            nativeSpriteMap: nativeSpriteMap ?? [:]
         )
         self.getNextFrameTextures = getNextFrameTextures
         self.spriteTextures = initTextures
@@ -105,19 +107,19 @@ extension ReplayView {
 
 // --- Touch Events
 extension ReplayView {
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for t in touches { self.touchDown(atPoint: t.location(in: self)) }
     }
     
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+    public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         for t in touches { self.touchMoved(toPoint: t.location(in: self)) }
     }
     
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         for t in touches { self.touchUp(atPoint: t.location(in: self)) }
     }
     
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+    public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         for t in touches { self.touchUp(atPoint: t.location(in: self)) }
     }
     
@@ -171,7 +173,7 @@ extension ReplayView {
 
 // -- Rendering
 extension ReplayView {
-    override func draw(_ rect: CGRect) {
+    public override func draw(_ rect: CGRect) {
         guard let context = UIGraphicsGetCurrentContext() else { return }
         
         drawSpriteTextures(context: context, currSpriteTexures: spriteTextures)

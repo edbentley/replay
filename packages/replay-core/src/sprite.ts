@@ -155,11 +155,11 @@ export type NativeSprite<P> = {
 };
 
 export type NativeSpriteImplementation<P, S> = {
-  init: (params: {
+  create: (params: {
     props: P;
     parentGlobalId: string;
     getState: () => S;
-    updateState: (update: (state: S) => S) => void;
+    updateState: (mergeState: Partial<S>) => void;
     utils: NativeSpriteUtils;
   }) => S;
   loop: (params: {

@@ -79,7 +79,8 @@ class ReplayJS {
     static func getTextures(
         platform: ReplayPlatform,
         replayJsRuntime context: ReplayJsRuntime,
-        deviceSize: DeviceSize
+        deviceSize: DeviceSize,
+        nativeSpriteMap: ReplayNativeSpriteMap
     ) -> (ReplaySpriteTextures, (Double) -> ReplaySpriteTextures) {
         
         // Set variable 'replay' in JS context
@@ -90,8 +91,13 @@ class ReplayJS {
             .objectForKeyedSubscript("replay")!
             .objectForKeyedSubscript("replayCore")!
         
-        let replayCoreReturnObj = replayCore.call(withArguments: [platform])!
-                
+        let nativeSpriteSettings = NativeSpriteSettings(
+            nativeSpriteMap: nativeSpriteMap,
+            deviceSize: deviceSize
+        )
+        
+        let replayCoreReturnObj = replayCore.call(withArguments: [platform, nativeSpriteSettings])!
+        
         let initTexturesParsed = parseTextures(
             replayCoreReturnObj.objectForKeyedSubscript("initTextures")!.toDictionary()!,
             deviceSize: deviceSize,

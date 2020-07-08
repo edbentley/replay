@@ -225,14 +225,15 @@ function traverseCustomSpriteContainer<P, I>(
           // Create a native container
           lookupNativeSpriteContainer = {
             type: "native",
-            state: nativeSpriteImplementation.init({
+            state: nativeSpriteImplementation.create({
               props: sprite.props,
               parentGlobalId,
               getState: () => lookupNativeSpriteContainer.state,
-              updateState: (update) => {
-                lookupNativeSpriteContainer.state = update(
-                  lookupNativeSpriteContainer.state
-                );
+              updateState: (mergeState) => {
+                lookupNativeSpriteContainer.state = {
+                  ...lookupNativeSpriteContainer.state,
+                  ...mergeState,
+                };
               },
               utils: nativeSpriteUtils,
             }),
@@ -467,7 +468,8 @@ type CustomSpriteContainer<P, S, I> = {
   type: "custom";
   state: S;
   childContainers: {
-    [id: string]: SpriteContainer<unknown, unknown, I>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [id: string]: SpriteContainer<unknown, any, I>;
   };
   prevTime: number;
   currentLag: number;

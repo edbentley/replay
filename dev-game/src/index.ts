@@ -106,10 +106,12 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
           updateState((s) => ({ ...s, text }));
         }
       },
-      width: 200,
+      width: 100,
       x: -device.size.width / 2 + 100,
       y: device.size.height / 2 - 20,
-      numberOfLines: 1,
+      numberOfLines: 3,
+      align: "left",
+      color: "red",
     });
     switch (state.stage) {
       case GameStage.Query:
