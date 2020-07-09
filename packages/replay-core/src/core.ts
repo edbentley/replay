@@ -296,19 +296,26 @@ function traverseCustomSpriteContainer<P, I>(
     })
     .filter(isNotNull);
 
-  // Clean up removed sprites
-  Object.keys(customSpriteContainer.childContainers).forEach((id) => {
-    if (!childIds.includes(id)) {
-      const spriteContainer = customSpriteContainer.childContainers[id];
-      if (spriteContainer.type === "native") {
-        spriteContainer.cleanup({
-          state: spriteContainer.state,
-          parentGlobalId,
-        });
+  // Recursively clean up removed sprites
+  const cleanupSpriteContainers = (
+    spriteContainers: CustomSpriteContainer<P, unknown, I>["childContainers"]
+  ) => {
+    Object.keys(spriteContainers).forEach((id) => {
+      if (!childIds.includes(id)) {
+        const spriteContainer = spriteContainers[id];
+        if (spriteContainer.type === "native") {
+          spriteContainer.cleanup({
+            state: spriteContainer.state,
+            parentGlobalId,
+          });
+        } else {
+          cleanupSpriteContainers(spriteContainer.childContainers);
+        }
+        delete spriteContainers[id];
       }
-      delete customSpriteContainer.childContainers[id];
-    }
-  });
+    });
+  };
+  cleanupSpriteContainers(customSpriteContainer.childContainers);
 
   return {
     id: spriteProps.id,
@@ -488,7 +495,7 @@ type NativeSpriteContainer<P, S> = {
   cleanup: (params: { state: S; parentGlobalId: string }) => void;
 };
 
-type NativeSpriteSettings = {
+export type NativeSpriteSettings = {
   /**
    * A map of Native Sprite names and their platform's implementation
    */
