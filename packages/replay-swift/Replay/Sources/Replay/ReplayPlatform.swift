@@ -205,7 +205,7 @@ typealias GetLocalCoords = JSValue
             session.fetchAsync(
                 path: url,
                 method: .POST,
-                jsonBody: body as? JsonData,
+                jsonBody: body as? ReplayJsonData,
                 onComplete: { callback.call(withArguments: [$0]) }
             )
         }
@@ -213,7 +213,7 @@ typealias GetLocalCoords = JSValue
             session.fetchAsync(
                 path: url,
                 method: .PUT,
-                jsonBody: body as? JsonData,
+                jsonBody: body as? ReplayJsonData,
                 onComplete: { callback.call(withArguments: [$0]) }
             )
         }
@@ -241,7 +241,7 @@ typealias GetLocalCoords = JSValue
             return provider.getStore() as NSDictionary
         }
         setStore = { store in
-            guard let validStore = store as? Store else { fatalError("Set invalid store") }
+            guard let validStore = store as? ReplayStore else { fatalError("Set invalid store") }
             provider.setStore(validStore)
         }
     }

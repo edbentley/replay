@@ -1,17 +1,17 @@
 import Foundation
 
-typealias Store = [String: String?]
+public typealias ReplayStore = [String: String?]
 
-protocol ReplayStorageProvider {
-    func setStore(_ store: Store) -> Void
-    func getStore() -> Store
+public protocol ReplayStorageProvider {
+    func setStore(_ store: ReplayStore) -> Void
+    func getStore() -> ReplayStore
 }
 
 class StorageProvider: ReplayStorageProvider {
-    func getStore() -> Store {
+    func getStore() -> ReplayStore {
         let defaults = UserDefaults.standard
 
-        var store = Store()
+        var store = ReplayStore()
 
         for (key, value) in defaults.dictionaryRepresentation() {
             if let valueStr = value as? String {
@@ -22,7 +22,7 @@ class StorageProvider: ReplayStorageProvider {
         return store
     }
 
-    func setStore(_ store: Store) {
+    func setStore(_ store: ReplayStore) {
         let defaults = UserDefaults.standard
 
         for (key, value) in store {

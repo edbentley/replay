@@ -1,1 +1,1 @@
-typealias ReplayLogger = @convention(block) (String) -> Void
+public typealias ReplayLogger = @convention(block) (String) -> Void

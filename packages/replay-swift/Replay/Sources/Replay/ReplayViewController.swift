@@ -1,7 +1,7 @@
 import UIKit
 
 // Allow access to view from Native Sprites
-public var replayViewGlobal: ReplayView!
+public var replayViewGlobal: ReplayView?
 
 public class ReplayViewController: UIViewController {
     var hideStatusBar: Bool
@@ -41,14 +41,16 @@ public class ReplayViewController: UIViewController {
 class TopView: UIView {
     init(frame: CGRect, nativeSpriteMap: ReplayNativeSpriteMap) {
         super.init(frame: frame)
-        replayViewGlobal = ReplayView(frame: frame, nativeSpriteMap: nativeSpriteMap)
+        let view = ReplayView(frame: frame, nativeSpriteMap: nativeSpriteMap)
+        
+        replayViewGlobal = view
         
         // center view
-        replayViewGlobal.transform = CGAffineTransform(translationX: replayViewGlobal.gameViewSize.offset.x, y: replayViewGlobal.gameViewSize.offset.y)
+        view.transform = CGAffineTransform(translationX: view.gameViewSize.offset.x, y: view.gameViewSize.offset.y)
             // scale to device
-            .concatenating(CGAffineTransform(scaleX: replayViewGlobal.gameViewSize.scale, y: replayViewGlobal.gameViewSize.scale))
+            .concatenating(CGAffineTransform(scaleX: view.gameViewSize.scale, y: view.gameViewSize.scale))
         
-        self.addSubview(replayViewGlobal)
+        self.addSubview(view)
     }
     
     required init?(coder: NSCoder) {

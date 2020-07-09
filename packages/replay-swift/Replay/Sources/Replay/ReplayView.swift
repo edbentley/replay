@@ -20,7 +20,7 @@ public class ReplayView: UIView, ReplayPlatform {
     var getNextFrameTextures: ((Double) -> ReplaySpriteTextures)!
     var initTime: CFTimeInterval?
     
-    init(
+    public init(
         frame: CGRect,
         nativeSpriteMap: ReplayNativeSpriteMap? = nil,
         gameJsString: String? = nil,
@@ -123,17 +123,17 @@ extension ReplayView {
         for t in touches { self.touchUp(atPoint: t.location(in: self)) }
     }
     
-    func touchDown(atPoint pos : CGPoint) {
+    public func touchDown(atPoint pos : CGPoint) {
         touchJustDown = true
         touchDown = true
         touchPos = pos
     }
     
-    func touchMoved(toPoint pos : CGPoint) {
+    public func touchMoved(toPoint pos : CGPoint) {
         touchPos = pos
     }
     
-    func touchUp(atPoint pos : CGPoint) {
+    public func touchUp(atPoint pos : CGPoint) {
         touchJustDown = false
         touchDown = false
         touchJustReleased = true

@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "build": "rm -rf dist/ && tsc -p ./tsconfig.json",
-    "test": "jest",
+    "build-swift-test": "webpack --config webpack.swift.js",
+    "test": "jest && npm run build-swift-test && ./swift-tests.sh",
     "test:watch": "jest --watch"
   },
   "author": "Ed Bentley",
@@ -27,7 +28,11 @@
   },
   "devDependencies": {
     "@replay/core": "0.2.0",
+    "@replay/swift": "0.2.0",
+    "@replay/web": "0.2.0",
     "jest": "^25.4.0",
-    "typescript": "^3.8.3"
+    "typescript": "^3.8.3",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12"
   }
 }

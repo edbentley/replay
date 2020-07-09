@@ -25,7 +25,8 @@ var textFieldMap: [String: (UITextFieldOrView, TextFieldDelegate)] = [:]
             let textView = UITextView()
             textView.delegate = textFieldDelegate
             
-            replayViewGlobal.addSubview(textView)
+            Utils.addToView(textView)
+            
             textFieldOrView = .textView(textView)
         } else {
             // Single-line
@@ -33,7 +34,8 @@ var textFieldMap: [String: (UITextFieldOrView, TextFieldDelegate)] = [:]
             textField.delegate = textFieldDelegate
             textField.contentVerticalAlignment = UIControl.ContentVerticalAlignment.center
             
-            replayViewGlobal.addSubview(textField)
+            Utils.addToView(textField)
+            
             textFieldOrView = .textField(textField)
         }
         
@@ -76,7 +78,7 @@ var textFieldMap: [String: (UITextFieldOrView, TextFieldDelegate)] = [:]
         ]
         let prevStoredProps = args.state.forProperty("storedProps")!.toDictionary()!
         let textFieldMapId = args.state.forProperty("textFieldMapId")!.toString()!
-        let caretPosition = args.state.forProperty("caretPosition")?.toInt32()
+        let caretPosition = Utils.parseOptionalField(args.state, key: "caretPosition")?.toInt32()
         
         if !NSDictionary(dictionary: storedProps).isEqual(to: prevStoredProps) {
             let (textFieldOrView, _) = textFieldMap[textFieldMapId]!
@@ -186,9 +188,9 @@ class Utils {
         let fontSize = propsObj.forProperty("fontSize")!.toNumber()!
         let text = propsObj.forProperty("text")!.toString()!
         let onChangeText = propsObj.forProperty("onChangeText")!
-        let numberOfLines = propsObj.forProperty("numberOfLines")?.toNumber() ?? 1
+        let numberOfLines = parseOptionalField(propsObj, key: "numberOfLines")?.toNumber() ?? 1
         
-        let alignString = propsObj.forProperty("align")?.toString() ?? "center"
+        let alignString = parseOptionalField(propsObj, key: "align")?.toString() ?? "center"
         let align: TextAlign
         switch alignString {
         case "left": align = .left
@@ -197,10 +199,11 @@ class Utils {
         default: fatalError("Unimplemented text align \(alignString)")
         }
         
-        let color = propsObj.forProperty("color")?.toString() ?? "black"
+        let color = parseOptionalField(propsObj, key: "color")?.toString() ?? "black"
         let width = propsObj.forProperty("width")!.toNumber()!
-        let x = propsObj.forProperty("x")?.toNumber() ?? 0
-        let y = propsObj.forProperty("y")?.toNumber() ?? 0
+        
+        let x = parseOptionalField(propsObj, key: "x")?.toNumber() ?? 0
+        let y = parseOptionalField(propsObj, key: "y")?.toNumber() ?? 0
         
         return Props(
             id: id,
@@ -217,6 +220,20 @@ class Utils {
             x: CGFloat(truncating: x),
             y: CGFloat(truncating: y)
         )
+    }
+    
+    // Use this to avoid "undefined" being returned
+    static func parseOptionalField(_ object: JSValue, key: String) -> JSValue? {
+        if !object.hasProperty(key) {
+            return nil
+        }
+        let value = object.forProperty(key)
+        if let val = value {
+            if val.isUndefined {
+                return nil
+            }
+        }
+        return value
     }
     
     static func updateTextFieldOrView(textFieldOrView: UITextFieldOrView, props: Props, caretPosition: Int32?, utils: ReplayNativeSpriteUtilsJS) {
@@ -277,6 +294,18 @@ class Utils {
         if let caretPosition = caretPosition,
             let textPosition = textView.position(from: textView.beginningOfDocument, offset: Int(caretPosition)) {
             textView.selectedTextRange = textView.textRange(from: textPosition, to: textPosition)
+        }
+    }
+    
+    // If we have an input on the first frame, the view isn't initialised yet,
+    // so we defer until it's ready
+    static func addToView(_ textInput: UIView) {
+        if let view = replayViewGlobal {
+            view.addSubview(textInput)
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                addToView(textInput)
+            }
         }
     }
     
