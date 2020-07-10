@@ -1,4 +1,10 @@
-import { t, makeSprite, GameProps } from "@replay/core";
+import {
+  t,
+  makeSprite,
+  GameProps,
+  makeNativeSprite,
+  NativeSpriteImplementation,
+} from "@replay/core";
 import { WebInputs as Inputs } from "..";
 
 export const testGameProps: GameProps = {
@@ -173,6 +179,40 @@ export const TestGameThrowImageError = makeSprite<GameProps>({
     ];
   },
 });
+
+export const TestGameWithNativeSprite = makeSprite<
+  GameProps,
+  undefined,
+  Inputs
+>({
+  render({ device }) {
+    if (device.inputs.pointer.pressed) {
+      return [];
+    }
+    return [TestNativeSprite({ id: "test" })];
+  },
+});
+
+type TestNativeSpriteProps = { id: string };
+const TestNativeSprite = makeNativeSprite<TestNativeSpriteProps>(
+  "TestNativeSprite"
+);
+export const TestNativeSpriteWeb: NativeSpriteImplementation<
+  TestNativeSpriteProps,
+  undefined
+> = {
+  create() {
+    console.log("Create");
+    return undefined;
+  },
+  loop({ state }) {
+    console.log("Loop");
+    return state;
+  },
+  cleanup() {
+    console.log("Cleanup");
+  },
+};
 
 /**
  * Assets used for test game

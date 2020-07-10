@@ -4,6 +4,7 @@ swift/
 **/test/build/**
 node_modules
 packages/replay-swift/Replay
+packages/replay-text-input/ReplayTextInput
 dev-game/swift
 website/build
 website/.docusaurus

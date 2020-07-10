@@ -28,6 +28,7 @@ final class ReplayTests: XCTestCase {
 
         view = ReplayView(
             frame: CGRect(x: 0, y: 0, width: width, height: height),
+            nativeSpriteMap: ["NativeSprite": MockNativeSprite()],
             gameJsString: gameJsString,
             mockSession: session,
             mockRandom: 0.2,
@@ -138,7 +139,11 @@ final class ReplayTests: XCTestCase {
         //      game height: 300, max height margin: 50
 
         // match game size
-        view = ReplayView(frame: CGRect(x: 0, y: 0, width: 500, height: 300), gameJsString: gameJsString)
+        view = ReplayView(
+            frame: CGRect(x: 0, y: 0, width: 500, height: 300),
+            nativeSpriteMap: ["NativeSprite": MockNativeSprite()],
+            gameJsString: gameJsString
+        )
         XCTAssertEqual(
             view.gameViewSize,
             GameViewSize(
@@ -149,7 +154,11 @@ final class ReplayTests: XCTestCase {
         )
 
         // keep game size but scale
-        view = ReplayView(frame: CGRect(x: 0, y: 0, width: 1000, height: 600), gameJsString: gameJsString)
+        view = ReplayView(
+            frame: CGRect(x: 0, y: 0, width: 1000, height: 600),
+            nativeSpriteMap: ["NativeSprite": MockNativeSprite()],
+            gameJsString: gameJsString
+        )
         XCTAssertEqual(
             view.gameViewSize,
             GameViewSize(
@@ -160,7 +169,11 @@ final class ReplayTests: XCTestCase {
         )
 
         // device somewhere in middle of min and max
-        view = ReplayView(frame: CGRect(x: 0, y: 0, width: 560, height: 350), gameJsString: gameJsString)
+        view = ReplayView(
+            frame: CGRect(x: 0, y: 0, width: 560, height: 350),
+            nativeSpriteMap: ["NativeSprite": MockNativeSprite()],
+            gameJsString: gameJsString
+        )
         XCTAssertEqual(
             view.gameViewSize,
             GameViewSize(
@@ -171,7 +184,11 @@ final class ReplayTests: XCTestCase {
         )
 
         // over max width margin
-        view = ReplayView(frame: CGRect(x: 0, y: 0, width: 700, height: 300), gameJsString: gameJsString)
+        view = ReplayView(
+            frame: CGRect(x: 0, y: 0, width: 700, height: 300),
+            nativeSpriteMap: ["NativeSprite": MockNativeSprite()],
+            gameJsString: gameJsString
+        )
         XCTAssertEqual(
             view.gameViewSize,
             GameViewSize(
@@ -182,7 +199,11 @@ final class ReplayTests: XCTestCase {
         )
 
         // over max height margin
-        view = ReplayView(frame: CGRect(x: 0, y: 0, width: 500, height: 500), gameJsString: gameJsString)
+        view = ReplayView(
+            frame: CGRect(x: 0, y: 0, width: 500, height: 500),
+            nativeSpriteMap: ["NativeSprite": MockNativeSprite()],
+            gameJsString: gameJsString
+        )
         XCTAssertEqual(
             view.gameViewSize,
             GameViewSize(
@@ -193,7 +214,11 @@ final class ReplayTests: XCTestCase {
         )
 
         // within max height margin
-        view = ReplayView(frame: CGRect(x: 0, y: 0, width: 400, height: 300), gameJsString: gameJsString)
+        view = ReplayView(
+            frame: CGRect(x: 0, y: 0, width: 400, height: 300),
+            nativeSpriteMap: ["NativeSprite": MockNativeSprite()],
+            gameJsString: gameJsString
+        )
         XCTAssertEqual(
             view.gameViewSize,
             GameViewSize(
@@ -204,7 +229,11 @@ final class ReplayTests: XCTestCase {
         )
 
         // within max width margin
-        view = ReplayView(frame: CGRect(x: 0, y: 0, width: 500, height: 290), gameJsString: gameJsString)
+        view = ReplayView(
+            frame: CGRect(x: 0, y: 0, width: 500, height: 290),
+            nativeSpriteMap: ["NativeSprite": MockNativeSprite()],
+            gameJsString: gameJsString
+        )
         XCTAssertEqual(
             view.gameViewSize,
             GameViewSize(
@@ -215,7 +244,11 @@ final class ReplayTests: XCTestCase {
         )
 
         // width and height over max margins, but device is wider
-        view = ReplayView(frame: CGRect(x: 0, y: 0, width: 1000, height: 500), gameJsString: gameJsString)
+        view = ReplayView(
+            frame: CGRect(x: 0, y: 0, width: 1000, height: 500),
+            nativeSpriteMap: ["NativeSprite": MockNativeSprite()],
+            gameJsString: gameJsString
+        )
         XCTAssertEqual(
             view.gameViewSize,
             GameViewSize(
@@ -226,7 +259,11 @@ final class ReplayTests: XCTestCase {
         )
 
         // width and height over max margins, but device is thinner
-        view = ReplayView(frame: CGRect(x: 0, y: 0, width: 700, height: 1000), gameJsString: gameJsString)
+        view = ReplayView(
+            frame: CGRect(x: 0, y: 0, width: 700, height: 1000),
+            nativeSpriteMap: ["NativeSprite": MockNativeSprite()],
+            gameJsString: gameJsString
+        )
         XCTAssertEqual(
             view.gameViewSize,
             GameViewSize(
@@ -331,5 +368,17 @@ final class ReplayTests: XCTestCase {
         view.loop(currentTime: oneFrame * 3)
 
         XCTAssertEqual(logger.lastLogged, "testValue")
+    }
+
+    func testNativeSprite() {
+        XCTAssertTrue(mockNativeSpriteStates.contains("create Game"))
+
+        view.loop(currentTime: oneFrame * 1)
+        XCTAssertTrue(mockNativeSpriteStates.contains("loop Hello Game"))
+
+        view.touchDown(atPoint: CGPoint(x: width / 2, y: height / 2))
+        view.loop(currentTime: oneFrame * 2)
+
+        XCTAssertTrue(mockNativeSpriteStates.contains("cleanup Game"))
     }
 }
