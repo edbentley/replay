@@ -40,6 +40,7 @@ export function GameView({ Game, gameProps, showReload, assets }) {
       [t.text({ color: "black", text: "Loading..." })],
       assets,
       "scale-up",
+      {},
       canvas,
       { width, height }
     );

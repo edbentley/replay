@@ -26,6 +26,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 Your image and audio assets also need to be added to your Xcode project. See [Replay Starter](starter.md) for an example setup.
 
+### `ReplayViewController(nativeSpriteMap, hideStatusBar)`
+
+#### Parameters
+
+- `nativeSpriteMap`: (Optional) A dictionary of [Native Sprite](native-sprites.md) names and their iOS implementation.
+- `hideStatusBar`: (Optional) A boolean to set if the status bar is hidden or not. Default `true`.
+
 ## Inputs
 
 The `device.inputs` parameter of Sprite methods is of type:

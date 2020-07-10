@@ -8,7 +8,7 @@ import TabItem from '@theme/TabItem';
 
 Once you've worked on your game for a while, it's a good idea to add some tests to avoid things breaking in the future. It gives you the confidence to keep publishing new updates!
 
-The `@replay/test` package is useful for writing tests in Jest for your Replay game. It provides a test platform, which works the same as any other like web and iOS, but returns helpful utility functions for testing.
+The `@replay/test` package is useful for writing tests in Jest for your Replay game. It provides a test platform, which works the same as any other like [web](web.md) and [iOS](ios.md), but returns helpful utility functions for testing.
 
 ## `testSprite(sprite, gameProps, options)`
 
@@ -32,6 +32,7 @@ The `@replay/test` package is useful for writing tests in Jest for your Replay g
     },
   },
   ```
+  - `nativeSpriteNames`: (Optional) A list of [Native Sprite](native-sprites.md) names to mock.
 
 `testSprite` returns an object with the following fields:
 

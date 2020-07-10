@@ -5,7 +5,7 @@ title: Web
 
 To render a game for the browser use the `@replay/web` package.
 
-### `renderCanvas(game, loadingTextures, assets, dimensions, canvas)`
+### `renderCanvas(game, loadingTextures, assets, dimensions, nativeSpriteMap, canvas, windowSize)`
 
 #### Parameters
 
@@ -15,7 +15,9 @@ To render a game for the browser use the `@replay/web` package.
 - `dimensions`: (Optional) A string that is either:
   - `"game-coords"`: (default) Use the game coordinates as pixels in the browser.
   - `"scale-up"`: Scales the game so that it fills up the browser window.
+- `nativeSpriteMap`: (Optional) A map of [Native Sprite](native-sprites.md) names and their web implementation.
 - `canvas`: (Optional) A canvas element to render to. If omitted, Replay will create a canvas in the document.
+- `windowSize`: (Optional) An object with width and height fields. Use to override the view size, instead of using the window size.
 
 ```js
 import { renderCanvas } from "@replay/web";

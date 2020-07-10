@@ -22,8 +22,7 @@ export type TextInputProps = {
    */
   numberOfLines?: number;
   /**
-   * Alignment of text around x position. `"left"` will put the left edge of
-   * the text at the x position.
+   * Alignment of text in input field.
    *
    * @default "center"
    */
