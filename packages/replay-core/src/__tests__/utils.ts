@@ -150,6 +150,7 @@ export const nativeSpriteSettings: NativeSpriteSettings = {
   nativeSpriteMap: {},
   nativeSpriteUtils: {
     didResize: false,
+    scale: 1,
     gameXToPlatformX: (x) => x,
     gameYToPlatformY: (y) => y,
   },
@@ -608,7 +609,7 @@ export const MyWidgetImplementation: NativeSpriteImplementation<
     widgetState.x = state.x;
 
     if (utils.didResize) {
-      widgetState.width *= 2;
+      widgetState.width *= 2 * utils.scale;
     }
 
     return state;

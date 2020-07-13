@@ -27,9 +27,8 @@ export const TextInputWeb: NativeSpriteImplementation<
       inputElement.style.resize = "none";
     }
     inputElement.id = domId;
-    inputElement.style.padding = `${padding}px`;
-    inputElement.style.borderWidth = `${border}px`;
     inputElement.style.position = "absolute";
+    inputElement.style.boxSizing = "border-box";
 
     updateInput(inputElement, props, null, utils);
 
@@ -106,14 +105,14 @@ export const TextInputWeb: NativeSpriteImplementation<
 
 const propsThatDontUpdate = ["id", "onChangeText"];
 
-const padding = 2;
+const padding = 4;
 const border = 1;
 
 function updateInput(
   inputElement: HTMLInputElement | HTMLTextAreaElement,
   props: TextInputProps,
   selectionEnd: number | null,
-  utils: NativeSpriteUtils
+  { gameYToPlatformY, gameXToPlatformX, scale }: NativeSpriteUtils
 ) {
   // Text value
   inputElement.value = props.text;
@@ -122,8 +121,16 @@ function updateInput(
     inputElement.selectionEnd = selectionEnd;
   }
 
+  // Scale to screen size
+  const fontSize = props.fontSize * scale;
+  const width = props.width * scale;
+
   // Font
-  inputElement.style.font = `${props.fontSize}px ${props.fontName}`;
+  inputElement.style.font = `${fontSize}px ${props.fontName}`;
+
+  // Padding / border
+  inputElement.style.padding = `${padding * scale}px`;
+  inputElement.style.borderWidth = `${border * scale}px`;
 
   // Text align
   inputElement.style.textAlign = props.align || "center";
@@ -132,18 +139,20 @@ function updateInput(
   inputElement.style.color = props.color || "black";
 
   // Width
-  inputElement.style.width = `${props.width}px`;
+  inputElement.style.width = `${width}px`;
 
   // Height
-  inputElement.style.lineHeight = `${props.fontSize}px`;
+  inputElement.style.lineHeight = `${fontSize}px`;
   const height =
-    props.fontSize * (props.numberOfLines || 1) + padding * 2 + border * 2;
+    fontSize * (props.numberOfLines || 1) +
+    padding * scale * 2 +
+    border * scale * 2;
   inputElement.style.height = `${height}px`;
 
   // Positioning
-  const leftX = utils.gameXToPlatformX(props.x || 0) - props.width / 2;
+  const leftX = gameXToPlatformX(props.x || 0) - width / 2;
   inputElement.style.left = `${leftX}px`;
 
-  const topY = utils.gameYToPlatformY(props.y || 0) - height / 2;
+  const topY = gameYToPlatformY(props.y || 0) - height / 2;
   inputElement.style.top = `${topY}px`;
 }

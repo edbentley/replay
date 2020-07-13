@@ -266,6 +266,7 @@ export function testSprite<P, S, I>(
         {}
       ),
       nativeSpriteUtils: {
+        scale: 1,
         didResize: false,
         gameXToPlatformX: (x) => x,
         gameYToPlatformY: (y) => y,

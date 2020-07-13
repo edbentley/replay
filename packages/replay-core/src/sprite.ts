@@ -173,6 +173,7 @@ export type NativeSpriteImplementation<P, S> = {
 
 export type NativeSpriteUtils = {
   didResize: boolean;
+  scale: number;
   gameXToPlatformX: (x: number) => number;
   gameYToPlatformY: (y: number) => number;
 };

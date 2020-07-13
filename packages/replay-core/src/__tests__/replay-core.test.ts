@@ -668,6 +668,7 @@ test("supports Native Sprites", () => {
 
   const mutableNativeSpriteUtils: NativeSpriteUtils = {
     didResize: false,
+    scale: 3,
     gameXToPlatformX: (x) => x + 10,
     gameYToPlatformY: (y) => y - 10,
   };
@@ -701,7 +702,7 @@ test("supports Native Sprites", () => {
   // test loop and didResize doubles width
   mutableNativeSpriteUtils.didResize = true;
   getNextFrameTextures(1000 * (1 / 60) + 1);
-  expect(widgetState.width).toBe(200);
+  expect(widgetState.width).toBe(600); // scale x3
   mutableNativeSpriteUtils.didResize = false;
 
   // test getState and updateState in callback

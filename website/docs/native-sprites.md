@@ -96,6 +96,7 @@ Called on initial creation of Sprite. Use this to run anything you need on setup
    ```
 - `utils`: An object with fields:
   - `didResize`: A boolean to check if the device was just resized.
+  - `scale`: Ratio of the game and platform's screen size.
   - `gameXToPlatformX`: Function to convert a local game `x` coordinate to platform `x` coordinate.
   - `gameYToPlatformY`: Function to convert a local game `y` coordinate to platform `y` coordinate.
 
@@ -116,6 +117,7 @@ Called 60 times a second. Returns the next frame's `state`.
 - `parentGlobalId`: A globally unique ID for the parent Sprite.
 - `utils`: An object with fields:
   - `didResize`: A boolean to check if the device was just resized.
+  - `scale`: Ratio of the game and platform's screen size.
   - `gameXToPlatformX`: Function to convert a local game `x` coordinate to platform `x` coordinate.
   - `gameYToPlatformY`: Function to convert a local game `y` coordinate to platform `y` coordinate.
 

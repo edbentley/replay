@@ -99,6 +99,7 @@ export function renderCanvas<S>(
 
   const nativeSpriteUtils: NativeSpriteUtils = {
     didResize: false,
+    scale: 1,
     gameXToPlatformX: (x) => x,
     gameYToPlatformY: (y) => y,
   };
@@ -151,6 +152,7 @@ export function renderCanvas<S>(
     });
 
     nativeSpriteUtils.didResize = true;
+    nativeSpriteUtils.scale = scale;
 
     const getX = clientXToGameX({
       canvasOffsetLeft: canvas.offsetLeft,

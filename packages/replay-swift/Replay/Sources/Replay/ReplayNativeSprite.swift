@@ -88,17 +88,22 @@ public struct ReplayNativeSpriteCleanupArgs {
 
 @objc public protocol ReplayNativeSpriteUtilsJS : JSExport {
     var didResize: Bool { get set }
+    var scale: NSNumber { get set }
     var gameXToPlatformX: @convention(block) (NSNumber) -> NSNumber { get set }
     var gameYToPlatformY: @convention(block) (NSNumber) -> NSNumber { get set }
 }
 @objc public class ReplayNativeSpriteUtils : NSObject, ReplayNativeSpriteUtilsJS {
     public var didResize: Bool
+    public var scale: NSNumber
     public var gameXToPlatformX: @convention(block) (NSNumber) -> NSNumber
     public var gameYToPlatformY: @convention(block) (NSNumber) -> NSNumber
 
     init(deviceSize: DeviceSize) {
         // Resize handling not currently supported for Native Sprites on Swift
         didResize = false
+        
+        // Scale is handled by ReplayViewController
+        scale = 1
 
         gameXToPlatformX = { x in
             return cgFloatToNsNumber(SizeUtils.gameXToDeviceX(x: x, deviceSize: deviceSize))
