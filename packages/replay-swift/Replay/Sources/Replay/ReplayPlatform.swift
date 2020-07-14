@@ -94,12 +94,12 @@ typealias GetLocalCoords = JSValue
     var justReleased: Bool
     var x: NSNumber
     var y: NSNumber
-    init(pressed: Bool, justPressed: Bool, justReleased: Bool, x: CGFloat, y: CGFloat) {
+    init(pressed: Bool, justPressed: Bool, justReleased: Bool, x: NSNumber, y: NSNumber) {
         self.pressed = pressed
         self.justPressed = justPressed
         self.justReleased = justReleased
-        self.x = cgFloatToNsNumber(x)
-        self.y = cgFloatToNsNumber(y)
+        self.x = x
+        self.y = y
     }
 }
 
@@ -109,12 +109,18 @@ typealias GetLocalCoords = JSValue
 @objc class Inputs : NSObject, InputsJS {
     var pointer: Pointer
     init(pointer: Pointer, getLocalCoords: GetLocalCoords) {
-        self.pointer = pointer
+        let localCoords = ReplayJS.callGetLocalCoords(
+            getLocalCoords: getLocalCoords,
+            coords: XYCoords(x: pointer.x, y: pointer.y)
+        )
         
-        let localCoords = ReplayJS.callGetLocalCoords(getLocalCoords: getLocalCoords, coords: XYCoords(x: pointer.x, y: pointer.y))
-
-        self.pointer.x = localCoords.x
-        self.pointer.y = localCoords.y
+        self.pointer = Pointer(
+            pressed: pointer.pressed,
+            justPressed: pointer.justPressed,
+            justReleased: pointer.justReleased,
+            x: localCoords.x,
+            y: localCoords.y
+        )
     }
 }
 

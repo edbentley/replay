@@ -45,10 +45,10 @@ class TopView: UIView {
         
         replayViewGlobal = view
         
-        // center view
-        view.transform = CGAffineTransform(translationX: view.gameViewSize.offset.x, y: view.gameViewSize.offset.y)
-            // scale to device
-            .concatenating(CGAffineTransform(scaleX: view.gameViewSize.scale, y: view.gameViewSize.scale))
+        // scale to device
+        view.transform = CGAffineTransform(scaleX: view.gameViewSize.scale, y: view.gameViewSize.scale)
+            // center view
+            .concatenating(CGAffineTransform(translationX: view.gameViewSize.offset.x, y: view.gameViewSize.offset.y))
         
         self.addSubview(view)
     }

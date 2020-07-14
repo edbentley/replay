@@ -153,8 +153,8 @@ extension ReplayView {
             pressed: touchDown,
             justPressed: touchJustDown,
             justReleased: touchJustReleased,
-            x: SizeUtils.deviceXToGameX(x: touchPos.x, deviceSize: deviceSize),
-            y: SizeUtils.deviceYToGameY(y: touchPos.y, deviceSize: deviceSize)
+            x: cgFloatToNsNumber(SizeUtils.deviceXToGameX(x: touchPos.x, deviceSize: deviceSize)),
+            y: cgFloatToNsNumber(SizeUtils.deviceYToGameY(y: touchPos.y, deviceSize: deviceSize))
         )
         return { getLocalCoords in
             iOSDevice(
