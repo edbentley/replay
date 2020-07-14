@@ -14,10 +14,9 @@ class AudioPlayer: NSObject, ReplayAudioPlayer, AVAudioPlayerDelegate {
         let player = getPlayer(filename: filename, play: true)
 
         if let atTime = position {
-            player.play(atTime: atTime)
-        } else {
-            player.play()
+            player.currentTime = atTime
         }
+        player.play()
         player.numberOfLoops = loop ? -1 : 0
     }
 
