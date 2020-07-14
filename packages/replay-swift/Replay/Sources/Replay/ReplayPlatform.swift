@@ -94,12 +94,12 @@ typealias GetLocalCoords = JSValue
     var justReleased: Bool
     var x: NSNumber
     var y: NSNumber
-    init(pressed: Bool, justPressed: Bool, justReleased: Bool, x: CGFloat, y: CGFloat) {
+    init(pressed: Bool, justPressed: Bool, justReleased: Bool, x: NSNumber, y: NSNumber) {
         self.pressed = pressed
         self.justPressed = justPressed
         self.justReleased = justReleased
-        self.x = cgFloatToNsNumber(x)
-        self.y = cgFloatToNsNumber(y)
+        self.x = x
+        self.y = y
     }
 }
 
@@ -109,12 +109,18 @@ typealias GetLocalCoords = JSValue
 @objc class Inputs : NSObject, InputsJS {
     var pointer: Pointer
     init(pointer: Pointer, getLocalCoords: GetLocalCoords) {
-        self.pointer = pointer
+        let localCoords = ReplayJS.callGetLocalCoords(
+            getLocalCoords: getLocalCoords,
+            coords: XYCoords(x: pointer.x, y: pointer.y)
+        )
         
-        let localCoords = ReplayJS.callGetLocalCoords(getLocalCoords: getLocalCoords, coords: XYCoords(x: pointer.x, y: pointer.y))
-
-        self.pointer.x = localCoords.x
-        self.pointer.y = localCoords.y
+        self.pointer = Pointer(
+            pressed: pointer.pressed,
+            justPressed: pointer.justPressed,
+            justReleased: pointer.justReleased,
+            x: localCoords.x,
+            y: localCoords.y
+        )
     }
 }
 
@@ -205,7 +211,7 @@ typealias GetLocalCoords = JSValue
             session.fetchAsync(
                 path: url,
                 method: .POST,
-                jsonBody: body as? JsonData,
+                jsonBody: body as? ReplayJsonData,
                 onComplete: { callback.call(withArguments: [$0]) }
             )
         }
@@ -213,7 +219,7 @@ typealias GetLocalCoords = JSValue
             session.fetchAsync(
                 path: url,
                 method: .PUT,
-                jsonBody: body as? JsonData,
+                jsonBody: body as? ReplayJsonData,
                 onComplete: { callback.call(withArguments: [$0]) }
             )
         }
@@ -241,7 +247,7 @@ typealias GetLocalCoords = JSValue
             return provider.getStore() as NSDictionary
         }
         setStore = { store in
-            guard let validStore = store as? Store else { fatalError("Set invalid store") }
+            guard let validStore = store as? ReplayStore else { fatalError("Set invalid store") }
             provider.setStore(validStore)
         }
     }

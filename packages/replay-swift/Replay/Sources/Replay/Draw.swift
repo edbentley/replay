@@ -27,7 +27,7 @@ class Draw {
 
         context.saveGState()
         
-        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
+        transformContext(context: context, baseProps: baseProps, parentOpacity: parentOpacity)
 
         context.setFillColor(color)
         context.fill(CGRect(x: -width / 2, y: -height / 2, width: width, height: height))
@@ -42,7 +42,7 @@ class Draw {
 
         context.saveGState()
 
-        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
+        transformContext(context: context, baseProps: baseProps, parentOpacity: parentOpacity)
 
         context.setStrokeColor(color)
         context.setLineWidth(thickness)
@@ -89,7 +89,7 @@ class Draw {
 
         context.saveGState()
 
-        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
+        transformContext(context: context, baseProps: baseProps, parentOpacity: parentOpacity)
         
         let xOffset: CGFloat
         switch align {
@@ -109,7 +109,7 @@ class Draw {
 
         context.saveGState()
 
-        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
+        transformContext(context: context, baseProps: baseProps, parentOpacity: parentOpacity)
 
         context.setFillColor(color)
         let rect = CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2)
@@ -126,7 +126,7 @@ class Draw {
 
         context.saveGState()
 
-        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
+        transformContext(context: context, baseProps: baseProps, parentOpacity: parentOpacity)
 
         guard let image = UIImage(named: fileName)
             else {
@@ -147,7 +147,7 @@ class Draw {
 
         context.saveGState()
 
-        transformContext(context: context, baseProps: baseProps, parentOpacity: baseProps.opacity)
+        transformContext(context: context, baseProps: baseProps, parentOpacity: parentOpacity)
 
         guard let image = UIImage(named: fileName)
             else {

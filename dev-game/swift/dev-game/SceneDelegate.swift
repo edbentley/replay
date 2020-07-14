@@ -1,5 +1,6 @@
 import UIKit
 import Replay
+import ReplayTextInput
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -10,7 +11,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)
-            window.rootViewController = ReplayViewController()
+            
+            let nativeSpriteMap = ["TextInput": ReplayTextInputSwift()]
+            
+            window.rootViewController = ReplayViewController(nativeSpriteMap: nativeSpriteMap)
             self.window = window
             window.makeKeyAndVisible()
         }

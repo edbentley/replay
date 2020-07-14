@@ -2,13 +2,13 @@ import Foundation
 @testable import Replay
 
 class MockStorage: ReplayStorageProvider {
-    var store: Store = [:]
+    var store: ReplayStore = [:]
 
-    func setStore(_ store: Store) {
+    func setStore(_ store: ReplayStore) {
         self.store = store
     }
 
-    func getStore() -> Store {
+    func getStore() -> ReplayStore {
         return store
     }
 }

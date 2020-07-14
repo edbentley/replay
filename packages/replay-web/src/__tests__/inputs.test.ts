@@ -35,6 +35,7 @@ test("Key events press and release keys", async () => {
     undefined,
     undefined,
     undefined,
+    undefined,
     canvas
   );
 
@@ -111,6 +112,7 @@ test("Pointer clicks and move", async () => {
 
   const { loadPromise } = renderCanvas(
     PointerGame(testGameProps),
+    undefined,
     undefined,
     undefined,
     undefined,
@@ -218,6 +220,7 @@ test("Pointer position within sprite", async () => {
     undefined,
     undefined,
     undefined,
+    undefined,
     canvas
   );
 
@@ -269,6 +272,7 @@ test("Pointer clicks in scaled canvas with margins and canvas offset", async () 
     undefined,
     undefined,
     "scale-up",
+    undefined,
     canvas
   );
 

@@ -9,6 +9,7 @@ import { SpriteBaseProps, ExcludeSpriteBaseProps } from "./props";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Sprite<P = any, S = any, I = any> =
   | CustomSprite<P, S, I>
+  | NativeSprite<P>
   | Texture
   | null;
 
@@ -141,3 +142,60 @@ export type SpriteTextures = {
   baseProps: SpriteBaseProps;
   textures: (SpriteTextures | Texture)[];
 };
+
+/**
+ * Native Sprites are custom platform-specific elements not inside Replay
+ * itself, like text inputs. Their name is stored, and implementation
+ * dynamically looked up within each platform.
+ */
+export type NativeSprite<P> = {
+  type: "native";
+  name: string;
+  props: P;
+};
+
+export type NativeSpriteImplementation<P, S> = {
+  create: (params: {
+    props: P;
+    parentGlobalId: string;
+    getState: () => S;
+    updateState: (mergeState: Partial<S>) => void;
+    utils: NativeSpriteUtils;
+  }) => S;
+  loop: (params: {
+    props: P;
+    state: S;
+    parentGlobalId: string;
+    utils: NativeSpriteUtils;
+  }) => S;
+  cleanup: (params: { state: S; parentGlobalId: string }) => void;
+};
+
+export type NativeSpriteUtils = {
+  didResize: boolean;
+  scale: number;
+  gameXToPlatformX: (x: number) => number;
+  gameYToPlatformY: (y: number) => number;
+};
+
+/**
+ * Function to define a Native Sprite, returns a new function which can be
+ * called to create an instance in other Sprites. Example:
+ *
+ * ```js
+ * const MyWidget = makeNativeSprite("MyWidget")
+ *
+ * MyWidget(props)
+ * ```
+ *
+ * An implementation of the Native Sprite must be defined for each platform.
+ */
+export function makeNativeSprite<P extends { id: string }>(
+  name: string
+): (props: P) => NativeSprite<P> {
+  return (props) => ({
+    type: "native",
+    name,
+    props,
+  });
+}

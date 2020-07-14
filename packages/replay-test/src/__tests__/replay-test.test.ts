@@ -1,4 +1,4 @@
-import { makeSprite, t, GameProps } from "@replay/core";
+import { makeSprite, t, GameProps, makeNativeSprite } from "@replay/core";
 import { testSprite } from "../index";
 
 test("getTextures, nextFrame", () => {
@@ -370,6 +370,16 @@ test("jumpToFrame throws last error", () => {
   );
 });
 
+test("can mock Native Sprites", () => {
+  const { getTextures } = testSprite(NativeSpriteGame(gameProps), gameProps, {
+    nativeSpriteNames: ["MyNativeSprite"],
+  });
+
+  const textures = getTextures();
+
+  expect(textures.length).toBe(0);
+});
+
 // --- Mock Game
 
 interface State {
@@ -559,3 +569,16 @@ const NestedSecondSprite = makeSprite({
     ];
   },
 });
+
+/// -- Mock Native Sprite test
+
+export const NativeSpriteGame = makeSprite<GameProps>({
+  render() {
+    return [
+      MyNativeSprite({
+        id: "native",
+      }),
+    ];
+  },
+});
+const MyNativeSprite = makeNativeSprite("MyNativeSprite");

@@ -7,6 +7,7 @@ import {
 } from "@replay/core/dist/sprite";
 import { TextTexture } from "@replay/core/dist/t";
 import { getParentCoordsForSprite } from "./coords";
+import { NativeSpriteMock } from "./nativeSpriteMock";
 
 interface Timer {
   gameTime: number;
@@ -58,6 +59,10 @@ interface Options<I> {
       [url: string]: () => object;
     };
   };
+  /**
+   * A list of Native Sprite names to mock
+   */
+  nativeSpriteNames?: string[];
 }
 
 /**
@@ -89,6 +94,7 @@ export function testSprite<P, S, I>(
     initStore = {},
     networkResponses = {},
     mapInputCoordinates = (_, inputs) => inputs,
+    nativeSpriteNames = [],
   } = options;
   /**
    * Mock function for device log.
@@ -253,6 +259,19 @@ export function testSprite<P, S, I>(
 
   const { initTextures, getNextFrameTextures } = replayCore(
     testPlatform,
+    {
+      // Mock the Native Sprites passed in to avoid errors when looked up
+      nativeSpriteMap: nativeSpriteNames.reduce(
+        (map, name) => ({ ...map, [name]: NativeSpriteMock }),
+        {}
+      ),
+      nativeSpriteUtils: {
+        scale: 1,
+        didResize: false,
+        gameXToPlatformX: (x) => x,
+        gameYToPlatformY: (y) => y,
+      },
+    },
     TestContainer(gameProps)
   );
 

@@ -1,6 +1,14 @@
 import { GameProps, Texture, DeviceSize, Store } from "@replay/core";
-import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
-import { CustomSprite, SpriteTextures } from "@replay/core/dist/sprite";
+import {
+  replayCore,
+  ReplayPlatform,
+  NativeSpriteMap,
+} from "@replay/core/dist/core";
+import {
+  CustomSprite,
+  SpriteTextures,
+  NativeSpriteUtils,
+} from "@replay/core/dist/sprite";
 import {
   getInputs,
   keyUpHandler as inputKeyUpHandler,
@@ -18,6 +26,7 @@ import { drawCanvas } from "./draw";
 import { getDeviceSize, setDeviceSize, calculateDeviceSize } from "./size";
 import { Dimensions } from "./dimensions";
 import { getDefaultProps } from "@replay/core/dist/props";
+import { getGameXToWebX, getGameYToWebY } from "./coordinates";
 
 export { Inputs as WebInputs, mapInputCoordinates } from "./input";
 export { Dimensions } from "./dimensions";
@@ -48,6 +57,10 @@ export function renderCanvas<S>(
    * Preferred method of placing the game in the browser window
    */
   dimensions: Dimensions = "game-coords",
+  /**
+   * A map of Native Sprite names and their web implementation
+   */
+  nativeSpriteMap?: NativeSpriteMap,
   userCanvas?: HTMLCanvasElement,
   /**
    * Override the view size, instead of using the window size
@@ -84,6 +97,13 @@ export function renderCanvas<S>(
   let pointerUp: (e: PointerEvent) => void;
   let scale: number;
 
+  const nativeSpriteUtils: NativeSpriteUtils = {
+    didResize: false,
+    scale: 1,
+    gameXToPlatformX: (x) => x,
+    gameYToPlatformY: (y) => y,
+  };
+
   function updateDeviceSize(cleanup?: boolean) {
     if (prevDeviceSize) {
       ctx.restore();
@@ -116,6 +136,23 @@ export function renderCanvas<S>(
     );
     scale = renderCanvasResult.scale;
     render.ref = renderCanvasResult.render;
+
+    nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
+      canvasOffsetLeft: canvas.offsetLeft,
+      width: deviceSize.width,
+      widthMargin: deviceSize.widthMargin,
+      scale,
+    });
+
+    nativeSpriteUtils.gameYToPlatformY = getGameYToWebY({
+      canvasOffsetTop: canvas.offsetTop,
+      height: deviceSize.height,
+      heightMargin: deviceSize.heightMargin,
+      scale,
+    });
+
+    nativeSpriteUtils.didResize = true;
+    nativeSpriteUtils.scale = scale;
 
     const getX = clientXToGameX({
       canvasOffsetLeft: canvas.offsetLeft,
@@ -252,6 +289,10 @@ export function renderCanvas<S>(
 
     const { initTextures, getNextFrameTextures } = replayCore<S, Inputs>(
       domPlatform,
+      {
+        nativeSpriteMap: nativeSpriteMap || {},
+        nativeSpriteUtils,
+      },
       gameSprite
     );
 

@@ -1,5 +1,6 @@
 import { Device, makeSprite, t, GameProps, DeviceSize } from "../index";
-import { ReplayPlatform } from "../core";
+import { ReplayPlatform, NativeSpriteSettings } from "../core";
+import { makeNativeSprite, NativeSpriteImplementation } from "../sprite";
 
 export const gameProps: GameProps = {
   id: "Game" as const,
@@ -144,6 +145,16 @@ export function getTestPlatform(customSize?: DeviceSize) {
     mutableTestDevice,
   };
 }
+
+export const nativeSpriteSettings: NativeSpriteSettings = {
+  nativeSpriteMap: {},
+  nativeSpriteUtils: {
+    didResize: false,
+    scale: 1,
+    gameXToPlatformX: (x) => x,
+    gameYToPlatformY: (y) => y,
+  },
+};
 
 interface TestGameState {
   position: number;
@@ -537,3 +548,73 @@ export const LocalStorageGame = makeSprite<
     ];
   },
 });
+
+/// -- Test Native Sprites
+
+export const NativeSpriteGame = makeSprite<
+  GameProps,
+  undefined,
+  TestPlatformInputs
+>({
+  render({ device }) {
+    if (device.inputs.x === 100) {
+      return [];
+    }
+    return [NestedNativeSprite({ id: "nested" })];
+  },
+});
+const NestedNativeSprite = makeSprite({
+  render() {
+    return [MyWidget({ id: "widget", text: "hello" })];
+  },
+});
+
+type MyWidgetProps = {
+  id: string;
+  text: string;
+};
+export const MyWidget = makeNativeSprite<MyWidgetProps>("MyWidget");
+
+export const widgetState = {
+  text: "",
+  x: 0,
+  y: 0,
+  globalId: "",
+  width: 100,
+};
+export let widgetCallback = () => {
+  // Empty
+};
+
+// An example platform implementation
+export const MyWidgetImplementation: NativeSpriteImplementation<
+  MyWidgetProps,
+  { text: string; x: number }
+> = {
+  create: ({ props, parentGlobalId, getState, updateState, utils }) => {
+    widgetState.text = props.text;
+    widgetState.globalId = `${parentGlobalId}--${props.id}`;
+    widgetState.x = utils.gameXToPlatformX(0);
+    widgetState.y = utils.gameYToPlatformY(0);
+
+    // Double x on callback
+    widgetCallback = () => {
+      const state = getState();
+      updateState({ x: state.x * 2 });
+    };
+
+    return { text: props.text, x: widgetState.x };
+  },
+  loop: ({ state, utils }) => {
+    widgetState.x = state.x;
+
+    if (utils.didResize) {
+      widgetState.width *= 2 * utils.scale;
+    }
+
+    return state;
+  },
+  cleanup: () => {
+    widgetState.text = "";
+  },
+};

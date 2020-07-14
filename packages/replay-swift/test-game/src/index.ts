@@ -1,4 +1,4 @@
-import { makeSprite, t, GameProps } from "@replay/core";
+import { makeSprite, t, GameProps, makeNativeSprite } from "@replay/core";
 import { iOSInputs } from "../../index";
 
 interface State {
@@ -85,8 +85,9 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
     };
   },
 
-  render({ state }) {
+  render({ state, device }) {
     return [
+      device.inputs.pointer.pressed ? null : NativeSprite({ id: "native" }),
       t.text({
         x: -100,
         font: { name: "serif", size: 22 },
@@ -108,3 +109,5 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
     ];
   },
 });
+
+const NativeSprite = makeNativeSprite("NativeSprite");

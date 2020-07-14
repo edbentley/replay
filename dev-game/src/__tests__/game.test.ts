@@ -39,6 +39,7 @@ test("gameplay", () => {
         }),
       },
     },
+    nativeSpriteNames: ["TextInput"],
   });
 
   getByText("Loading");

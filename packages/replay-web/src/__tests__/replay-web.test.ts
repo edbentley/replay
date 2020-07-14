@@ -13,6 +13,9 @@ import {
   TestGame,
   resizeWindow,
   TestGameThrowImageError,
+  TestNativeSpriteWeb,
+  TestGameWithNativeSprite,
+  clickPointer,
 } from "./utils";
 import { t, GameProps } from "@replay/core";
 
@@ -48,6 +51,7 @@ test("Can render image moving across screen", async () => {
     ],
     getTestAssets(),
     "game-coords",
+    undefined,
     canvas
   );
 
@@ -102,6 +106,7 @@ test("Canvas elements are drawn in order of sprites passed in", () => {
     ],
     getTestAssets(),
     "game-coords",
+    undefined,
     canvas
   );
 
@@ -113,6 +118,7 @@ test("Can render game with Sprites", async () => {
   const canvas = document.createElement("canvas");
   const { loadPromise } = renderCanvas(
     TestGameWithSprites(testGameProps),
+    undefined,
     undefined,
     undefined,
     undefined,
@@ -150,7 +156,14 @@ test("Dimension 'game-coords' renders the minimum size", () => {
     id: "Game",
     size: { width: 200, height: 200, maxWidthMargin: 10, maxHeightMargin: 20 },
   };
-  renderCanvas(TestGame(props), undefined, undefined, "game-coords", canvas);
+  renderCanvas(
+    TestGame(props),
+    undefined,
+    undefined,
+    "game-coords",
+    undefined,
+    canvas
+  );
 
   expect(canvas.width).toBe(200);
   expect(canvas.height).toBe(200);
@@ -165,7 +178,14 @@ test("Dimension 'scale-up' renders up to browser size and resizes", () => {
     id: "Game",
     size: { width: 200, height: 200, maxWidthMargin: 10, maxHeightMargin: 20 },
   };
-  renderCanvas(TestGame(props), undefined, undefined, "scale-up", canvas);
+  renderCanvas(
+    TestGame(props),
+    undefined,
+    undefined,
+    "scale-up",
+    undefined,
+    canvas
+  );
 
   // the game is square so width scales up to max 400px (scale 2)
   // so a margin of 10 game coordinates allowed on each side = 40px extra width
@@ -188,6 +208,7 @@ test("Unknown image name throws readable error", async () => {
       undefined,
       undefined,
       "scale-up",
+      undefined,
       canvas
     );
     await loadPromise;
@@ -196,4 +217,28 @@ test("Unknown image name throws readable error", async () => {
   }
 
   expect(error).toBe(`Cannot find image file "unknown.png"`);
+});
+
+test("Supports Native Sprites", async () => {
+  console.log = jest.fn();
+
+  const canvas = document.createElement("canvas");
+  const { loadPromise } = renderCanvas(
+    TestGameWithNativeSprite(testGameProps),
+    undefined,
+    undefined,
+    undefined,
+    { TestNativeSprite: TestNativeSpriteWeb },
+    canvas
+  );
+  await loadPromise;
+
+  expect(console.log).toBeCalledWith("Create");
+
+  mockTime.nextFrame();
+  expect(console.log).toBeCalledWith("Loop");
+
+  clickPointer(0, 0);
+  mockTime.nextFrame();
+  expect(console.log).toBeCalledWith("Cleanup");
 });

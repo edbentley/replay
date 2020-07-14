@@ -4,6 +4,8 @@ import {
   Sprite,
   CustomSpriteProps,
   SpriteTextures,
+  NativeSpriteImplementation,
+  NativeSpriteUtils,
 } from "./sprite";
 import { Device, DeviceSize } from "./device";
 import { SpriteBaseProps, getDefaultProps } from "./props";
@@ -76,6 +78,12 @@ export interface ReplayPlatform<I> {
   ) => Device<I>;
 }
 
+export type NativeSpriteMap = Record<
+  string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  NativeSpriteImplementation<any, any> | undefined
+>;
+
 /**
  * In some platforms (e.g. iOS) the game is loaded in the same container as a
  * global variable.
@@ -87,6 +95,7 @@ declare const game: {
 
 export function replayCore<S, I>(
   platform: ReplayPlatform<I>,
+  nativeSpriteSettings: NativeSpriteSettings,
   gameSpriteArg?: CustomSprite<GameProps, S, I>,
   /**
    * Optionally specify a game size when you want to override the
@@ -105,7 +114,7 @@ export function replayCore<S, I>(
 
   const getInitDevice = platform.getGetDevice();
   const initDevice = getInitDevice(globalToGameCoords);
-  const gameContainer = createSpriteContainer(
+  const gameContainer = createCustomSpriteContainer(
     gameSprite,
     getInitDevice(globalToGameCoords),
     0
@@ -115,7 +124,7 @@ export function replayCore<S, I>(
   const initRenderMethod = getRenderMethod(initDevice.size, gameSize);
 
   return {
-    initTextures: traverseSpriteContainer<GameProps, I>(
+    initTextures: traverseCustomSpriteContainer<GameProps, I>(
       gameContainer,
       gameSprite.props,
       getInitDevice,
@@ -123,13 +132,15 @@ export function replayCore<S, I>(
       true,
       initRenderMethod,
       0,
-      1
+      1,
+      gameSprite.props.id,
+      nativeSpriteSettings
     ),
     getNextFrameTextures(time) {
       const getDevice = platform.getGetDevice();
       const device = getDevice(globalToGameCoords);
       const renderMethod = getRenderMethod(device.size, gameSize);
-      return traverseSpriteContainer<GameProps, I>(
+      return traverseCustomSpriteContainer<GameProps, I>(
         gameContainer,
         gameSprite.props,
         getDevice,
@@ -137,7 +148,9 @@ export function replayCore<S, I>(
         false,
         renderMethod,
         time,
-        1
+        1,
+        gameSprite.props.id,
+        nativeSpriteSettings
       );
     },
   };
@@ -148,8 +161,8 @@ export function replayCore<S, I>(
  * sprites to update a tree of sprite containers, or create / destroy containers
  * as appropriate.
  */
-function traverseSpriteContainer<P, I>(
-  spriteContainer: SpriteContainer<P, unknown, I>,
+function traverseCustomSpriteContainer<P, I>(
+  customSpriteContainer: CustomSpriteContainer<P, unknown, I>,
   spriteProps: CustomSpriteProps<P>,
   getDeviceGlobal: (
     getLocalCoords: (globalCoords: {
@@ -164,10 +177,14 @@ function traverseSpriteContainer<P, I>(
   initCreation: boolean,
   renderMethod: RenderMethod,
   time: number,
-  parentOpacity: number
+  parentOpacity: number,
+  parentGlobalId: string,
+  nativeSpriteSettings: NativeSpriteSettings
 ): SpriteTextures {
   const baseProps = getDefaultProps(spriteProps);
   baseProps.opacity *= parentOpacity;
+
+  const { nativeSpriteMap, nativeSpriteUtils } = nativeSpriteSettings;
 
   const getLocalCoords = (globalCoords: { x: number; y: number }) => {
     const parentCoords = getParentCoords(globalCoords);
@@ -176,7 +193,7 @@ function traverseSpriteContainer<P, I>(
   };
   const device = getDeviceGlobal(getLocalCoords);
 
-  const sprites = spriteContainer.getSprites(
+  const sprites = customSpriteContainer.getSprites(
     spriteProps,
     device,
     initCreation,
@@ -186,36 +203,119 @@ function traverseSpriteContainer<P, I>(
 
   const childIds: string[] = [];
 
-  const textures = sprites.filter(isNotNull).map((sprite) => {
-    if (sprite.type === "custom") {
-      childIds.push(sprite.props.id);
-      let spriteInitCreation = false;
-      if (!spriteContainer.childContainers[sprite.props.id]) {
-        spriteInitCreation = true;
-        spriteContainer.childContainers[
-          sprite.props.id
-        ] = createSpriteContainer(sprite, device, spriteContainer.prevTime);
-      }
-      return traverseSpriteContainer(
-        spriteContainer.childContainers[sprite.props.id],
-        sprite.props,
-        getDeviceGlobal,
-        getLocalCoords,
-        spriteInitCreation,
-        renderMethod,
-        time,
-        baseProps.opacity
-      );
-    }
-    return sprite;
-  });
+  const textures = sprites
+    .map((sprite) => {
+      if (!sprite) return sprite;
 
-  // Clean up removed sprites
-  Object.keys(spriteContainer.childContainers).forEach((id) => {
-    if (!childIds.includes(id)) {
-      delete spriteContainer.childContainers[id];
-    }
-  });
+      if (sprite.type === "native") {
+        childIds.push(sprite.props.id);
+
+        const nativeSpriteImplementation = nativeSpriteMap[sprite.name];
+        if (!nativeSpriteImplementation) {
+          throw Error(`Cannot find Native Sprite "${sprite.name}"`);
+        }
+
+        let lookupNativeSpriteContainer =
+          customSpriteContainer.childContainers[sprite.props.id];
+
+        if (
+          !lookupNativeSpriteContainer ||
+          lookupNativeSpriteContainer.type !== "native"
+        ) {
+          // Create a native container
+          lookupNativeSpriteContainer = {
+            type: "native",
+            state: nativeSpriteImplementation.create({
+              props: sprite.props,
+              parentGlobalId,
+              getState: () => lookupNativeSpriteContainer.state,
+              updateState: (mergeState) => {
+                lookupNativeSpriteContainer.state = {
+                  ...lookupNativeSpriteContainer.state,
+                  ...mergeState,
+                };
+              },
+              utils: nativeSpriteUtils,
+            }),
+            cleanup: nativeSpriteImplementation.cleanup,
+          };
+          customSpriteContainer.childContainers[
+            sprite.props.id
+          ] = lookupNativeSpriteContainer;
+        }
+
+        lookupNativeSpriteContainer.state = nativeSpriteImplementation.loop({
+          props: sprite.props,
+          state: lookupNativeSpriteContainer.state,
+          parentGlobalId,
+          utils: nativeSpriteUtils,
+        });
+
+        nativeSpriteUtils.didResize = false;
+
+        return null;
+      }
+
+      if (sprite.type === "custom") {
+        childIds.push(sprite.props.id);
+        let spriteInitCreation = false;
+
+        let lookupCustomSpriteContainer =
+          customSpriteContainer.childContainers[sprite.props.id];
+
+        if (
+          !lookupCustomSpriteContainer ||
+          lookupCustomSpriteContainer.type !== "custom"
+        ) {
+          spriteInitCreation = true;
+          lookupCustomSpriteContainer = createCustomSpriteContainer(
+            sprite,
+            device,
+            customSpriteContainer.prevTime
+          );
+          customSpriteContainer.childContainers[
+            sprite.props.id
+          ] = lookupCustomSpriteContainer;
+        }
+
+        return traverseCustomSpriteContainer(
+          lookupCustomSpriteContainer,
+          sprite.props,
+          getDeviceGlobal,
+          getLocalCoords,
+          spriteInitCreation,
+          renderMethod,
+          time,
+          baseProps.opacity,
+          `${parentGlobalId}--${sprite.props.id}`,
+          nativeSpriteSettings
+        );
+      }
+
+      return sprite;
+    })
+    .filter(isNotNull);
+
+  // Recursively clean up removed sprites
+  const cleanupSpriteContainers = (
+    spriteContainers: CustomSpriteContainer<P, unknown, I>["childContainers"]
+  ) => {
+    Object.keys(spriteContainers).forEach((id) => {
+      if (!childIds.includes(id)) {
+        const spriteContainer = spriteContainers[id];
+        if (spriteContainer.type === "native") {
+          spriteContainer.cleanup({
+            state: spriteContainer.state,
+            parentGlobalId,
+          });
+        } else {
+          cleanupSpriteContainers(spriteContainer.childContainers);
+        }
+        delete spriteContainers[id];
+      }
+    });
+  };
+  cleanupSpriteContainers(customSpriteContainer.childContainers);
 
   return {
     id: spriteProps.id,
@@ -233,11 +333,11 @@ const REPLAY_TIME_PER_UPDATE_MS = 1000 * (1 / 60);
  * Returns a container of the state of the sprite. Should only be called once
  * per creation of sprite.
  */
-function createSpriteContainer<P, S, I>(
+function createCustomSpriteContainer<P, S, I>(
   sprite: CustomSprite<P, S, I>,
   initDevice: Device<I>,
   currentTime: number
-): SpriteContainer<P, S, I> {
+): CustomSpriteContainer<P, S, I> {
   const { spriteObj, props: initProps } = sprite;
 
   // Use a queue so state is updated after rendering
@@ -257,6 +357,7 @@ function createSpriteContainer<P, S, I>(
   }
 
   return {
+    type: "custom",
     // WARNING: types are a bit tricky here, need to cast.
     // If a sprite does not set an init state, this will simply pass undefined
     state: initState as S,
@@ -366,10 +467,16 @@ function getRenderMethod(
   return supportsLandscapeAndPortrait && isPortrait ? "renderP" : "render";
 }
 
-interface SpriteContainer<P, S, I> {
+type SpriteContainer<P, S, I> =
+  | CustomSpriteContainer<P, S, I>
+  | NativeSpriteContainer<P, S>;
+
+type CustomSpriteContainer<P, S, I> = {
+  type: "custom";
   state: S;
   childContainers: {
-    [id: string]: SpriteContainer<unknown, unknown, I>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [id: string]: SpriteContainer<unknown, any, I>;
   };
   prevTime: number;
   currentLag: number;
@@ -380,7 +487,21 @@ interface SpriteContainer<P, S, I> {
     renderMethod: RenderMethod,
     time: number
   ) => Sprite[];
-}
+};
+
+type NativeSpriteContainer<P, S> = {
+  type: "native";
+  state: S;
+  cleanup: (params: { state: S; parentGlobalId: string }) => void;
+};
+
+export type NativeSpriteSettings = {
+  /**
+   * A map of Native Sprite names and their platform's implementation
+   */
+  nativeSpriteMap: NativeSpriteMap;
+  nativeSpriteUtils: NativeSpriteUtils;
+};
 
 function isNotNull<T>(arg: T | null): arg is T {
   return arg !== null;

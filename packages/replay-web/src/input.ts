@@ -66,7 +66,12 @@ export function getInputs(
 
 export function keyDownHandler(e: KeyboardEvent) {
   if (
-    ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].includes(e.key)
+    ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].includes(e.key) &&
+    // Don't block text inputs
+    !(
+      e.target instanceof HTMLTextAreaElement ||
+      e.target instanceof HTMLInputElement
+    )
   ) {
     // avoid scrolling with space and arrow keys
     e.preventDefault();
