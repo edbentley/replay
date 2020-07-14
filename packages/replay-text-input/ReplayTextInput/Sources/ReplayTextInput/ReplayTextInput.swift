@@ -17,13 +17,14 @@ var textFieldMap: [String: (UITextFieldOrView, TextFieldDelegate)] = [:]
             onChangeText: props.onChangeText,
             updateCaretPosition: { caretPosition in
                 args.updateState(["caretPosition": caretPosition])
-            }
+        }
         )
         
         if props.numberOfLines > 1 {
             // Multi-line
             let textView = UITextView()
             textView.delegate = textFieldDelegate
+            Utils.addDoneToTextView(textView)
             
             Utils.addToView(textView)
             
@@ -33,6 +34,7 @@ var textFieldMap: [String: (UITextFieldOrView, TextFieldDelegate)] = [:]
             let textField = UITextField()
             textField.delegate = textFieldDelegate
             textField.contentVerticalAlignment = UIControl.ContentVerticalAlignment.center
+            textField.returnKeyType = .done
             
             Utils.addToView(textField)
             
@@ -141,6 +143,11 @@ class TextFieldDelegate: NSObject, UITextFieldDelegate, UITextViewDelegate {
     
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         return handleChange(textField, shouldChangeTextIn: range, replacementText: string, currText: textField.text ?? "")
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return false
     }
     
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
@@ -272,7 +279,7 @@ class Utils {
     
     static func updateTextView(textView: UITextView, props: Props, caretPosition: Int32?, utils: ReplayNativeSpriteUtilsJS) {
         let padding = textView.textContainerInset.top + textView.textContainerInset.bottom
-        let height = CGFloat(props.numberOfLines) * props.fontSize * 1.2 + padding // * 1.2 for line spacing
+        let height = CGFloat(props.numberOfLines) * props.fontSize + padding
         
         let x = CGFloat(truncating: utils.gameXToPlatformX(Utils.cgFloatToNsNumber(props.x)))
         let y = CGFloat(truncating: utils.gameYToPlatformY(Utils.cgFloatToNsNumber(props.y)))
@@ -295,6 +302,23 @@ class Utils {
             let textPosition = textView.position(from: textView.beginningOfDocument, offset: Int(caretPosition)) {
             textView.selectedTextRange = textView.textRange(from: textPosition, to: textPosition)
         }
+    }
+    
+    // UITextView doesn't have a Done button
+    static func addDoneToTextView(_ textView: UITextView) {
+        let toolBar = UIToolbar(frame: CGRect(x: 0.0,
+                                              y: 0.0,
+                                              width: UIScreen.main.bounds.size.width,
+                                              height: 44.0))
+        let flexible = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let barButton = UIBarButtonItem(
+            title: "Done",
+            style: .plain,
+            target: textView,
+            action: #selector(textView.resignFirstResponder)
+        )
+        toolBar.setItems([flexible, barButton], animated: false)
+        textView.inputAccessoryView = toolBar
     }
     
     // If we have an input on the first frame, the view isn't initialised yet,
