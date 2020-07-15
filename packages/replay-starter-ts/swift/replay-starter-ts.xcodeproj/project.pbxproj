@@ -371,7 +371,7 @@
 			repositoryURL = "https://github.com/edbentley/replay-swift";
 			requirement = {
 				kind = exactVersion;
-				version = 0.2.0;
+				version = 0.3.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
