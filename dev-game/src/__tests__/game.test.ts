@@ -28,6 +28,7 @@ test("gameplay", () => {
     audio,
     store,
     log,
+    alert,
   } = testSprite(Game(gameProps), gameProps, {
     initInputs: inputs,
     mapInputCoordinates,
@@ -47,6 +48,11 @@ test("gameplay", () => {
   jumpToFrame(() => textureExists("player"));
   expect(getTexture("player").props.x).toBe(0);
   expect(getTexture("player").props.y).toBe(-150);
+
+  expect(alert.okCancel).toHaveBeenCalledWith(
+    "Game is about to start",
+    expect.any(Function)
+  );
 
   // enemy spawns in middle
 

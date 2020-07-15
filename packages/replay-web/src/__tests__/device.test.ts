@@ -170,3 +170,29 @@ test("Can play audio, pause and get position", async () => {
 
   expect(console.log).toBeCalledWith("Current time: 5");
 });
+
+test("Can show alerts", async () => {
+  jest.spyOn(window, "alert").mockImplementation(() => null);
+  jest.spyOn(window, "confirm").mockImplementation(() => true);
+
+  const { loadPromise } = renderCanvas(TestGame(testGameProps));
+
+  await loadPromise;
+  mockTime.nextFrame();
+
+  clickPointer(104, 0);
+  mockTime.nextFrame();
+  releasePointer(104, 0);
+  mockTime.nextFrame();
+
+  expect(window.alert).toBeCalledWith("Ok?");
+  expect(console.log).toBeCalledWith("It's ok");
+
+  clickPointer(105, 0);
+  mockTime.nextFrame();
+  releasePointer(105, 0);
+  mockTime.nextFrame();
+
+  expect(window.confirm).toBeCalledWith("Ok or cancel?");
+  expect(console.log).toBeCalledWith("Was ok: true");
+});

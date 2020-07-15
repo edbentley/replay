@@ -1,4 +1,4 @@
-import { GameProps, Texture, DeviceSize, Store } from "@replay/core";
+import { GameProps, Texture, DeviceSize, Store, Device } from "@replay/core";
 import {
   replayCore,
   ReplayPlatform,
@@ -344,11 +344,11 @@ function deviceCreator(
   defaultSize: DeviceSize
 ): ReplayPlatform<Inputs>["getGetDevice"] {
   // called once
-  const initDevice = {
+  const initDevice: Omit<Device<Inputs>, "inputs" | "size" | "now"> = {
     log: console.log,
     random: Math.random,
-    timeout: (callback: () => void, ms: number) => setTimeout(callback, ms),
-    audio: (filename: string) => {
+    timeout: (callback, ms) => setTimeout(callback, ms),
+    audio: (filename) => {
       function getAudioElement(play: boolean) {
         let audioElement = audioElements[filename];
         if (!audioElement) {
@@ -362,7 +362,7 @@ function deviceCreator(
       }
       return {
         getPosition: () => getAudioElement(false).currentTime,
-        play: (fromPosition?: number, loop?: boolean) => {
+        play: (fromPosition, loop) => {
           const audioElement = getAudioElement(true);
           audioElement.play();
           if (fromPosition !== undefined) {
@@ -378,12 +378,12 @@ function deviceCreator(
       };
     },
     network: {
-      get: (url: string, callback: (data: unknown) => void) => {
+      get: (url, callback) => {
         fetch(url)
           .then((res) => res.json())
           .then(callback);
       },
-      post: (url: string, body: object, callback: (data: unknown) => void) => {
+      post: (url, body, callback) => {
         fetch(url, {
           method: "POST",
           body: JSON.stringify(body),
@@ -391,7 +391,7 @@ function deviceCreator(
           .then((res) => res.json())
           .then(callback);
       },
-      put: (url: string, body: object, callback: (data: unknown) => void) => {
+      put: (url, body, callback) => {
         fetch(url, {
           method: "PUT",
           body: JSON.stringify(body),
@@ -399,7 +399,7 @@ function deviceCreator(
           .then((res) => res.json())
           .then(callback);
       },
-      delete: (url: string, callback: (data: unknown) => void) => {
+      delete: (url, callback) => {
         fetch(url, {
           method: "DELETE",
         })
@@ -418,7 +418,7 @@ function deviceCreator(
         }
         return store;
       },
-      setStore: (store: Store) => {
+      setStore: (store) => {
         Object.entries(store).forEach(([field, value]) => {
           if (value === undefined) {
             localStorage.removeItem(field);
@@ -428,11 +428,21 @@ function deviceCreator(
         });
       },
     },
+    alert: {
+      ok: (message, onResponse) => {
+        alert(message);
+        onResponse?.();
+      },
+      okCancel: (message, onResponse) => {
+        const wasOk = confirm(message);
+        onResponse(wasOk);
+      },
+    },
   };
 
   return () => {
     // called every frame
-    const device = {
+    const device: Omit<Device<Inputs>, "inputs"> = {
       ...initDevice,
       size: getDeviceSize() || defaultSize,
       now: () => new Date(),

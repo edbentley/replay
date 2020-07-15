@@ -60,11 +60,15 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
     //   }
     // );
     device.timeout(() => {
-      updateState((state) => ({
-        ...state,
-        bulletSpeed: 10,
-        stage: GameStage.Play,
-      }));
+      device.alert.okCancel("Game is about to start", (wasOk) => {
+        if (wasOk) {
+          updateState((state) => ({
+            ...state,
+            bulletSpeed: 10,
+            stage: GameStage.Play,
+          }));
+        }
+      });
     }, 1000);
 
     return { ...initState, highScore };
@@ -137,6 +141,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
             bulletSpeed: state.bulletSpeed,
             gameOver: (score) => {
               if (score > state.highScore) {
+                device.alert.ok("New high score!");
                 device.storage.setStore({ highScore: String(score) });
               }
 

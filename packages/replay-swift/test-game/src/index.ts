@@ -77,6 +77,14 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
         device.log(device.storage.getStore().testKey);
       } else if (pointer.x === 111) {
         device.storage.setStore({ testKey: "testValue" });
+      } else if (pointer.x === 112) {
+        device.alert.ok("Ok?", () => {
+          device.log("It's ok");
+        });
+      } else if (pointer.x === 113) {
+        device.alert.okCancel("Ok or cancel?", (wasOk) => {
+          device.log(`Was ok: ${wasOk}`);
+        });
       }
     }
     return {

@@ -42,6 +42,10 @@ interface TestPlatformInputs {
       put: boolean;
       delete: boolean;
     };
+    alert: {
+      ok: boolean;
+      okCancel: boolean;
+    };
     moveWithUpdateState: boolean;
   };
 }
@@ -70,6 +74,10 @@ function getInitTestPlatformInputs(): TestPlatformInputs {
         post: false,
         put: false,
         delete: false,
+      },
+      alert: {
+        ok: false,
+        okCancel: false,
       },
       moveWithUpdateState: false,
     },
@@ -122,6 +130,14 @@ export function getTestPlatform(customSize?: DeviceSize) {
     storage: {
       getStore: jest.fn(() => ({ text1: "storage" })),
       setStore: jest.fn(),
+    },
+    alert: {
+      ok: jest.fn((_, onResponse) => {
+        onResponse?.();
+      }),
+      okCancel: jest.fn((_, onResponse) => {
+        onResponse(true);
+      }),
     },
   };
 
@@ -397,6 +413,17 @@ export const FullTestGame = makeSprite<
 
     if (device.inputs.buttonPressed.setRandom) {
       device.log(device.random());
+    }
+
+    if (device.inputs.buttonPressed.alert.ok) {
+      device.alert.ok("Message", () => {
+        device.log("Hit ok");
+      });
+    }
+    if (device.inputs.buttonPressed.alert.okCancel) {
+      device.alert.okCancel("Message Confirm", (wasOk) => {
+        device.log(`Was ok: ${wasOk}`);
+      });
     }
 
     if (state.testInitUpdateState) {

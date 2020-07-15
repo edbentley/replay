@@ -557,6 +557,39 @@ test("supports local storage", () => {
   expect(storageSpy.setStore).toBeCalledWith({ text2: "new-val" });
 });
 
+test("supports alerts", () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+  const logSpy = jest.spyOn(mutableTestDevice, "log");
+
+  const { alert } = mutableTestDevice;
+  const alertSpy = {
+    ok: jest.spyOn(alert, "ok"),
+    okCancel: jest.spyOn(alert, "okCancel"),
+  };
+
+  const { getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    FullTestGame(gameProps)
+  );
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time);
+  };
+
+  mutableTestDevice.inputs.buttonPressed.alert.ok = true;
+  getNextFrameTexturesOverTime();
+  expect(alertSpy.ok).toBeCalled();
+  expect(logSpy).toBeCalledWith("Hit ok");
+
+  mutableTestDevice.inputs.buttonPressed.alert.okCancel = true;
+  getNextFrameTexturesOverTime();
+  expect(alertSpy.okCancel).toBeCalled();
+  expect(logSpy).toBeCalledWith("Was ok: true");
+});
+
 test("can define various texture shapes", () => {
   expect(
     t.text({

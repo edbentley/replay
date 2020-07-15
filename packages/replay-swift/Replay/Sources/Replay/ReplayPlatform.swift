@@ -32,6 +32,7 @@ typealias GetLocalCoords = JSValue
     var audio: @convention(block) (String) -> Audio { get set }
     var network: Network { get set }
     var storage: Storage { get set }
+    var alert: Alert { get set }
 }
 @objc class iOSDevice : NSObject, iOSDeviceJS {
     var inputs: Inputs
@@ -43,6 +44,7 @@ typealias GetLocalCoords = JSValue
     var audio: @convention(block) (String) -> Audio
     var network: Network
     var storage: Storage
+    var alert: Alert
 
     init(
         inputs: Inputs,
@@ -52,7 +54,8 @@ typealias GetLocalCoords = JSValue
         dateGenerator: ReplayDateGenerator,
         audioPlayer: ReplayAudioPlayer,
         logger: @escaping ReplayLogger,
-        storageProvider: ReplayStorageProvider
+        storageProvider: ReplayStorageProvider,
+        alerter: ReplayAlerter
     ) {
         self.inputs = inputs
         self.size = size
@@ -77,6 +80,7 @@ typealias GetLocalCoords = JSValue
             return Audio(filename: filename, audioPlayer: audioPlayer)
         }
         storage = Storage(provider: storageProvider)
+        alert = Alert(alerter: alerter)
     }
 }
 
@@ -249,6 +253,29 @@ typealias GetLocalCoords = JSValue
         setStore = { store in
             guard let validStore = store as? ReplayStore else { fatalError("Set invalid store") }
             provider.setStore(validStore)
+        }
+    }
+}
+
+@objc protocol AlertJS : JSExport {
+    var ok: @convention(block) (String, JSValue) -> Void { get set }
+    var okCancel: @convention(block) (String, JSValue) -> Void { get set }
+}
+@objc class Alert : NSObject, AlertJS {
+    var ok: @convention(block) (String, JSValue) -> Void
+    var okCancel: @convention(block) (String, JSValue) -> Void
+
+    init(alerter: ReplayAlerter) {
+        ok = { (message, onResponse) in
+            alerter.ok(
+                message,
+                onResponse: onResponse.isUndefined ? nil : { onResponse.call(withArguments: []) }
+            )
+        }
+        okCancel = { (message, onResponse) in
+            alerter.okCancel(message, onResponse: { wasOk in
+                onResponse.call(withArguments: [wasOk])
+            })
         }
     }
 }
