@@ -60,6 +60,10 @@ interface Options<I> {
     };
   };
   /**
+   * For ok / cancel alert, which choice is chosen. Default true (OK).
+   */
+  initAlertResponse?: boolean;
+  /**
    * A list of Native Sprite names to mock
    */
   nativeSpriteNames?: string[];
@@ -94,6 +98,7 @@ export function testSprite<P, S, I>(
     initStore = {},
     networkResponses = {},
     mapInputCoordinates = (_, inputs) => inputs,
+    initAlertResponse = true,
     nativeSpriteNames = [],
   } = options;
   /**
@@ -142,6 +147,26 @@ export function testSprite<P, S, I>(
       return cb(networkResponses.delete[url]());
     }),
   };
+
+  const okCancelValue = { ref: initAlertResponse };
+
+  /**
+   * Mock functions for alerts.
+   */
+  const alert: Device<I>["alert"] = {
+    ok: jest.fn((_, onResponse) => {
+      onResponse?.();
+    }),
+    okCancel: jest.fn((_, onResponse) => {
+      onResponse(okCancelValue.ref);
+    }),
+  };
+  /**
+   * Update whether okCancel alert chooses ok or cancel
+   */
+  function updateAlertResponse(isOk: boolean) {
+    okCancelValue.ref = isOk;
+  }
 
   let inputs: I = { ...initInputs };
   function getInputs(
@@ -247,6 +272,7 @@ export function testSprite<P, S, I>(
         audio: audioFn,
         network,
         storage,
+        alert,
       });
     },
   };
@@ -437,5 +463,7 @@ export function testSprite<P, S, I>(
     audio,
     network,
     store,
+    alert,
+    updateAlertResponse,
   };
 }

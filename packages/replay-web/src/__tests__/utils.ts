@@ -57,6 +57,14 @@ export const TestGame = makeSprite<GameProps, TestGameState, Inputs>({
           const dataCast = data as Data;
           device.log(`DELETE ${dataCast.name}`);
         });
+      } else if (pointer.x === 4) {
+        device.alert.ok("Ok?", () => {
+          device.log("It's ok");
+        });
+      } else if (pointer.x === 5) {
+        device.alert.okCancel("Ok or cancel?", (wasOk) => {
+          device.log(`Was ok: ${wasOk}`);
+        });
       }
     }
 

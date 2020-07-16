@@ -17,6 +17,7 @@ The `device` parameter of the Sprite methods can be used to interact with the pl
       audio,
       network,
       storage,
+      alert,
     } = device;
 
     ...
@@ -154,4 +155,35 @@ Setting `undefined` will remove a field from storage:
 
 ```js
 storage.setStore({ highScore: undefined });
+```
+
+### `alert`
+
+Show an alert using the platform's dialog.
+
+#### `ok(message, onResponse)`
+
+An alert dialog with an OK button. Game loop will be paused on some platforms.
+
+```js
+alert.ok("Connected", () => {
+  // Optional callback to handle OK clicked
+});
+```
+
+#### `okCancel(message, onResponse)`
+
+An alert dialog with an OK and cancel button. Game loop will be paused on some platforms.
+
+```js
+device.alert.okCancel(
+  "Are you sure you want to delete this?",
+  (wasOk) => {
+    if (wasOk) {
+      // Delete it
+    } else {
+      // Cancel
+    }
+  }
+);
 ```

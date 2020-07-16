@@ -12,7 +12,6 @@
 		2BBA142E24519F9E00C68FAD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2BBA142D24519F9E00C68FAD /* Assets.xcassets */; };
 		2BBA143124519F9E00C68FAD /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2BBA143024519F9E00C68FAD /* Preview Assets.xcassets */; };
 		2BBA143424519F9E00C68FAD /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2BBA143224519F9E00C68FAD /* LaunchScreen.storyboard */; };
-		2BBA143E2451AA7D00C68FAD /* Replay in Frameworks */ = {isa = PBXBuildFile; productRef = 2BBA143D2451AA7D00C68FAD /* Replay */; };
 		2BBA14402451FE5300C68FAD /* game.js in Resources */ = {isa = PBXBuildFile; fileRef = 2BBA143F2451FE5300C68FAD /* game.js */; };
 		2BBA1444245358F800C68FAD /* shoot.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2BBA1443245358F800C68FAD /* shoot.wav */; };
 		6498DAF624AF96EE007A5A9F /* ReplayTextInput in Resources */ = {isa = PBXBuildFile; fileRef = 6498DAF524AF96ED007A5A9F /* ReplayTextInput */; };
@@ -27,7 +26,6 @@
 		2BBA143024519F9E00C68FAD /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		2BBA143324519F9E00C68FAD /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		2BBA143524519F9E00C68FAD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		2BBA143B2451A8A500C68FAD /* Replay */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Replay; path = "../../packages/replay-swift/Replay"; sourceTree = "<group>"; };
 		2BBA143F2451FE5300C68FAD /* game.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = game.js; sourceTree = "<group>"; };
 		2BBA1443245358F800C68FAD /* shoot.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = shoot.wav; path = ../../assets/audio/shoot.wav; sourceTree = "<group>"; };
 		6498DAF524AF96ED007A5A9F /* ReplayTextInput */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ReplayTextInput; path = "../../packages/replay-text-input/ReplayTextInput"; sourceTree = "<group>"; };
@@ -38,7 +36,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2BBA143E2451AA7D00C68FAD /* Replay in Frameworks */,
 				6498DAF824AF97B6007A5A9F /* ReplayTextInput in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -50,7 +47,6 @@
 			isa = PBXGroup;
 			children = (
 				6498DAF524AF96ED007A5A9F /* ReplayTextInput */,
-				2BBA143B2451A8A500C68FAD /* Replay */,
 				2BBA142624519F9D00C68FAD /* dev-game */,
 				2BBA142524519F9D00C68FAD /* Products */,
 				2BBA143C2451AA7D00C68FAD /* Frameworks */,
@@ -112,7 +108,6 @@
 			);
 			name = "dev-game";
 			packageProductDependencies = (
-				2BBA143D2451AA7D00C68FAD /* Replay */,
 				6498DAF724AF97B6007A5A9F /* ReplayTextInput */,
 			);
 			productName = "dev-game";
@@ -370,10 +365,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		2BBA143D2451AA7D00C68FAD /* Replay */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Replay;
-		};
 		6498DAF724AF97B6007A5A9F /* ReplayTextInput */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ReplayTextInput;

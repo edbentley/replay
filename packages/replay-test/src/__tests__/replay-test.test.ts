@@ -320,6 +320,33 @@ test("storage", () => {
   expect(store).toEqual({ origStore: "origValue" });
 });
 
+test("alerts", () => {
+  const {
+    nextFrame,
+    log,
+    alert,
+    updateInputs,
+    updateAlertResponse,
+  } = testSprite(Game(gameProps), gameProps, {
+    initAlertResponse: false,
+  });
+  nextFrame();
+
+  updateInputs({ testInput: "alert-ok" });
+  nextFrame();
+  expect(alert.ok).toBeCalledWith("Ok?", expect.any(Function));
+  expect(log).toBeCalledWith("It's ok");
+
+  updateInputs({ testInput: "alert-ok-cancel" });
+  nextFrame();
+  expect(alert.okCancel).toBeCalledWith("Ok or cancel?", expect.any(Function));
+  expect(log).toBeCalledWith("Was ok: false");
+
+  updateAlertResponse(true);
+  nextFrame();
+  expect(log).toBeCalledWith("Was ok: true");
+});
+
 test("can test individual Sprites", () => {
   const { getByText, getTextures } = testSprite(
     Text({ id: "Text", text: "Hello" }),
@@ -475,6 +502,16 @@ const Game = makeSprite<GameProps, State, Inputs>({
         break;
       case "storage-remove":
         device.storage.setStore({ testKey: undefined });
+        break;
+      case "alert-ok":
+        device.alert.ok("Ok?", () => {
+          device.log("It's ok");
+        });
+        break;
+      case "alert-ok-cancel":
+        device.alert.okCancel("Ok or cancel?", (wasOk) => {
+          device.log(`Was ok: ${wasOk}`);
+        });
         break;
       default:
         break;

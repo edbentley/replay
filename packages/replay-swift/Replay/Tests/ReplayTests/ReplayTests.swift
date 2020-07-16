@@ -4,6 +4,7 @@ import XCTest
 final class ReplayTests: XCTestCase {
     var view: ReplayView!
     var audioPlayer: MockAudioPlayer!
+    var alerter: MockAlerter!
     var logger: MockLogger!
     var storageProvider: MockStorage!
 
@@ -25,6 +26,7 @@ final class ReplayTests: XCTestCase {
         audioPlayer = MockAudioPlayer()
         logger = MockLogger()
         storageProvider = MockStorage()
+        alerter = MockAlerter()
 
         view = ReplayView(
             frame: CGRect(x: 0, y: 0, width: width, height: height),
@@ -35,7 +37,8 @@ final class ReplayTests: XCTestCase {
             mockDateNow: Date(timeIntervalSinceReferenceDate: 15),
             mockAudioPlayer: audioPlayer,
             mockLogger: logger.getLogger(),
-            mockStorage: storageProvider
+            mockStorage: storageProvider,
+            mockAlerter: alerter
         )
     }
 
@@ -368,6 +371,27 @@ final class ReplayTests: XCTestCase {
         view.loop(currentTime: oneFrame * 3)
 
         XCTAssertEqual(logger.lastLogged, "testValue")
+    }
+    
+    func testAlert() {
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 112, y: 0))
+        view.loop(currentTime: oneFrame * 1)
+
+        XCTAssertEqual(alerter.lastMessage, "Ok?")
+        XCTAssertEqual(logger.lastLogged, "It's ok")
+
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 113, y: 0))
+        view.loop(currentTime: oneFrame * 2)
+
+        XCTAssertEqual(alerter.lastMessage, "Ok or cancel?")
+        XCTAssertEqual(logger.lastLogged, "Was ok: true")
+        
+        alerter.shouldOk = false
+        
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 113, y: 0))
+        view.loop(currentTime: oneFrame * 3)
+
+        XCTAssertEqual(logger.lastLogged, "Was ok: false")
     }
 
     func testNativeSprite() {

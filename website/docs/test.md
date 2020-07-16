@@ -32,6 +32,7 @@ The `@replay/test` package is useful for writing tests in Jest for your Replay g
     },
   },
   ```
+  - `initAlertResponse`: (Optional) Set which choice is chosen for OK / cancel alerts. Default `true`.
   - `nativeSpriteNames`: (Optional) A list of [Native Sprite](native-sprites.md) names to mock.
 
 `testSprite` returns an object with the following fields:
@@ -141,6 +142,22 @@ A mock local storage store.
 
 ```js
 expect(store).toEqual({ highScore: 5 });
+```
+
+### `alert`
+
+A mock alert object.
+
+```js
+expect(alert.okCancel).toBeCalledWith("Ok or cancel?", expect.any(Function));
+```
+
+### `updateAlertResponse(isOk)`
+
+Update whether OK / cancel alert chooses OK or cancel.
+
+```js
+updateAlertResponse(false);
 ```
 
 ## Example

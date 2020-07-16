@@ -61,6 +61,19 @@ export interface Device<I> {
     getStore: () => Store;
     setStore: (store: Store) => void;
   };
+
+  alert: {
+    /**
+     * An alert dialog with an OK button. Game loop will be paused on some
+     * platforms.
+     */
+    ok: (message: string, onResponse?: () => void) => void;
+    /**
+     * An alert dialog with an OK and cancel button. Game loop will be paused on
+     * some platforms.
+     */
+    okCancel: (message: string, onResponse: (wasOk: boolean) => void) => void;
+  };
 }
 
 /**
