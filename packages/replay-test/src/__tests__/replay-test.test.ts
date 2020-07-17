@@ -347,6 +347,19 @@ test("alerts", () => {
   expect(log).toBeCalledWith("Was ok: true");
 });
 
+test("clipboard", () => {
+  const { nextFrame, log, clipboard, updateInputs } = testSprite(
+    Game(gameProps),
+    gameProps
+  );
+  nextFrame();
+
+  updateInputs({ testInput: "clipboard-copy" });
+  nextFrame();
+  expect(clipboard.copy).toBeCalledWith("Hello", expect.any(Function));
+  expect(log).toBeCalledWith("Copied");
+});
+
 test("can test individual Sprites", () => {
   const { getByText, getTextures } = testSprite(
     Text({ id: "Text", text: "Hello" }),
@@ -513,6 +526,12 @@ const Game = makeSprite<GameProps, State, Inputs>({
           device.log(`Was ok: ${wasOk}`);
         });
         break;
+      case "clipboard-copy":
+        device.clipboard.copy("Hello", () => {
+          device.log("Copied");
+        });
+        break;
+
       default:
         break;
     }

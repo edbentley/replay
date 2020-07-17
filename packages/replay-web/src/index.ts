@@ -438,6 +438,28 @@ function deviceCreator(
         onResponse(wasOk);
       },
     },
+    clipboard: {
+      copy: (text, onComplete) => {
+        if (!navigator.clipboard) {
+          onComplete(
+            new Error(
+              window.isSecureContext
+                ? "Couldn't access clipboard"
+                : "Clipboard only available on HTTPS or localhost"
+            )
+          );
+          return;
+        }
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            onComplete();
+          })
+          .catch((error: Error) => {
+            onComplete(error);
+          });
+      },
+    },
   };
 
   return () => {

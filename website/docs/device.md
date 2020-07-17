@@ -18,6 +18,7 @@ The `device` parameter of the Sprite methods can be used to interact with the pl
       network,
       storage,
       alert,
+      clipboard,
     } = device;
 
     ...
@@ -186,4 +187,22 @@ device.alert.okCancel(
     }
   }
 );
+```
+
+### `clipboard`
+
+Interact with the player's clipboard.
+
+#### `copy(text, onComplete)`
+
+Asynchronously copy text to the clipboard. Callback has an error argument if unsuccessful (e.g. did not get permission).
+
+```js
+clipboard.copy("ABCDEFG", (error) => {
+  if (error) {
+    // Couldn't copy to clipboard
+  } else {
+    // Success
+  }
+});
 ```

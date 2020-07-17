@@ -29,6 +29,7 @@ test("gameplay", () => {
     store,
     log,
     alert,
+    clipboard,
   } = testSprite(Game(gameProps), gameProps, {
     initInputs: inputs,
     mapInputCoordinates,
@@ -49,8 +50,9 @@ test("gameplay", () => {
   expect(getTexture("player").props.x).toBe(0);
   expect(getTexture("player").props.y).toBe(-150);
 
+  expect(clipboard.copy).toHaveBeenCalledWith("Hello", expect.any(Function));
   expect(alert.okCancel).toHaveBeenCalledWith(
-    "Game is about to start",
+    `Just copied "Hello" to your clipboard. Game is about to start`,
     expect.any(Function)
   );
 

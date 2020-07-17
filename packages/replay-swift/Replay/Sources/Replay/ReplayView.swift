@@ -13,6 +13,7 @@ public class ReplayView: UIView, ReplayPlatform {
     var logger: ReplayLogger
     var storageProvider: ReplayStorageProvider
     var alerter: ReplayAlerter
+    var clipboardManager: ReplayClipboardManager
     
     var deviceSize: DeviceSize!
     var gameViewSize: GameViewSize!
@@ -31,7 +32,8 @@ public class ReplayView: UIView, ReplayPlatform {
         mockAudioPlayer: ReplayAudioPlayer? = nil,
         mockLogger: ReplayLogger? = nil,
         mockStorage: ReplayStorageProvider? = nil,
-        mockAlerter: ReplayAlerter? = nil
+        mockAlerter: ReplayAlerter? = nil,
+        mockClipboardManager: ReplayClipboardManager? = nil
     ) {
         self.session = mockSession ?? URLSession.shared
         self.dateGenerator = ReplayDateGenerator(mockDateNow: mockDateNow)
@@ -42,6 +44,7 @@ public class ReplayView: UIView, ReplayPlatform {
         }
         self.storageProvider = mockStorage ?? StorageProvider()
         self.alerter = mockAlerter ?? Alerter()
+        self.clipboardManager = mockClipboardManager ?? ClipboardManager()
         
         super.init(frame: frame)
         
@@ -169,7 +172,8 @@ extension ReplayView {
                 audioPlayer: self.audioPlayer,
                 logger: self.logger,
                 storageProvider: self.storageProvider,
-                alerter: self.alerter
+                alerter: self.alerter,
+                clipboardManager: self.clipboardManager
             )
         }
     }

@@ -85,6 +85,11 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
         device.alert.okCancel("Ok or cancel?", (wasOk) => {
           device.log(`Was ok: ${wasOk}`);
         });
+      } else if (pointer.x === 114) {
+        device.clipboard.copy("Hello", () => {
+          // Note: no error on iOS possible
+          device.log("Copied");
+        });
       }
     }
     return {

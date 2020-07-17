@@ -590,6 +590,44 @@ test("supports alerts", () => {
   expect(logSpy).toBeCalledWith("Was ok: true");
 });
 
+test("can copy to clipboard", () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+  const logSpy = jest.spyOn(mutableTestDevice, "log");
+
+  const { clipboard } = mutableTestDevice;
+  const clipboardSpy = {
+    copy: jest.spyOn(clipboard, "copy"),
+  };
+
+  const { getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    FullTestGame(gameProps)
+  );
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time);
+  };
+
+  expect(clipboardSpy.copy).not.toHaveBeenCalled();
+
+  mutableTestDevice.inputs.buttonPressed.clipboard.copyMessage =
+    "Hello clipboard";
+  getNextFrameTexturesOverTime();
+  expect(clipboardSpy.copy).toBeCalledWith(
+    "Hello clipboard",
+    expect.any(Function)
+  );
+  expect(logSpy).toBeCalledWith("Copied");
+
+  mutableTestDevice.inputs.buttonPressed.clipboard.copyMessage = "Error";
+  getNextFrameTexturesOverTime();
+  expect(clipboardSpy.copy).toBeCalledWith("Error", expect.any(Function));
+  expect(logSpy).toBeCalledWith("Error copying: !");
+});
+
 test("can define various texture shapes", () => {
   expect(
     t.text({

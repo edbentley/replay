@@ -60,13 +60,22 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
     //   }
     // );
     device.timeout(() => {
-      device.alert.okCancel("Game is about to start", (wasOk) => {
-        if (wasOk) {
-          updateState((state) => ({
-            ...state,
-            bulletSpeed: 10,
-            stage: GameStage.Play,
-          }));
+      device.clipboard.copy("Hello", (error) => {
+        if (error) {
+          device.alert.ok(`Error copying to clipboard: ${error.message}`);
+        } else {
+          device.alert.okCancel(
+            `Just copied "Hello" to your clipboard. Game is about to start`,
+            (wasOk) => {
+              if (wasOk) {
+                updateState((state) => ({
+                  ...state,
+                  bulletSpeed: 10,
+                  stage: GameStage.Play,
+                }));
+              }
+            }
+          );
         }
       });
     }, 1000);

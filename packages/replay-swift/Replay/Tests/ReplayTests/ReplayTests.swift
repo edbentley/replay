@@ -7,6 +7,7 @@ final class ReplayTests: XCTestCase {
     var alerter: MockAlerter!
     var logger: MockLogger!
     var storageProvider: MockStorage!
+    var clipboard: MockClipboard!
 
     let width = 500
     let height = 300
@@ -27,6 +28,7 @@ final class ReplayTests: XCTestCase {
         logger = MockLogger()
         storageProvider = MockStorage()
         alerter = MockAlerter()
+        clipboard = MockClipboard()
 
         view = ReplayView(
             frame: CGRect(x: 0, y: 0, width: width, height: height),
@@ -38,7 +40,8 @@ final class ReplayTests: XCTestCase {
             mockAudioPlayer: audioPlayer,
             mockLogger: logger.getLogger(),
             mockStorage: storageProvider,
-            mockAlerter: alerter
+            mockAlerter: alerter,
+            mockClipboardManager: clipboard
         )
     }
 
@@ -392,6 +395,14 @@ final class ReplayTests: XCTestCase {
         view.loop(currentTime: oneFrame * 3)
 
         XCTAssertEqual(logger.lastLogged, "Was ok: false")
+    }
+    
+    func testClipboard() {
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 114, y: 0))
+        view.loop(currentTime: oneFrame * 1)
+
+        XCTAssertEqual(clipboard.lastCopied, "Hello")
+        XCTAssertEqual(logger.lastLogged, "Copied")
     }
 
     func testNativeSprite() {

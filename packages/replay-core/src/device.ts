@@ -74,6 +74,14 @@ export interface Device<I> {
      */
     okCancel: (message: string, onResponse: (wasOk: boolean) => void) => void;
   };
+
+  clipboard: {
+    /**
+     * Asynchronously copy text to the clipboard. Callback has an error argument
+     * if unsuccessful (e.g. did not get permission).
+     */
+    copy: (text: string, onComplete: (error?: Error) => void) => void;
+  };
 }
 
 /**

@@ -33,6 +33,7 @@ typealias GetLocalCoords = JSValue
     var network: Network { get set }
     var storage: Storage { get set }
     var alert: Alert { get set }
+    var clipboard: Clipboard { get set }
 }
 @objc class iOSDevice : NSObject, iOSDeviceJS {
     var inputs: Inputs
@@ -45,6 +46,7 @@ typealias GetLocalCoords = JSValue
     var network: Network
     var storage: Storage
     var alert: Alert
+    var clipboard: Clipboard
 
     init(
         inputs: Inputs,
@@ -55,7 +57,8 @@ typealias GetLocalCoords = JSValue
         audioPlayer: ReplayAudioPlayer,
         logger: @escaping ReplayLogger,
         storageProvider: ReplayStorageProvider,
-        alerter: ReplayAlerter
+        alerter: ReplayAlerter,
+        clipboardManager: ReplayClipboardManager
     ) {
         self.inputs = inputs
         self.size = size
@@ -81,6 +84,12 @@ typealias GetLocalCoords = JSValue
         }
         storage = Storage(provider: storageProvider)
         alert = Alert(alerter: alerter)
+        
+        let copy: @convention(block) (String, JSValue) -> Void = { (text, onComplete) in
+            clipboardManager.copy(text)
+            onComplete.call(withArguments: [])
+        }
+        clipboard = ["copy": copy]
     }
 }
 
@@ -279,3 +288,8 @@ typealias GetLocalCoords = JSValue
         }
     }
 }
+
+// Clipboard is a JS object with a copy field.
+// However NSObject already has a `copy` method which conflicts with Replay's,
+// so we'll use an NSDictionary instead of JSExport
+typealias Clipboard = NSDictionary

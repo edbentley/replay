@@ -65,6 +65,14 @@ export const TestGame = makeSprite<GameProps, TestGameState, Inputs>({
         device.alert.okCancel("Ok or cancel?", (wasOk) => {
           device.log(`Was ok: ${wasOk}`);
         });
+      } else if (pointer.x === 6 || pointer.x === 7) {
+        device.clipboard.copy(pointer.x === 6 ? "Hello" : "Error", (error) => {
+          if (error) {
+            device.log(`Error copying: ${error.message}`);
+          } else {
+            device.log("Copied");
+          }
+        });
       }
     }
 
