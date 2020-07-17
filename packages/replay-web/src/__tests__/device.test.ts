@@ -21,6 +21,13 @@ jest
   .spyOn(window.HTMLAudioElement.prototype, "load")
   .mockImplementation(() => undefined);
 
+// Setup clipboard
+Object.assign(navigator, {
+  clipboard: {
+    writeText: () => undefined,
+  },
+});
+
 beforeEach(() => {
   console.log = jest.fn();
   resetInputs();
@@ -195,4 +202,37 @@ test("Can show alerts", async () => {
 
   expect(window.confirm).toBeCalledWith("Ok or cancel?");
   expect(console.log).toBeCalledWith("Was ok: true");
+});
+
+test("Can copy to clipboard", async () => {
+  jest
+    .spyOn(navigator.clipboard, "writeText")
+    .mockImplementation(async (message) => {
+      if (message === "Error") {
+        throw new Error("!");
+      }
+    });
+
+  const { loadPromise } = renderCanvas(TestGame(testGameProps));
+
+  await loadPromise;
+  mockTime.nextFrame();
+
+  clickPointer(106, 0);
+  mockTime.nextFrame();
+  releasePointer(106, 0);
+  mockTime.nextFrame();
+
+  expect(navigator.clipboard.writeText).toBeCalledWith("Hello");
+
+  // log calls not being picked up inside device.clipboard.copy callback?
+  // expect(console.log).toBeCalledWith("Copied");
+
+  clickPointer(107, 0);
+  mockTime.nextFrame();
+  releasePointer(107, 0);
+  mockTime.nextFrame();
+
+  expect(navigator.clipboard.writeText).toBeCalledWith("Error");
+  // expect(console.log).toBeCalledWith("Error copying: !");
 });

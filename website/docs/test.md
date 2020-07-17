@@ -160,6 +160,14 @@ Update whether OK / cancel alert chooses OK or cancel.
 updateAlertResponse(false);
 ```
 
+### `clipboard`
+
+A mock clipboard object.
+
+```js
+expect(clipboard.copy).toBeCalledWith("ABCDEFG", expect.any(Function));
+```
+
 ## Example
 
 <Tabs

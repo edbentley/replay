@@ -46,6 +46,9 @@ interface TestPlatformInputs {
       ok: boolean;
       okCancel: boolean;
     };
+    clipboard: {
+      copyMessage: string;
+    };
     moveWithUpdateState: boolean;
   };
 }
@@ -78,6 +81,9 @@ function getInitTestPlatformInputs(): TestPlatformInputs {
       alert: {
         ok: false,
         okCancel: false,
+      },
+      clipboard: {
+        copyMessage: "",
       },
       moveWithUpdateState: false,
     },
@@ -137,6 +143,11 @@ export function getTestPlatform(customSize?: DeviceSize) {
       }),
       okCancel: jest.fn((_, onResponse) => {
         onResponse(true);
+      }),
+    },
+    clipboard: {
+      copy: jest.fn((message, onComplete) => {
+        onComplete(message === "Error" ? new Error("!") : undefined);
       }),
     },
   };
@@ -423,6 +434,17 @@ export const FullTestGame = makeSprite<
     if (device.inputs.buttonPressed.alert.okCancel) {
       device.alert.okCancel("Message Confirm", (wasOk) => {
         device.log(`Was ok: ${wasOk}`);
+      });
+    }
+
+    const { copyMessage } = device.inputs.buttonPressed.clipboard;
+    if (copyMessage) {
+      device.clipboard.copy(copyMessage, (error) => {
+        if (error) {
+          device.log(`Error copying: ${error.message}`);
+        } else {
+          device.log("Copied");
+        }
       });
     }
 

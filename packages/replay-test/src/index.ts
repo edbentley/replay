@@ -168,6 +168,15 @@ export function testSprite<P, S, I>(
     okCancelValue.ref = isOk;
   }
 
+  /**
+   * Mock functions for clipboard.
+   */
+  const clipboard: Device<I>["clipboard"] = {
+    copy: jest.fn((_, onComplete) => {
+      onComplete();
+    }),
+  };
+
   let inputs: I = { ...initInputs };
   function getInputs(
     globalToLocalCoords: (globalCoords: {
@@ -273,6 +282,7 @@ export function testSprite<P, S, I>(
         network,
         storage,
         alert,
+        clipboard,
       });
     },
   };
@@ -465,5 +475,6 @@ export function testSprite<P, S, I>(
     store,
     alert,
     updateAlertResponse,
+    clipboard,
   };
 }
