@@ -199,14 +199,93 @@ test("now", () => {
   expect(log).toBeCalledWith("2000-02-01T00:00:00.000Z");
 });
 
-test("timeout", () => {
-  const { jumpToFrame, getTexture } = testSprite(Game(gameProps), gameProps, {
-    initInputs: {
-      testInput: "timeout",
-    },
+describe("timer", () => {
+  test("Can call function after timeout with timer", async () => {
+    const { log, nextFrame, updateInputs } = testSprite(
+      Game(gameProps),
+      gameProps,
+      {
+        initInputs: {
+          testInput: "timerStart",
+        },
+      }
+    );
+    nextFrame();
+    updateInputs({ testInput: undefined });
+
+    nextFrame();
+    nextFrame();
+    expect(log).not.toBeCalled();
+    nextFrame();
+    // 50 ms passed
+    expect(log).toBeCalledWith("timeout complete");
   });
 
-  jumpToFrame(() => getTexture("player").props.x === -10);
+  test("Can pause and resume timer", async () => {
+    const { log, nextFrame, updateInputs } = testSprite(
+      Game(gameProps),
+      gameProps,
+      {
+        initInputs: {
+          testInput: "timerStart",
+        },
+      }
+    );
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    expect(log).not.toBeCalled();
+
+    // Can pause
+    updateInputs({ testInput: "timerPause" });
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    nextFrame();
+    nextFrame();
+    nextFrame();
+    expect(log).not.toBeCalled();
+
+    // Can resume
+    updateInputs({ testInput: "timerResume" });
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    expect(log).toBeCalledWith("timeout complete");
+  });
+
+  test("Can cancel timer", async () => {
+    const { log, nextFrame, updateInputs } = testSprite(
+      Game(gameProps),
+      gameProps,
+      {
+        initInputs: {
+          testInput: "timerStart",
+        },
+      }
+    );
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    expect(log).not.toBeCalled();
+
+    // Can cancel
+    updateInputs({ testInput: "timerCancel" });
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    nextFrame();
+    nextFrame();
+    nextFrame();
+    expect(log).not.toBeCalled();
+
+    // Resume timer (should do nothing)
+    updateInputs({ testInput: "timerResume" });
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    expect(log).not.toBeCalled();
+  });
 });
 
 test("audio", () => {
@@ -425,6 +504,7 @@ test("can mock Native Sprites", () => {
 interface State {
   x: number;
   showEnemy: boolean;
+  timerId?: string;
 }
 interface Inputs {
   x?: number;
@@ -467,10 +547,20 @@ const Game = makeSprite<GameProps, State, Inputs>({
           ...state,
           showEnemy: true,
         };
-      case "timeout":
-        device.timeout(() => {
-          updateState((prevState) => ({ ...prevState, x: -10 }));
-        }, 100);
+      case "timerStart":
+        const id = device.timer.start(() => {
+          device.log("timeout complete");
+        }, 40);
+        updateState((s) => ({ ...s, timerId: id }));
+        break;
+      case "timerPause":
+        device.timer.pause(state.timerId ?? "");
+        break;
+      case "timerResume":
+        device.timer.resume(state.timerId ?? "");
+        break;
+      case "timerCancel":
+        device.timer.cancel(state.timerId ?? "");
         break;
       case "audioPlay":
         device.audio("sound.wav").play();

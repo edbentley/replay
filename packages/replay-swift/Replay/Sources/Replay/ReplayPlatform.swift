@@ -27,7 +27,7 @@ typealias GetLocalCoords = JSValue
     var size: DeviceSize { get set }
     var log: @convention(block) (String) -> Void { get set }
     var random: @convention(block) () -> NSNumber { get set }
-    var timeout: @convention(block) (JSValue, NSNumber) -> Void { get set }
+    var timer: ReplayTimer { get set }
     var now: @convention(block) () -> NSDate { get set }
     var audio: @convention(block) (String) -> Audio { get set }
     var network: Network { get set }
@@ -40,7 +40,7 @@ typealias GetLocalCoords = JSValue
     var size: DeviceSize
     var log: @convention(block) (String) -> Void
     var random: @convention(block) () -> NSNumber
-    var timeout: @convention(block) (JSValue, NSNumber) -> Void
+    var timer: ReplayTimer
     var now: @convention(block) () -> NSDate
     var audio: @convention(block) (String) -> Audio
     var network: Network
@@ -58,7 +58,8 @@ typealias GetLocalCoords = JSValue
         logger: @escaping ReplayLogger,
         storageProvider: ReplayStorageProvider,
         alerter: ReplayAlerter,
-        clipboardManager: ReplayClipboardManager
+        clipboardManager: ReplayClipboardManager,
+        timerManager: ReplayTimerManager
     ) {
         self.inputs = inputs
         self.size = size
@@ -68,14 +69,7 @@ typealias GetLocalCoords = JSValue
         random = {
             return NSNumber(value: randomGenerator.getRandomNumber())
         }
-        timeout = { (callback, ms) in
-            _ = Timer.scheduledTimer(
-                withTimeInterval: TimeInterval(Float(truncating: ms) / 1000),
-                repeats: false
-            ) { timer in
-                callback.call(withArguments: [])
-            }
-        }
+        timer = ReplayTimer(timerManager: timerManager)
         now = {
             return dateGenerator.getDateNow() as NSDate
         }
@@ -243,6 +237,37 @@ typealias GetLocalCoords = JSValue
                 jsonBody: nil,
                 onComplete: { callback.call(withArguments: [$0]) }
             )
+        }
+    }
+}
+
+@objc protocol ReplayTimerJS : JSExport {
+    var start: @convention(block) (JSValue, NSNumber) -> String { get set }
+    var pause: @convention(block) (String) -> Void { get set }
+    var resume: @convention(block) (String) -> Void { get set }
+    var cancel: @convention(block) (String) -> Void { get set }
+}
+@objc class ReplayTimer : NSObject, ReplayTimerJS {
+    var start: @convention(block) (JSValue, NSNumber) -> String
+    var pause: @convention(block) (String) -> Void
+    var resume: @convention(block) (String) -> Void
+    var cancel: @convention(block) (String) -> Void
+
+    init(timerManager: ReplayTimerManager) {
+        start = { (callback, ms) in
+            timerManager.start(
+                callback: { callback.call(withArguments: []) },
+                time: TimeInterval(Float(truncating: ms) / 1000)
+            )
+        }
+        pause = { (id) in
+            timerManager.pause(id: id)
+        }
+        resume = { (id) in
+            timerManager.resume(id: id)
+        }
+        cancel = { (id) in
+            timerManager.cancel(id: id)
         }
     }
 }

@@ -59,25 +59,32 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
     //     });
     //   }
     // );
-    device.timeout(() => {
-      device.clipboard.copy("Hello", (error) => {
-        if (error) {
-          device.alert.ok(`Error copying to clipboard: ${error.message}`);
-        } else {
-          device.alert.okCancel(
-            `Just copied "Hello" to your clipboard. Game is about to start`,
-            (wasOk) => {
-              if (wasOk) {
-                updateState((state) => ({
-                  ...state,
-                  bulletSpeed: 10,
-                  stage: GameStage.Play,
-                }));
-              }
-            }
-          );
-        }
-      });
+    device.timer.start(() => {
+      updateState((state) => ({
+        ...state,
+        bulletSpeed: 10,
+        stage: GameStage.Play,
+      }));
+
+      // Uncomment below to test alerts and clipboard
+      // device.clipboard.copy("Hello", (error) => {
+      //   if (error) {
+      //     device.alert.ok(`Error copying to clipboard: ${error.message}`);
+      //   } else {
+      //     device.alert.okCancel(
+      //       `Just copied "Hello" to your clipboard. Game is about to start`,
+      //       (wasOk) => {
+      //         if (wasOk) {
+      //           updateState((state) => ({
+      //             ...state,
+      //             bulletSpeed: 10,
+      //             stage: GameStage.Play,
+      //           }));
+      //         }
+      //       }
+      //     );
+      //   }
+      // });
     }, 1000);
 
     return { ...initState, highScore };
@@ -150,7 +157,6 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
             bulletSpeed: state.bulletSpeed,
             gameOver: (score) => {
               if (score > state.highScore) {
-                device.alert.ok("New high score!");
                 device.storage.setStore({ highScore: String(score) });
               }
 

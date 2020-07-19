@@ -10,8 +10,10 @@ import { getParentCoordsForSprite } from "./coords";
 import { NativeSpriteMock } from "./nativeSpriteMock";
 
 interface Timer {
-  gameTime: number;
+  id: string;
   callback: () => void;
+  timeRemainingMs: number;
+  isPaused: boolean;
 }
 
 interface Options<I> {
@@ -241,8 +243,41 @@ export function testSprite<P, S, I>(
     };
   };
 
-  const timeout: Device<I>["timeout"] = (cb, ms) => {
-    timers.push({ callback: cb, gameTime: gameTime + ms });
+  const timer: Device<I>["timer"] = {
+    start: (callback, ms) => {
+      // Get a unique ID
+      let id = "";
+      let i = timers.length;
+      while (!id || timers.map((t) => t.id).includes(id)) {
+        i++;
+        id = `ID00${i}`;
+      }
+      timers.push({
+        id,
+        callback,
+        timeRemainingMs: ms,
+        isPaused: false,
+      });
+      return id;
+    },
+    pause: (id) => {
+      const timer = timers.find((t) => t.id === id);
+      if (!timer) return;
+
+      timer.isPaused = true;
+    },
+    resume: (id) => {
+      const timer = timers.find((t) => t.id === id);
+      if (!timer) return;
+
+      timer.isPaused = false;
+    },
+    cancel: (id) => {
+      const timerIndex = timers.findIndex((t) => t.id === id);
+      if (timerIndex === -1) return;
+
+      timers.splice(timerIndex, 1);
+    },
   };
 
   const store = { ...initStore };
@@ -276,7 +311,7 @@ export function testSprite<P, S, I>(
         size,
         log,
         random,
-        timeout,
+        timer,
         now,
         audio: audioFn,
         network,
@@ -315,11 +350,14 @@ export function testSprite<P, S, I>(
     // remove timer and call callback if its time is reached
     const removeIndexes: number[] = [];
     timers.forEach((timer, i) => {
-      if (gameTime < timer.gameTime) {
-        return;
+      if (!timer.isPaused) {
+        timer.timeRemainingMs -= 1000 / 60;
+
+        if (timer.timeRemainingMs <= 0) {
+          timer.callback();
+          removeIndexes.push(i);
+        }
       }
-      timer.callback();
-      removeIndexes.push(i);
     });
     removeIndexes.forEach((i) => {
       timers.splice(i, 1);

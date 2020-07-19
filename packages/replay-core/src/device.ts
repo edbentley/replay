@@ -19,10 +19,25 @@ export interface Device<I> {
    */
   random: () => number;
 
-  /**
-   * Equivalent to setTimeout in JS
-   */
-  timeout: (callback: () => void, ms: number) => void;
+  timer: {
+    /**
+     * Equivalent to setTimeout in JS. Returns an ID to let you pause it.
+     */
+    start: (callback: () => void, ms: number) => string;
+    /**
+     * Pause timer ID
+     */
+    pause: (id: string) => void;
+    /**
+     * Resume a paused timer ID
+     */
+    resume: (id: string) => void;
+    /**
+     * Remove a timer, will not be possible to resume it but callback is cleaned
+     * up.
+     */
+    cancel: (id: string) => void;
+  };
 
   /**
    * Get the current time & date now as a Date object

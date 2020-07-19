@@ -4,6 +4,7 @@ import { iOSInputs } from "../../index";
 interface State {
   playerX: number;
   enemiesX: number[];
+  timerId: string | null;
 }
 
 interface Data {
@@ -26,6 +27,7 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
     return {
       playerX: 100,
       enemiesX: [],
+      timerId: null,
     };
   },
 
@@ -41,7 +43,7 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
 
     if (pointer.justPressed) {
       if (pointer.x === 100) {
-        device.timeout(() => {
+        device.timer.start(() => {
           spawnEnemy(100);
         }, 50);
       } else if (pointer.x === 101) {
@@ -90,6 +92,28 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
           // Note: no error on iOS possible
           device.log("Copied");
         });
+      } else if (pointer.x === 115) {
+        // New timer
+        const timerId = device.timer.start(() => {
+          device.log("Timeout");
+          updateState((s) => ({
+            ...s,
+            timerId: null,
+          }));
+        }, 30);
+        updateState((s) => ({ ...s, timerId }));
+      } else if (pointer.x === 116 && state.timerId) {
+        // Pause timer
+        device.timer.pause(state.timerId);
+      } else if (pointer.x === 117 && state.timerId) {
+        // Resume timer
+        device.timer.resume(state.timerId);
+      } else if (pointer.x === 118 && state.timerId) {
+        // Cancel timer
+        device.timer.cancel(state.timerId);
+      } else if (pointer.x === 119) {
+        // No-op
+        device.timer.cancel("doesnt_exist");
       }
     }
     return {

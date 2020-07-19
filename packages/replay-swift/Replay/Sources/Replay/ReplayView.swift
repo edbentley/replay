@@ -14,6 +14,7 @@ public class ReplayView: UIView, ReplayPlatform {
     var storageProvider: ReplayStorageProvider
     var alerter: ReplayAlerter
     var clipboardManager: ReplayClipboardManager
+    var timerManager = TimerManager()
     
     var deviceSize: DeviceSize!
     var gameViewSize: GameViewSize!
@@ -173,7 +174,8 @@ extension ReplayView {
                 logger: self.logger,
                 storageProvider: self.storageProvider,
                 alerter: self.alerter,
-                clipboardManager: self.clipboardManager
+                clipboardManager: self.clipboardManager,
+                timerManager: self.timerManager
             )
         }
     }

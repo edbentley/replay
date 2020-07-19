@@ -28,8 +28,8 @@ test("gameplay", () => {
     audio,
     store,
     log,
-    alert,
-    clipboard,
+    // alert,
+    // clipboard,
   } = testSprite(Game(gameProps), gameProps, {
     initInputs: inputs,
     mapInputCoordinates,
@@ -50,11 +50,12 @@ test("gameplay", () => {
   expect(getTexture("player").props.x).toBe(0);
   expect(getTexture("player").props.y).toBe(-150);
 
-  expect(clipboard.copy).toHaveBeenCalledWith("Hello", expect.any(Function));
-  expect(alert.okCancel).toHaveBeenCalledWith(
-    `Just copied "Hello" to your clipboard. Game is about to start`,
-    expect.any(Function)
-  );
+  // Uncomment in game to test
+  // expect(clipboard.copy).toHaveBeenCalledWith("Hello", expect.any(Function));
+  // expect(alert.okCancel).toHaveBeenCalledWith(
+  //   `Just copied "Hello" to your clipboard. Game is about to start`,
+  //   expect.any(Function)
+  // );
 
   // enemy spawns in middle
 
