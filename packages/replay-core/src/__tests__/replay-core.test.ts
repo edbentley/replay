@@ -337,9 +337,12 @@ test("can provide a random number", () => {
   expect(randomSpy).toBeCalledTimes(1);
 });
 
-test("supports timeout", () => {
+test("supports timer", () => {
   const { platform, mutableTestDevice } = getTestPlatform();
-  const timeoutSpy = jest.spyOn(mutableTestDevice, "timeout");
+  const startSpy = jest.spyOn(mutableTestDevice.timer, "start");
+  const cancelSpy = jest.spyOn(mutableTestDevice.timer, "cancel");
+  const pauseSpy = jest.spyOn(mutableTestDevice.timer, "pause");
+  const resumeSpy = jest.spyOn(mutableTestDevice.timer, "resume");
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const { getNextFrameTextures } = replayCore(
@@ -348,11 +351,35 @@ test("supports timeout", () => {
     FullTestGame(gameProps)
   );
 
-  mutableTestDevice.inputs.buttonPressed.startTimer = true;
-  getNextFrameTextures(1000 * (1 / 60) + 1);
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time);
+  };
+
+  mutableTestDevice.inputs.buttonPressed.timer.start = true;
+  getNextFrameTexturesOverTime();
 
   expect(logSpy).toBeCalledWith("timeout complete");
-  expect(timeoutSpy).toBeCalledTimes(2); // once in init
+  expect(startSpy).toBeCalledTimes(2); // once in init
+
+  mutableTestDevice.inputs.buttonPressed.timer.start = false;
+  mutableTestDevice.inputs.buttonPressed.timer.pause = "abc";
+  getNextFrameTexturesOverTime();
+  expect(pauseSpy).toBeCalledTimes(1);
+  expect(pauseSpy).toBeCalledWith("abc");
+
+  mutableTestDevice.inputs.buttonPressed.timer.pause = "";
+  mutableTestDevice.inputs.buttonPressed.timer.resume = "abc";
+  getNextFrameTexturesOverTime();
+  expect(resumeSpy).toBeCalledTimes(1);
+  expect(resumeSpy).toBeCalledWith("abc");
+
+  mutableTestDevice.inputs.buttonPressed.timer.resume = "";
+  mutableTestDevice.inputs.buttonPressed.timer.cancel = "abc";
+  getNextFrameTexturesOverTime();
+  expect(cancelSpy).toBeCalledTimes(1);
+  expect(cancelSpy).toBeCalledWith("abc");
 });
 
 test("supports getting date now", () => {

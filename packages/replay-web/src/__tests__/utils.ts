@@ -22,21 +22,21 @@ interface Data {
 /**
  * A simple 'game' which moves an enemy across the screen
  */
-export const TestGame = makeSprite<GameProps, TestGameState, Inputs>({
+export const TestGame = makeSprite<
+  GameProps,
+  TestGameState & { timerId: string | null },
+  Inputs
+>({
   init() {
-    return { position: 0 };
+    return { position: 0, timerId: null };
   },
 
-  loop({ state, device }) {
+  loop({ state, device, updateState }) {
     const posInc = device.inputs.keysDown.ArrowRight ? 10 : 0;
 
     const { pointer } = device.inputs;
     if (pointer.justPressed) {
-      if (pointer.x === 0) {
-        device.timeout(() => {
-          device.log("Timeout");
-        }, 30);
-      } else if (pointer.x === 1) {
+      if (pointer.x === 1) {
         device.log(device.now().toUTCString());
       } else if (pointer.x === 2) {
         device.log(device.random());
@@ -73,10 +73,32 @@ export const TestGame = makeSprite<GameProps, TestGameState, Inputs>({
             device.log("Copied");
           }
         });
+      } else if (pointer.x === 8) {
+        // New timer
+        const timerId = device.timer.start(() => {
+          device.log("Timeout");
+          updateState((s) => ({
+            ...s,
+            timerId: null,
+          }));
+        }, 30);
+        updateState((s) => ({ ...s, timerId }));
+      } else if (pointer.x === 9 && state.timerId) {
+        // Pause timer
+        device.timer.pause(state.timerId);
+      } else if (pointer.x === 10 && state.timerId) {
+        // Resume timer
+        device.timer.resume(state.timerId);
+      } else if (pointer.x === 11 && state.timerId) {
+        // Cancel timer
+        device.timer.cancel(state.timerId);
+      } else if (pointer.x === 12) {
+        // No-op
+        device.timer.cancel("doesnt_exist");
       }
     }
 
-    return { position: state.position + posInc };
+    return { position: state.position + posInc, timerId: state.timerId };
   },
 
   render({ state }) {

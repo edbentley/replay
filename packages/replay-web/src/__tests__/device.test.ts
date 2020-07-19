@@ -51,20 +51,93 @@ test("Can log a random number", async () => {
   expect(randomNumber).toBeLessThanOrEqual(1);
 });
 
-test("Can call function after timeout", async () => {
-  const { loadPromise } = renderCanvas(TestGame(testGameProps));
-  await loadPromise;
-  mockTime.nextFrame();
+describe("timer", () => {
+  test("Can call function after timeout with timer", async () => {
+    const { loadPromise } = renderCanvas(TestGame(testGameProps));
+    await loadPromise;
+    mockTime.nextFrame();
 
-  clickPointer(100, 0);
-  mockTime.nextFrame();
-  releasePointer(100, 0);
+    clickPointer(108, 0);
+    mockTime.nextFrame();
+    releasePointer(108, 0);
 
-  expect(console.log).not.toBeCalled();
+    expect(console.log).not.toBeCalled();
 
-  jest.runAllTimers();
+    jest.runAllTimers();
 
-  expect(console.log).toBeCalledWith("Timeout");
+    expect(console.log).toBeCalledWith("Timeout");
+  });
+
+  test("Can pause and resume timer", async () => {
+    const { loadPromise } = renderCanvas(TestGame(testGameProps));
+    await loadPromise;
+    mockTime.nextFrame();
+
+    // New timer
+    clickPointer(108, 0);
+    mockTime.nextFrame();
+    releasePointer(108, 0);
+
+    // Pause timer
+    clickPointer(109, 0);
+    mockTime.nextFrame();
+    releasePointer(109, 0);
+
+    jest.runAllTimers();
+
+    expect(console.log).not.toBeCalled();
+
+    // Resume timer
+    clickPointer(110, 0);
+    mockTime.nextFrame();
+    releasePointer(110, 0);
+
+    jest.runAllTimers();
+
+    expect(console.log).toBeCalledWith("Timeout");
+  });
+
+  test("Can cancel timer", async () => {
+    const { loadPromise } = renderCanvas(TestGame(testGameProps));
+    await loadPromise;
+    mockTime.nextFrame();
+
+    // New timer
+    clickPointer(108, 0);
+    mockTime.nextFrame();
+    releasePointer(108, 0);
+
+    // Cancel timer
+    clickPointer(111, 0);
+    mockTime.nextFrame();
+    releasePointer(111, 0);
+
+    jest.runAllTimers();
+
+    expect(console.log).not.toBeCalled();
+
+    // Resume timer (should do nothing)
+    clickPointer(110, 0);
+    mockTime.nextFrame();
+    releasePointer(110, 0);
+
+    jest.runAllTimers();
+
+    expect(console.log).not.toBeCalled();
+  });
+
+  test("No-op for ID that doesn't exist", async () => {
+    const { loadPromise } = renderCanvas(TestGame(testGameProps));
+    await loadPromise;
+    mockTime.nextFrame();
+
+    // cancel ID "doesnt_exist"
+    clickPointer(112, 0);
+    mockTime.nextFrame();
+    releasePointer(112, 0);
+
+    // No errors!
+  });
 });
 
 test("Can get the current date", async () => {

@@ -27,7 +27,12 @@ interface TestPlatformInputs {
     action: boolean;
     log: boolean;
     setRandom: boolean;
-    startTimer: boolean;
+    timer: {
+      start: boolean;
+      pause: string;
+      cancel: string;
+      resume: string;
+    };
     setDate: boolean;
     sound: {
       play: boolean;
@@ -63,7 +68,12 @@ function getInitTestPlatformInputs(): TestPlatformInputs {
       action: false,
       log: false,
       setRandom: false,
-      startTimer: false,
+      timer: {
+        start: false,
+        pause: "",
+        resume: "",
+        cancel: "",
+      },
       setDate: false,
       sound: {
         play: false,
@@ -127,8 +137,14 @@ export function getTestPlatform(customSize?: DeviceSize) {
     },
     log: jest.fn(),
     random: jest.fn(() => 0.5),
-    timeout(callback) {
-      callback();
+    timer: {
+      start(callback) {
+        callback();
+        return "id";
+      },
+      cancel: jest.fn(),
+      resume: jest.fn(),
+      pause: jest.fn(),
     },
     now: () => new Date(Date.UTC(1995, 12, 17, 3, 24, 0)),
     audio: () => audio,
@@ -337,7 +353,7 @@ export const FullTestGame = makeSprite<
   TestPlatformInputs
 >({
   init({ updateState, device }) {
-    device.timeout(() => {
+    device.timer.start(() => {
       updateState((state) => ({
         ...state,
         testInitUpdateState: "initialised",
@@ -361,7 +377,7 @@ export const FullTestGame = makeSprite<
         ...prevState,
         testRenderUpdateState2: `render time 2: ${device.now().toISOString()}`,
       }));
-      device.timeout(() => {
+      device.timer.start(() => {
         updateState((prevState) => ({
           ...prevState,
           testRenderTimeout: "updateState from timeout in render",
@@ -373,10 +389,21 @@ export const FullTestGame = makeSprite<
       device.log("Log Message");
     }
 
-    if (device.inputs.buttonPressed.startTimer) {
-      device.timeout(() => {
+    // Timer
+    if (device.inputs.buttonPressed.timer.start) {
+      device.timer.start(() => {
         device.log("timeout complete");
       }, 100);
+    }
+    const { pause, resume, cancel } = device.inputs.buttonPressed.timer;
+    if (pause) {
+      device.timer.pause(pause);
+    }
+    if (resume) {
+      device.timer.resume(resume);
+    }
+    if (cancel) {
+      device.timer.cancel(cancel);
     }
 
     // Audio

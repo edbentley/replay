@@ -12,7 +12,7 @@ The `device` parameter of the Sprite methods can be used to interact with the pl
       size,
       log,
       random,
-      timeout,
+      timer,
       now,
       audio,
       network,
@@ -63,14 +63,42 @@ Returns a random number between 0 - 1. Replaces `Math.random`.
 const spawnY = random() * 500;
 ```
 
-### `timeout`
+### `timer`
 
-Run a callback after a time in milliseconds. Replaces `setTimeout`.
+Run, pause and cancel timers.
+
+#### `start(callback, ms)`
+
+Run a callback after a time in milliseconds, returns an `id` string. Replaces `setTimeout`.
 
 ```js
-timeout(() => {
+const timerId = device.timer.start(() => {
   // Do stuff
 }, 500);
+```
+
+#### `pause(id)`
+
+Pause a timer using its ID.
+
+```js
+device.timer.pause(timerId);
+```
+
+#### `resume(id)`
+
+Resume a paused timer using its ID.
+
+```js
+device.timer.resume(timerId);
+```
+
+#### `cancel(id)`
+
+Cancel a timer using its ID. It will not be possible to resume the timer, but the callback is cleaned up.
+
+```js
+device.timer.cancel(timerId);
 ```
 
 ### `now`

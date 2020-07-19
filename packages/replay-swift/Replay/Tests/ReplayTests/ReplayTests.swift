@@ -122,18 +122,14 @@ final class ReplayTests: XCTestCase {
 
         XCTAssertEqual(view.spriteTextures.textures.count, 2)
         XCTAssertEqual(getProps(view.spriteTextures.textures[1]).x, CGFloat(101))
+        
+        // Enemy spawns 50 ms after tap
+        wait(for: 0.050)
 
-        let promise = expectation(description: "Enemy spawns 50 ms after tap")
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + DispatchTimeInterval.milliseconds(50)) {
-            self.view.loop(currentTime: self.oneFrame * 3)
-            self.view.loop(currentTime: self.oneFrame * 4)
-            XCTAssertEqual(self.view.spriteTextures.textures.count, 3)
-            XCTAssertEqual(getProps(self.view.spriteTextures.textures[2]).x, CGFloat(100))
-            promise.fulfill()
-        }
-
-        waitForExpectations(timeout: 1, handler: nil)
+        view.loop(currentTime: self.oneFrame * 3)
+        view.loop(currentTime: self.oneFrame * 4)
+        XCTAssertEqual(self.view.spriteTextures.textures.count, 3)
+        XCTAssertEqual(getProps(self.view.spriteTextures.textures[2]).x, CGFloat(100))
     }
 
     func testSize() {
@@ -404,6 +400,68 @@ final class ReplayTests: XCTestCase {
         XCTAssertEqual(clipboard.lastCopied, "Hello")
         XCTAssertEqual(logger.lastLogged, "Copied")
     }
+    
+    func testStartTimer() {
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 115, y: 0))
+        view.loop(currentTime: oneFrame * 1)
+        wait(for: 0.035)
+
+        XCTAssertEqual(logger.lastLogged, "Timeout")
+    }
+    
+    func testPauseAndResumeTimer() {
+        // Start timer
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 115, y: 0))
+        view.loop(currentTime: oneFrame * 1)
+        
+        wait(for: 0.015)
+        XCTAssertEqual(logger.lastLogged, nil)
+        
+        // Pause
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 116, y: 0))
+        view.loop(currentTime: oneFrame * 2)
+        
+        wait(for: 0.030)
+        XCTAssertEqual(logger.lastLogged, nil)
+        
+        // Resume
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 117, y: 0))
+        view.loop(currentTime: oneFrame * 3)
+        
+        wait(for: 0.015)
+        XCTAssertEqual(logger.lastLogged, "Timeout")
+    }
+    
+    func testCancelTimer() {
+        // Start timer
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 115, y: 0))
+        view.loop(currentTime: oneFrame * 1)
+        
+        wait(for: 0.015)
+        XCTAssertEqual(logger.lastLogged, nil)
+        
+        // Cancel timer
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 118, y: 0))
+        view.loop(currentTime: oneFrame * 2)
+        
+        wait(for: 0.030)
+        XCTAssertEqual(logger.lastLogged, nil)
+        
+        // Resume (should do nothing)
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 117, y: 0))
+        view.loop(currentTime: oneFrame * 3)
+        
+        wait(for: 0.030)
+        XCTAssertEqual(logger.lastLogged, nil)
+    }
+    
+    func testNoOpTimer() {
+        // cancel ID "doesnt_exist"
+        view.touchDown(atPoint: CGPoint(x: width / 2 + 119, y: 0))
+        view.loop(currentTime: oneFrame * 1)
+        
+        // No errors!
+    }
 
     func testNativeSprite() {
         XCTAssertTrue(mockNativeSpriteStates.contains("create Game"))
@@ -415,5 +473,18 @@ final class ReplayTests: XCTestCase {
         view.loop(currentTime: oneFrame * 2)
 
         XCTAssertTrue(mockNativeSpriteStates.contains("cleanup Game"))
+    }
+}
+
+extension XCTestCase {
+    func wait(for duration: TimeInterval) {
+        let waitExpectation = expectation(description: "Waiting")
+
+        let when = DispatchTime.now() + duration
+        DispatchQueue.main.asyncAfter(deadline: when) {
+            waitExpectation.fulfill()
+        }
+
+        waitForExpectations(timeout: duration + 0.5)
     }
 }

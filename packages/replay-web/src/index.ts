@@ -27,6 +27,7 @@ import { getDeviceSize, setDeviceSize, calculateDeviceSize } from "./size";
 import { Dimensions } from "./dimensions";
 import { getDefaultProps } from "@replay/core/dist/props";
 import { getGameXToWebX, getGameYToWebY } from "./coordinates";
+import { getTimer } from "./timer";
 
 export { Inputs as WebInputs, mapInputCoordinates } from "./input";
 export { Dimensions } from "./dimensions";
@@ -347,7 +348,7 @@ function deviceCreator(
   const initDevice: Omit<Device<Inputs>, "inputs" | "size" | "now"> = {
     log: console.log,
     random: Math.random,
-    timeout: (callback, ms) => setTimeout(callback, ms),
+    timer: getTimer(),
     audio: (filename) => {
       function getAudioElement(play: boolean) {
         let audioElement = audioElements[filename];
