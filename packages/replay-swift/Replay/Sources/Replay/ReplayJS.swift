@@ -147,6 +147,7 @@ class ReplayJS {
         let scaleY = propsDict.value(forKey: "scaleY") as! NSNumber
         let anchorX = propsDict.value(forKey: "anchorX") as! NSNumber
         let anchorY = propsDict.value(forKey: "anchorY") as! NSNumber
+        let mask = propsDict.value(forKey: "mask")
         
         let baseProps = BaseProps(
             // Top Sprite needs to offset to iOS coordinates, but nested Sprites are relative
@@ -157,7 +158,8 @@ class ReplayJS {
             scaleX: CGFloat(truncating: scaleX),
             scaleY: CGFloat(truncating: scaleY),
             anchorX: CGFloat(truncating: anchorX),
-            anchorY: CGFloat(truncating: anchorY)
+            anchorY: CGFloat(truncating: anchorY),
+            mask: parseMask(mask)
         )
         
         if let type = dict.value(forKey: "type") as? NSString {
@@ -212,12 +214,7 @@ class ReplayJS {
             case "line":
                 let thickness = propsDict.value(forKey: "thickness") as! NSNumber
                 let color = propsDict.value(forKey: "color") as! String
-                let path = (propsDict.value(forKey: "path") as! [[NSNumber]])
-                    .map({ (xyJsTuple) -> CGPoint in
-                        let x = Double(truncating: xyJsTuple[0])
-                        let y = Double(truncating: xyJsTuple[1])
-                        return CGPoint(x: x, y: y)
-                    })
+                let path = parsePath(propsDict.value(forKey: "path"))
                 let lineProps = LineProps(
                     thickness: CGFloat(truncating: thickness),
                     color: color,
@@ -270,6 +267,58 @@ class ReplayJS {
                                  baseProps: baseProps,
                                  textures: parsedTextures)
         )
+    }
+    
+    private static func parseMask(_ mask: Any?) -> ReplayMask {
+        guard let maskDict = mask as? NSDictionary else { return .none }
+        
+        let type = maskDict.value(forKey: "type") as! String
+        
+        switch type {
+        case "circleMask":
+            let x = maskDict.value(forKey: "x") as! NSNumber
+            let y = maskDict.value(forKey: "y") as! NSNumber
+            let radius = maskDict.value(forKey: "radius") as! NSNumber
+            
+            return .circle(
+                CircleMaskProps(
+                    radius: CGFloat(truncating: radius),
+                    x: CGFloat(truncating: x),
+                    y: CGFloat(truncating: y)
+                )
+            )
+            
+        case "rectangleMask":
+            let x = maskDict.value(forKey: "x") as! NSNumber
+            let y = maskDict.value(forKey: "y") as! NSNumber
+            let width = maskDict.value(forKey: "width") as! NSNumber
+            let height = maskDict.value(forKey: "height") as! NSNumber
+            
+            return .rectangle(
+                RectangleMaskProps(
+                    width: CGFloat(truncating: width),
+                    height: CGFloat(truncating: height),
+                    x: CGFloat(truncating: x),
+                    y: CGFloat(truncating: y)
+                )
+            )
+            
+        case "lineMask":
+            let path = parsePath(maskDict.value(forKey: "path"))
+            return .line(LineMaskProps(path: path))
+            
+        default:
+            return .none
+        }
+    }
+    
+    private static func parsePath(_ pathField: Any?) -> [CGPoint] {
+        return (pathField as! [[NSNumber]])
+            .map({ (xyJsTuple) -> CGPoint in
+                let x = Double(truncating: xyJsTuple[0])
+                let y = Double(truncating: xyJsTuple[1])
+                return CGPoint(x: x, y: y)
+            })
     }
     
     // call the getLocalCoords function

@@ -1,4 +1,4 @@
-import { t, makeSprite } from "../../packages/replay-core/src";
+import { t, makeSprite, mask } from "../../packages/replay-core/src";
 import { WebInputs } from "../../packages/replay-web/src";
 import { iOSInputs } from "../../packages/replay-swift";
 import { bulletX, bulletY } from "./utils";
@@ -199,6 +199,10 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         id: "spritesheet",
         x: -100,
         y: 0,
+        mask: mask.circle({
+          radius: 20,
+          x: -24,
+        }),
       }),
       t.line({
         x: -100,

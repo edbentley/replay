@@ -1,3 +1,5 @@
+import { MaskShape } from "./mask";
+
 export type SpriteBaseProps = {
   /**
    * x coordinate of Sprite.
@@ -39,6 +41,10 @@ export type SpriteBaseProps = {
    * @default 0.
    */
   anchorY: number;
+  /**
+   * Only render the content that fits within the outline of this shape.
+   */
+  mask: MaskShape;
 };
 
 /**
@@ -60,5 +66,6 @@ export function getDefaultProps(
     scaleY: props.scaleY ?? 1,
     anchorX: props.anchorX || 0,
     anchorY: props.anchorY || 0,
+    mask: props.mask || null,
   };
 }

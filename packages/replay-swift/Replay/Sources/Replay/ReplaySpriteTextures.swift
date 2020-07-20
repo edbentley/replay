@@ -29,6 +29,7 @@ struct BaseProps {
     var scaleY: CGFloat
     var anchorX: CGFloat
     var anchorY: CGFloat
+    var mask: ReplayMask
 }
 
 struct TextureFont {
@@ -80,4 +81,3 @@ struct SpriteSheetProps {
     var width: CGFloat
     var height: CGFloat
 }
-

@@ -13,9 +13,10 @@ import {
   MyWidgetImplementation,
   widgetState,
   widgetCallback,
+  MaskGame,
 } from "./utils";
 import { SpriteTextures, NativeSpriteUtils } from "../sprite";
-import { TextTexture, CircleTexture } from "../t";
+import { TextTexture, CircleTexture, RectangleTexture } from "../t";
 
 test("can render simple game and getNextFrameTextures", () => {
   const { platform, mutableTestDevice } = getTestPlatform();
@@ -49,6 +50,7 @@ test("can render simple game and getNextFrameTextures", () => {
       scaleY: 1,
       anchorX: 0,
       anchorY: 0,
+      mask: null,
     },
     textures: [
       {
@@ -64,6 +66,7 @@ test("can render simple game and getNextFrameTextures", () => {
           scaleY: 1,
           anchorX: 0,
           anchorY: 0,
+          mask: null,
         },
       },
     ],
@@ -85,6 +88,7 @@ test("can render simple game and getNextFrameTextures", () => {
       scaleY: 1,
       anchorX: 0,
       anchorY: 0,
+      mask: null,
     },
   });
 
@@ -105,6 +109,7 @@ test("can render simple game and getNextFrameTextures", () => {
       scaleY: 1,
       anchorX: 0,
       anchorY: 0,
+      mask: null,
     },
   });
 });
@@ -141,6 +146,7 @@ test("can render simple game with sprites", () => {
       rotation: 0,
       scaleX: 5,
       scaleY: 1,
+      mask: null,
       x: 50,
       y: 0,
     },
@@ -158,6 +164,7 @@ test("can render simple game with sprites", () => {
           anchorY: 0,
           scaleX: 1,
           scaleY: 1,
+          mask: null,
         },
       },
     ],
@@ -181,6 +188,7 @@ test("can render simple game with sprites", () => {
       anchorY: 0,
       scaleX: 1,
       scaleY: 1,
+      mask: null,
     },
   });
 
@@ -209,6 +217,7 @@ test("can render simple game with sprites", () => {
       anchorY: 0,
       scaleX: 1,
       scaleY: 1,
+      mask: null,
     },
   });
 });
@@ -575,6 +584,7 @@ test("supports local storage", () => {
         anchorY: 0,
         scaleX: 1,
         scaleY: 1,
+        mask: null,
       },
     },
   ]);
@@ -703,6 +713,49 @@ test("can define various texture shapes", () => {
   ).toBe("image");
 });
 
+test("supports masks on Sprites", () => {
+  const { initTextures } = replayCore(
+    getTestPlatform().platform,
+    nativeSpriteSettings,
+    MaskGame(gameProps)
+  );
+
+  const initSpriteTextures = initTextures.textures[0] as SpriteTextures;
+
+  expect(initSpriteTextures.baseProps.mask).toEqual({
+    type: "circleMask",
+    x: 5,
+    y: -5,
+    radius: 10,
+  });
+
+  const circleMaskRect = initSpriteTextures.textures[0] as RectangleTexture;
+  const rectMaskRect = initSpriteTextures.textures[1] as RectangleTexture;
+  const lineMaskRect = initSpriteTextures.textures[2] as RectangleTexture;
+
+  expect(circleMaskRect.props.mask).toEqual({
+    type: "circleMask",
+    x: 10,
+    y: 0,
+    radius: 5,
+  });
+  expect(rectMaskRect.props.mask).toEqual({
+    type: "rectangleMask",
+    x: 0,
+    y: 10,
+    width: 5,
+    height: 5,
+  });
+  expect(lineMaskRect.props.mask).toEqual({
+    type: "lineMask",
+    path: [
+      [0, 0],
+      [10, 0],
+      [10, 10],
+    ],
+  });
+});
+
 test("deeply nested sprites and input position", () => {
   const { platform, mutableTestDevice } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
@@ -751,6 +804,7 @@ test("deeply nested sprites and input position", () => {
       anchorY: 0,
       scaleX: 1,
       scaleY: 1,
+      mask: null,
     },
   });
 

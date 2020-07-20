@@ -1,4 +1,4 @@
-import { makeSprite, t, GameProps, makeNativeSprite } from "@replay/core";
+import { makeSprite, t, GameProps, makeNativeSprite, mask } from "@replay/core";
 import { iOSInputs } from "../../index";
 
 interface State {
@@ -141,6 +141,9 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
           x,
           radius: 10,
           color: "#0095DD",
+          mask: mask.circle({
+            radius: 5,
+          }),
         })
       ),
     ];

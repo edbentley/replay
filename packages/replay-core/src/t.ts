@@ -1,4 +1,5 @@
 import { SpriteBaseProps, getDefaultProps } from "./props";
+import { MaskShape } from "./mask";
 
 export type TextureFont = {
   /**
@@ -37,6 +38,7 @@ export const t = {
     scaleY?: number;
     anchorX?: number;
     anchorY?: number;
+    mask?: MaskShape;
     x?: number;
     y?: number;
     rotation?: number;
@@ -65,6 +67,7 @@ export const t = {
     scaleY?: number;
     anchorX?: number;
     anchorY?: number;
+    mask?: MaskShape;
     x?: number;
     y?: number;
     rotation?: number;
@@ -92,6 +95,7 @@ export const t = {
     scaleY?: number;
     anchorX?: number;
     anchorY?: number;
+    mask?: MaskShape;
     x?: number;
     y?: number;
     rotation?: number;
@@ -118,6 +122,7 @@ export const t = {
     scaleY?: number;
     anchorX?: number;
     anchorY?: number;
+    mask?: MaskShape;
     /**
      * Thickness of line.
      * @default 1
@@ -156,6 +161,7 @@ export const t = {
     scaleY?: number;
     anchorX?: number;
     anchorY?: number;
+    mask?: MaskShape;
     x?: number;
     y?: number;
     rotation?: number;
@@ -187,6 +193,7 @@ export const t = {
     scaleY?: number;
     anchorX?: number;
     anchorY?: number;
+    mask?: MaskShape;
     x?: number;
     y?: number;
     rotation?: number;

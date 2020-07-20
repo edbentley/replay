@@ -19,6 +19,7 @@ test("Can get inner coordinate outside of Sprite", () => {
                   x: baseX,
                   y: baseY,
                   rotation,
+                  mask: null,
                 };
 
                 const getLocal = getLocalCoordsForSprite(baseProps);

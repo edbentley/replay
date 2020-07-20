@@ -1,6 +1,7 @@
 import { Texture, DeviceSize, TextureFont } from "@replay/core";
 import { SpriteTextures } from "@replay/core/dist/sprite";
 import { SpriteBaseProps } from "@replay/core/dist/props";
+import { MaskShape } from "@replay/core/dist/mask";
 
 export function drawCanvas(
   ctx: CanvasRenderingContext2D,
@@ -154,7 +155,49 @@ const transformCanvas = (
   ctx.scale(scaleX, scaleY);
   ctx.translate(-anchorX, anchorY);
   ctx.globalAlpha = opacity * parentOpacity;
+
+  applyMask(ctx, baseProps.mask);
 };
+
+// Return 0 to ensure switch is exhaustive
+function applyMask(ctx: CanvasRenderingContext2D, mask: MaskShape): 0 {
+  if (!mask) return 0;
+  switch (mask.type) {
+    case "lineMask": {
+      const [[moveToX, moveToY], ...lineTo] = mask.path;
+
+      ctx.beginPath();
+      ctx.moveTo(moveToX, -moveToY);
+      lineTo.forEach(([x, y]) => {
+        ctx.lineTo(x, -y);
+      });
+
+      ctx.clip();
+      return 0;
+    }
+
+    case "circleMask": {
+      ctx.beginPath();
+      ctx.arc(mask.x, -mask.y, Math.round(mask.radius), 0, Math.PI * 2);
+
+      ctx.clip();
+      return 0;
+    }
+
+    case "rectangleMask": {
+      ctx.beginPath();
+      ctx.rect(
+        mask.x - mask.width / 2,
+        -mask.y - mask.height / 2,
+        mask.width,
+        mask.height
+      );
+
+      ctx.clip();
+      return 0;
+    }
+  }
+}
 
 const drawUtils = (ctx: CanvasRenderingContext2D) => ({
   circle(radius: number, fillStyle: string) {

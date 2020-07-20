@@ -1,4 +1,4 @@
-import { makeSprite, t, GameProps, makeNativeSprite } from "@replay/core";
+import { makeSprite, t, GameProps, makeNativeSprite, mask } from "@replay/core";
 import { testSprite } from "../index";
 
 test("getTextures, nextFrame", () => {
@@ -15,6 +15,13 @@ test("getTextures, nextFrame", () => {
           "anchorX": 0,
           "anchorY": 0,
           "color": "blue",
+          "mask": Object {
+            "height": 10,
+            "type": "rectangleMask",
+            "width": 5,
+            "x": 0,
+            "y": 0,
+          },
           "opacity": 1,
           "radius": 10,
           "rotation": 0,
@@ -36,6 +43,7 @@ test("getTextures, nextFrame", () => {
             "name": "Arial",
             "size": 12,
           },
+          "mask": null,
           "opacity": 1,
           "rotation": 0,
           "scaleX": 1,
@@ -59,6 +67,13 @@ test("getTextures, nextFrame", () => {
           "anchorX": 0,
           "anchorY": 0,
           "color": "blue",
+          "mask": Object {
+            "height": 10,
+            "type": "rectangleMask",
+            "width": 5,
+            "x": 0,
+            "y": 0,
+          },
           "opacity": 1,
           "radius": 10,
           "rotation": 0,
@@ -80,6 +95,7 @@ test("getTextures, nextFrame", () => {
             "name": "Arial",
             "size": 12,
           },
+          "mask": null,
           "opacity": 1,
           "rotation": 0,
           "scaleX": 1,
@@ -637,6 +653,10 @@ const Game = makeSprite<GameProps, State, Inputs>({
         rotation: 0,
         radius: 10,
         color: "blue",
+        mask: mask.rectangle({
+          width: 5,
+          height: 10,
+        }),
       }),
       Text({
         id: "Text",

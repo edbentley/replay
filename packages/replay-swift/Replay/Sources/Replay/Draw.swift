@@ -18,6 +18,45 @@ class Draw {
         context.scaleBy(x: scaleX, y: scaleY)
         context.translateBy(x: -anchorX, y: anchorY)
         context.setAlpha(opacity * parentOpacity)
+        
+        applyMask(context, mask: baseProps.mask)
+    }
+    
+    static func applyMask(_ context: CGContext, mask: ReplayMask) {
+        let path = UIBezierPath()
+        
+        switch mask {
+        case .circle(let props):
+            path.addArc(
+                withCenter: CGPoint(x: props.x, y: -props.y),
+                radius: props.radius,
+                startAngle: 0,
+                endAngle: .pi * 2,
+                clockwise: true
+            )
+            
+        case .rectangle(let props):
+            path.move(to: CGPoint(x: props.x - props.width / 2, y: -props.y - props.height / 2))
+            path.addLine(to: CGPoint(x: props.x + props.width / 2, y: -props.y - props.height / 2))
+            path.addLine(to: CGPoint(x: props.x + props.width / 2, y: -props.y + props.height / 2))
+            path.addLine(to: CGPoint(x: props.x - props.width / 2, y: -props.y + props.height / 2))
+            path.addLine(to: CGPoint(x: props.x - props.width / 2, y: -props.y - props.height / 2))
+            
+        case .line(let props):
+            for (index, point) in props.path.enumerated() {
+                let movedPoint = CGPoint(x: point.x, y: -point.y)
+                if index == 0 {
+                    path.move(to: movedPoint)
+                    continue
+                }
+                path.addLine(to: movedPoint)
+            }
+            
+        case .none:
+            return
+        }
+        
+        path.addClip()
     }
     
     static func rectangle(context: CGContext, baseProps: BaseProps, rectProps: RectangleProps, parentOpacity: CGFloat) {
