@@ -200,6 +200,7 @@ All Sprites can be given the following props:
 - `scaleY`: Scale the Texture vertically around the anchor point. Default `1`.
 - `anchorX`: Move the `x` anchor point in game coordinates from the center point of the Sprite. Default `0`.
 - `anchorY`: Move the `y` anchor point in game coordinates from the center point of the Sprite. Default `0`.
+- `mask`: Apply a mask to the Sprite's content, see [Mask](mask.md) for the shapes possible. Default `null`.
 
 Here's how you could combine `anchorX` and `scaleX` for a health bar effect:
 

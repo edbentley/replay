@@ -9,6 +9,7 @@ module.exports = {
       "game-loop",
       "top-level-game",
       "thinking-in-replay",
+      "mask",
     ],
     Testing: ["test"],
     Platforms: ["web", "ios"],
