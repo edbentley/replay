@@ -46,18 +46,53 @@ git commit -m "v0.x.0"
 # Add the tag
 git tag v0.x.0
 
-# Push to remote
-git push
-git push origin --tags
-
 # Publish to npm
 npx lerna publish from-git
+
+# Push to remote with tag
+git push --follow-tags
+
+# Replay Swift clone
+cd ../replay-swift
+git rm -r .
+cp -a ../replay/packages/replay-swift/Replay/. .
+git add .
+git commit -m "v0.x.0"
+git tag 0.x.0 # note: no v
+git push --follow-tags
+
+# Replay Text Input clone
+cd ../replay-text-input-swift
+git rm -r .
+cp -a ../replay/packages/replay-text-input/ReplayTextInput/. .
+git add .
+git commit -m "v0.x.0"
+git tag 0.x.0 # note: no v
+git push --follow-tags
+
+# replay-starter-ts clone
+cd ../replay-starter-ts
+git rm -r .
+rsync -av ../replay/packages/replay-starter-ts/ . --exclude node_modules
+git add .
+git commit -m "v0.x.0"
+git tag v0.x.0
+git push --follow-tags
+
+# replay-starter-js clone
+cd ../replay-starter-js
+git rm -r .
+rsync -av ../replay/packages/replay-starter-js/ . --exclude node_modules
+git add .
+git commit -m "v0.x.0"
+git tag v0.x.0
+git push --follow-tags
+
+# Publish website
+cd ../replay/website
+GIT_USER=<Your GitHub username> USE_SSH=true npm run deploy
 ```
 
 #### Note
 
 - The file [ReplayCore.swift](./packages/replay-swift/Replay/Sources/Replay/ReplayCore.swift) needs to be manually updated for now.
-- On a new release, the following clone repos need to be updated and released:
-  - [replay-swift](https://github.com/edbentley/replay-swift)
-  - [replay-starter-ts](https://github.com/edbentley/replay-starter-ts)
-  - [replay-starter-js](https://github.com/edbentley/replay-starter-js)

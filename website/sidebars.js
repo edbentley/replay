@@ -10,7 +10,8 @@ module.exports = {
       "top-level-game",
       "thinking-in-replay",
     ],
-    Test: ["test"],
+    Testing: ["test"],
     Platforms: ["web", "ios"],
+    "Native Sprites": ["native-sprites", "text-input"],
   },
 };

@@ -1,4 +1,4 @@
-import { makeSprite, t, GameProps } from "@replay/core";
+import { makeSprite, t, GameProps, makeNativeSprite } from "@replay/core";
 import { testSprite } from "../index";
 
 test("getTextures, nextFrame", () => {
@@ -199,14 +199,93 @@ test("now", () => {
   expect(log).toBeCalledWith("2000-02-01T00:00:00.000Z");
 });
 
-test("timeout", () => {
-  const { jumpToFrame, getTexture } = testSprite(Game(gameProps), gameProps, {
-    initInputs: {
-      testInput: "timeout",
-    },
+describe("timer", () => {
+  test("Can call function after timeout with timer", async () => {
+    const { log, nextFrame, updateInputs } = testSprite(
+      Game(gameProps),
+      gameProps,
+      {
+        initInputs: {
+          testInput: "timerStart",
+        },
+      }
+    );
+    nextFrame();
+    updateInputs({ testInput: undefined });
+
+    nextFrame();
+    nextFrame();
+    expect(log).not.toBeCalled();
+    nextFrame();
+    // 50 ms passed
+    expect(log).toBeCalledWith("timeout complete");
   });
 
-  jumpToFrame(() => getTexture("player").props.x === -10);
+  test("Can pause and resume timer", async () => {
+    const { log, nextFrame, updateInputs } = testSprite(
+      Game(gameProps),
+      gameProps,
+      {
+        initInputs: {
+          testInput: "timerStart",
+        },
+      }
+    );
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    expect(log).not.toBeCalled();
+
+    // Can pause
+    updateInputs({ testInput: "timerPause" });
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    nextFrame();
+    nextFrame();
+    nextFrame();
+    expect(log).not.toBeCalled();
+
+    // Can resume
+    updateInputs({ testInput: "timerResume" });
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    expect(log).toBeCalledWith("timeout complete");
+  });
+
+  test("Can cancel timer", async () => {
+    const { log, nextFrame, updateInputs } = testSprite(
+      Game(gameProps),
+      gameProps,
+      {
+        initInputs: {
+          testInput: "timerStart",
+        },
+      }
+    );
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    expect(log).not.toBeCalled();
+
+    // Can cancel
+    updateInputs({ testInput: "timerCancel" });
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    nextFrame();
+    nextFrame();
+    nextFrame();
+    expect(log).not.toBeCalled();
+
+    // Resume timer (should do nothing)
+    updateInputs({ testInput: "timerResume" });
+    nextFrame();
+    updateInputs({ testInput: undefined });
+    nextFrame();
+    expect(log).not.toBeCalled();
+  });
 });
 
 test("audio", () => {
@@ -320,6 +399,46 @@ test("storage", () => {
   expect(store).toEqual({ origStore: "origValue" });
 });
 
+test("alerts", () => {
+  const {
+    nextFrame,
+    log,
+    alert,
+    updateInputs,
+    updateAlertResponse,
+  } = testSprite(Game(gameProps), gameProps, {
+    initAlertResponse: false,
+  });
+  nextFrame();
+
+  updateInputs({ testInput: "alert-ok" });
+  nextFrame();
+  expect(alert.ok).toBeCalledWith("Ok?", expect.any(Function));
+  expect(log).toBeCalledWith("It's ok");
+
+  updateInputs({ testInput: "alert-ok-cancel" });
+  nextFrame();
+  expect(alert.okCancel).toBeCalledWith("Ok or cancel?", expect.any(Function));
+  expect(log).toBeCalledWith("Was ok: false");
+
+  updateAlertResponse(true);
+  nextFrame();
+  expect(log).toBeCalledWith("Was ok: true");
+});
+
+test("clipboard", () => {
+  const { nextFrame, log, clipboard, updateInputs } = testSprite(
+    Game(gameProps),
+    gameProps
+  );
+  nextFrame();
+
+  updateInputs({ testInput: "clipboard-copy" });
+  nextFrame();
+  expect(clipboard.copy).toBeCalledWith("Hello", expect.any(Function));
+  expect(log).toBeCalledWith("Copied");
+});
+
 test("can test individual Sprites", () => {
   const { getByText, getTextures } = testSprite(
     Text({ id: "Text", text: "Hello" }),
@@ -360,11 +479,32 @@ test("can get global position and rotation of deeply nested textures", () => {
   expect(textures[0].props.rotation).toBe(0);
 });
 
+test("jumpToFrame throws last error", () => {
+  const { jumpToFrame, getTexture } = testSprite(Game(gameProps), gameProps, {
+    initInputs: {},
+  });
+
+  expect(() => jumpToFrame(() => getTexture("i-dont-exist"))).toThrowError(
+    `Timeout of 1000 gameplay seconds reached on jumpToFrame with error:\n\nNo textures found with test id "i-dont-exist"`
+  );
+});
+
+test("can mock Native Sprites", () => {
+  const { getTextures } = testSprite(NativeSpriteGame(gameProps), gameProps, {
+    nativeSpriteNames: ["MyNativeSprite"],
+  });
+
+  const textures = getTextures();
+
+  expect(textures.length).toBe(0);
+});
+
 // --- Mock Game
 
 interface State {
   x: number;
   showEnemy: boolean;
+  timerId?: string;
 }
 interface Inputs {
   x?: number;
@@ -407,10 +547,20 @@ const Game = makeSprite<GameProps, State, Inputs>({
           ...state,
           showEnemy: true,
         };
-      case "timeout":
-        device.timeout(() => {
-          updateState((prevState) => ({ ...prevState, x: -10 }));
-        }, 100);
+      case "timerStart":
+        const id = device.timer.start(() => {
+          device.log("timeout complete");
+        }, 40);
+        updateState((s) => ({ ...s, timerId: id }));
+        break;
+      case "timerPause":
+        device.timer.pause(state.timerId ?? "");
+        break;
+      case "timerResume":
+        device.timer.resume(state.timerId ?? "");
+        break;
+      case "timerCancel":
+        device.timer.cancel(state.timerId ?? "");
         break;
       case "audioPlay":
         device.audio("sound.wav").play();
@@ -456,6 +606,22 @@ const Game = makeSprite<GameProps, State, Inputs>({
       case "storage-remove":
         device.storage.setStore({ testKey: undefined });
         break;
+      case "alert-ok":
+        device.alert.ok("Ok?", () => {
+          device.log("It's ok");
+        });
+        break;
+      case "alert-ok-cancel":
+        device.alert.okCancel("Ok or cancel?", (wasOk) => {
+          device.log(`Was ok: ${wasOk}`);
+        });
+        break;
+      case "clipboard-copy":
+        device.clipboard.copy("Hello", () => {
+          device.log("Copied");
+        });
+        break;
+
       default:
         break;
     }
@@ -549,3 +715,16 @@ const NestedSecondSprite = makeSprite({
     ];
   },
 });
+
+/// -- Mock Native Sprite test
+
+export const NativeSpriteGame = makeSprite<GameProps>({
+  render() {
+    return [
+      MyNativeSprite({
+        id: "native",
+      }),
+    ];
+  },
+});
+const MyNativeSprite = makeNativeSprite("MyNativeSprite");

@@ -1,6 +1,6 @@
 {
   "name": "@replay/core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A cross-platform JS game engine inspired by React (core)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,7 +13,7 @@
     "build-dist": "rm -rf dist/ && tsc -p ./tsconfig.json",
     "build-umd": "webpack --config webpack.config.js",
     "build-swift": "webpack --config webpack.swift.js",
-    "build-test": "rm -rf test/build/ && tsc --skipLibCheck --lib es2018 --outDir test/build src/__tests__/utils.ts",
+    "build-test": "rm -rf test/build/ && tsc --skipLibCheck --lib es2018 --strict --outDir test/build src/__tests__/utils.ts",
     "test": "npm run build-test && jest",
     "test:watch": "npm run build-test && jest --watch"
   },

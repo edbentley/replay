@@ -1,9 +1,10 @@
-import { makeSprite, t, GameProps } from "@replay/core";
+import { makeSprite, t, GameProps, makeNativeSprite } from "@replay/core";
 import { iOSInputs } from "../../index";
 
 interface State {
   playerX: number;
   enemiesX: number[];
+  timerId: string | null;
 }
 
 interface Data {
@@ -26,6 +27,7 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
     return {
       playerX: 100,
       enemiesX: [],
+      timerId: null,
     };
   },
 
@@ -41,7 +43,7 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
 
     if (pointer.justPressed) {
       if (pointer.x === 100) {
-        device.timeout(() => {
+        device.timer.start(() => {
           spawnEnemy(100);
         }, 50);
       } else if (pointer.x === 101) {
@@ -77,6 +79,41 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
         device.log(device.storage.getStore().testKey);
       } else if (pointer.x === 111) {
         device.storage.setStore({ testKey: "testValue" });
+      } else if (pointer.x === 112) {
+        device.alert.ok("Ok?", () => {
+          device.log("It's ok");
+        });
+      } else if (pointer.x === 113) {
+        device.alert.okCancel("Ok or cancel?", (wasOk) => {
+          device.log(`Was ok: ${wasOk}`);
+        });
+      } else if (pointer.x === 114) {
+        device.clipboard.copy("Hello", () => {
+          // Note: no error on iOS possible
+          device.log("Copied");
+        });
+      } else if (pointer.x === 115) {
+        // New timer
+        const timerId = device.timer.start(() => {
+          device.log("Timeout");
+          updateState((s) => ({
+            ...s,
+            timerId: null,
+          }));
+        }, 30);
+        updateState((s) => ({ ...s, timerId }));
+      } else if (pointer.x === 116 && state.timerId) {
+        // Pause timer
+        device.timer.pause(state.timerId);
+      } else if (pointer.x === 117 && state.timerId) {
+        // Resume timer
+        device.timer.resume(state.timerId);
+      } else if (pointer.x === 118 && state.timerId) {
+        // Cancel timer
+        device.timer.cancel(state.timerId);
+      } else if (pointer.x === 119) {
+        // No-op
+        device.timer.cancel("doesnt_exist");
       }
     }
     return {
@@ -85,8 +122,9 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
     };
   },
 
-  render({ state }) {
+  render({ state, device }) {
     return [
+      device.inputs.pointer.pressed ? null : NativeSprite({ id: "native" }),
       t.text({
         x: -100,
         font: { name: "serif", size: 22 },
@@ -108,3 +146,5 @@ export const Game = makeSprite<GameProps, State, iOSInputs>({
     ];
   },
 });
+
+const NativeSprite = makeNativeSprite("NativeSprite");

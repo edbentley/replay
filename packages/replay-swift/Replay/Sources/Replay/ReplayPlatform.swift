@@ -27,22 +27,26 @@ typealias GetLocalCoords = JSValue
     var size: DeviceSize { get set }
     var log: @convention(block) (String) -> Void { get set }
     var random: @convention(block) () -> NSNumber { get set }
-    var timeout: @convention(block) (JSValue, NSNumber) -> Void { get set }
+    var timer: ReplayTimer { get set }
     var now: @convention(block) () -> NSDate { get set }
     var audio: @convention(block) (String) -> Audio { get set }
     var network: Network { get set }
     var storage: Storage { get set }
+    var alert: Alert { get set }
+    var clipboard: Clipboard { get set }
 }
 @objc class iOSDevice : NSObject, iOSDeviceJS {
     var inputs: Inputs
     var size: DeviceSize
     var log: @convention(block) (String) -> Void
     var random: @convention(block) () -> NSNumber
-    var timeout: @convention(block) (JSValue, NSNumber) -> Void
+    var timer: ReplayTimer
     var now: @convention(block) () -> NSDate
     var audio: @convention(block) (String) -> Audio
     var network: Network
     var storage: Storage
+    var alert: Alert
+    var clipboard: Clipboard
 
     init(
         inputs: Inputs,
@@ -52,7 +56,10 @@ typealias GetLocalCoords = JSValue
         dateGenerator: ReplayDateGenerator,
         audioPlayer: ReplayAudioPlayer,
         logger: @escaping ReplayLogger,
-        storageProvider: ReplayStorageProvider
+        storageProvider: ReplayStorageProvider,
+        alerter: ReplayAlerter,
+        clipboardManager: ReplayClipboardManager,
+        timerManager: ReplayTimerManager
     ) {
         self.inputs = inputs
         self.size = size
@@ -62,14 +69,7 @@ typealias GetLocalCoords = JSValue
         random = {
             return NSNumber(value: randomGenerator.getRandomNumber())
         }
-        timeout = { (callback, ms) in
-            _ = Timer.scheduledTimer(
-                withTimeInterval: TimeInterval(Float(truncating: ms) / 1000),
-                repeats: false
-            ) { timer in
-                callback.call(withArguments: [])
-            }
-        }
+        timer = ReplayTimer(timerManager: timerManager)
         now = {
             return dateGenerator.getDateNow() as NSDate
         }
@@ -77,6 +77,13 @@ typealias GetLocalCoords = JSValue
             return Audio(filename: filename, audioPlayer: audioPlayer)
         }
         storage = Storage(provider: storageProvider)
+        alert = Alert(alerter: alerter)
+        
+        let copy: @convention(block) (String, JSValue) -> Void = { (text, onComplete) in
+            clipboardManager.copy(text)
+            onComplete.call(withArguments: [])
+        }
+        clipboard = ["copy": copy]
     }
 }
 
@@ -94,12 +101,12 @@ typealias GetLocalCoords = JSValue
     var justReleased: Bool
     var x: NSNumber
     var y: NSNumber
-    init(pressed: Bool, justPressed: Bool, justReleased: Bool, x: CGFloat, y: CGFloat) {
+    init(pressed: Bool, justPressed: Bool, justReleased: Bool, x: NSNumber, y: NSNumber) {
         self.pressed = pressed
         self.justPressed = justPressed
         self.justReleased = justReleased
-        self.x = cgFloatToNsNumber(x)
-        self.y = cgFloatToNsNumber(y)
+        self.x = x
+        self.y = y
     }
 }
 
@@ -109,12 +116,18 @@ typealias GetLocalCoords = JSValue
 @objc class Inputs : NSObject, InputsJS {
     var pointer: Pointer
     init(pointer: Pointer, getLocalCoords: GetLocalCoords) {
-        self.pointer = pointer
+        let localCoords = ReplayJS.callGetLocalCoords(
+            getLocalCoords: getLocalCoords,
+            coords: XYCoords(x: pointer.x, y: pointer.y)
+        )
         
-        let localCoords = ReplayJS.callGetLocalCoords(getLocalCoords: getLocalCoords, coords: XYCoords(x: pointer.x, y: pointer.y))
-
-        self.pointer.x = localCoords.x
-        self.pointer.y = localCoords.y
+        self.pointer = Pointer(
+            pressed: pointer.pressed,
+            justPressed: pointer.justPressed,
+            justReleased: pointer.justReleased,
+            x: localCoords.x,
+            y: localCoords.y
+        )
     }
 }
 
@@ -205,7 +218,7 @@ typealias GetLocalCoords = JSValue
             session.fetchAsync(
                 path: url,
                 method: .POST,
-                jsonBody: body as? JsonData,
+                jsonBody: body as? ReplayJsonData,
                 onComplete: { callback.call(withArguments: [$0]) }
             )
         }
@@ -213,7 +226,7 @@ typealias GetLocalCoords = JSValue
             session.fetchAsync(
                 path: url,
                 method: .PUT,
-                jsonBody: body as? JsonData,
+                jsonBody: body as? ReplayJsonData,
                 onComplete: { callback.call(withArguments: [$0]) }
             )
         }
@@ -224,6 +237,37 @@ typealias GetLocalCoords = JSValue
                 jsonBody: nil,
                 onComplete: { callback.call(withArguments: [$0]) }
             )
+        }
+    }
+}
+
+@objc protocol ReplayTimerJS : JSExport {
+    var start: @convention(block) (JSValue, NSNumber) -> String { get set }
+    var pause: @convention(block) (String) -> Void { get set }
+    var resume: @convention(block) (String) -> Void { get set }
+    var cancel: @convention(block) (String) -> Void { get set }
+}
+@objc class ReplayTimer : NSObject, ReplayTimerJS {
+    var start: @convention(block) (JSValue, NSNumber) -> String
+    var pause: @convention(block) (String) -> Void
+    var resume: @convention(block) (String) -> Void
+    var cancel: @convention(block) (String) -> Void
+
+    init(timerManager: ReplayTimerManager) {
+        start = { (callback, ms) in
+            timerManager.start(
+                callback: { callback.call(withArguments: []) },
+                time: TimeInterval(Float(truncating: ms) / 1000)
+            )
+        }
+        pause = { (id) in
+            timerManager.pause(id: id)
+        }
+        resume = { (id) in
+            timerManager.resume(id: id)
+        }
+        cancel = { (id) in
+            timerManager.cancel(id: id)
         }
     }
 }
@@ -241,8 +285,36 @@ typealias GetLocalCoords = JSValue
             return provider.getStore() as NSDictionary
         }
         setStore = { store in
-            guard let validStore = store as? Store else { fatalError("Set invalid store") }
+            guard let validStore = store as? ReplayStore else { fatalError("Set invalid store") }
             provider.setStore(validStore)
         }
     }
 }
+
+@objc protocol AlertJS : JSExport {
+    var ok: @convention(block) (String, JSValue) -> Void { get set }
+    var okCancel: @convention(block) (String, JSValue) -> Void { get set }
+}
+@objc class Alert : NSObject, AlertJS {
+    var ok: @convention(block) (String, JSValue) -> Void
+    var okCancel: @convention(block) (String, JSValue) -> Void
+
+    init(alerter: ReplayAlerter) {
+        ok = { (message, onResponse) in
+            alerter.ok(
+                message,
+                onResponse: onResponse.isUndefined ? nil : { onResponse.call(withArguments: []) }
+            )
+        }
+        okCancel = { (message, onResponse) in
+            alerter.okCancel(message, onResponse: { wasOk in
+                onResponse.call(withArguments: [wasOk])
+            })
+        }
+    }
+}
+
+// Clipboard is a JS object with a copy field.
+// However NSObject already has a `copy` method which conflicts with Replay's,
+// so we'll use an NSDictionary instead of JSExport
+typealias Clipboard = NSDictionary

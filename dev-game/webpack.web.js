@@ -37,9 +37,10 @@ module.exports = {
     filename: "index.js",
     path: path.resolve(__dirname, "dist"),
   },
-  devServer: {
-    host: "0.0.0.0",
-  },
+  // Test on local network
+  // devServer: {
+  //   host: "0.0.0.0",
+  // },
   resolve: {
     // Ensure import of core from web is also local package
     alias: {

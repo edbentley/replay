@@ -12,11 +12,13 @@ The `device` parameter of the Sprite methods can be used to interact with the pl
       size,
       log,
       random,
-      timeout,
+      timer,
       now,
       audio,
       network,
       storage,
+      alert,
+      clipboard,
     } = device;
 
     ...
@@ -61,14 +63,42 @@ Returns a random number between 0 - 1. Replaces `Math.random`.
 const spawnY = random() * 500;
 ```
 
-### `timeout`
+### `timer`
 
-Run a callback after a time in milliseconds. Replaces `setTimeout`.
+Run, pause and cancel timers.
+
+#### `start(callback, ms)`
+
+Run a callback after a time in milliseconds, returns an `id` string. Replaces `setTimeout`.
 
 ```js
-timeout(() => {
+const timerId = device.timer.start(() => {
   // Do stuff
 }, 500);
+```
+
+#### `pause(id)`
+
+Pause a timer using its ID.
+
+```js
+device.timer.pause(timerId);
+```
+
+#### `resume(id)`
+
+Resume a paused timer using its ID.
+
+```js
+device.timer.resume(timerId);
+```
+
+#### `cancel(id)`
+
+Cancel a timer using its ID. It will not be possible to resume the timer, but the callback is cleaned up.
+
+```js
+device.timer.cancel(timerId);
 ```
 
 ### `now`
@@ -154,4 +184,53 @@ Setting `undefined` will remove a field from storage:
 
 ```js
 storage.setStore({ highScore: undefined });
+```
+
+### `alert`
+
+Show an alert using the platform's dialog.
+
+#### `ok(message, onResponse)`
+
+An alert dialog with an OK button. Game loop will be paused on some platforms.
+
+```js
+alert.ok("Connected", () => {
+  // Optional callback to handle OK clicked
+});
+```
+
+#### `okCancel(message, onResponse)`
+
+An alert dialog with an OK and cancel button. Game loop will be paused on some platforms.
+
+```js
+device.alert.okCancel(
+  "Are you sure you want to delete this?",
+  (wasOk) => {
+    if (wasOk) {
+      // Delete it
+    } else {
+      // Cancel
+    }
+  }
+);
+```
+
+### `clipboard`
+
+Interact with the player's clipboard.
+
+#### `copy(text, onComplete)`
+
+Asynchronously copy text to the clipboard. Callback has an error argument if unsuccessful (e.g. did not get permission).
+
+```js
+clipboard.copy("ABCDEFG", (error) => {
+  if (error) {
+    // Couldn't copy to clipboard
+  } else {
+    // Success
+  }
+});
 ```

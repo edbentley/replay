@@ -19,10 +19,25 @@ export interface Device<I> {
    */
   random: () => number;
 
-  /**
-   * Equivalent to setTimeout in JS
-   */
-  timeout: (callback: () => void, ms: number) => void;
+  timer: {
+    /**
+     * Equivalent to setTimeout in JS. Returns an ID to let you pause it.
+     */
+    start: (callback: () => void, ms: number) => string;
+    /**
+     * Pause timer ID
+     */
+    pause: (id: string) => void;
+    /**
+     * Resume a paused timer ID
+     */
+    resume: (id: string) => void;
+    /**
+     * Remove a timer, will not be possible to resume it but callback is cleaned
+     * up.
+     */
+    cancel: (id: string) => void;
+  };
 
   /**
    * Get the current time & date now as a Date object
@@ -60,6 +75,27 @@ export interface Device<I> {
   storage: {
     getStore: () => Store;
     setStore: (store: Store) => void;
+  };
+
+  alert: {
+    /**
+     * An alert dialog with an OK button. Game loop will be paused on some
+     * platforms.
+     */
+    ok: (message: string, onResponse?: () => void) => void;
+    /**
+     * An alert dialog with an OK and cancel button. Game loop will be paused on
+     * some platforms.
+     */
+    okCancel: (message: string, onResponse: (wasOk: boolean) => void) => void;
+  };
+
+  clipboard: {
+    /**
+     * Asynchronously copy text to the clipboard. Callback has an error argument
+     * if unsuccessful (e.g. did not get permission).
+     */
+    copy: (text: string, onComplete: (error?: Error) => void) => void;
   };
 }
 

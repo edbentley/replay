@@ -2,7 +2,7 @@ import Foundation
 import AVFoundation
 
 // This allows other players to be made for mocking
-protocol ReplayAudioPlayer {
+public protocol ReplayAudioPlayer {
     func playSound(_ filename: String, position: TimeInterval?, loop: Bool) -> Void
     func pauseSound(_ filename: String) -> Void
     func getPosition(_ filename: String) -> TimeInterval
@@ -14,10 +14,9 @@ class AudioPlayer: NSObject, ReplayAudioPlayer, AVAudioPlayerDelegate {
         let player = getPlayer(filename: filename, play: true)
 
         if let atTime = position {
-            player.play(atTime: atTime)
-        } else {
-            player.play()
+            player.currentTime = atTime
         }
+        player.play()
         player.numberOfLoops = loop ? -1 : 0
     }
 

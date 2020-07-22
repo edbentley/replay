@@ -2,17 +2,17 @@ import Foundation
 import JavaScriptCore
 @testable import Replay
 
-typealias MockResponses = [Replay.NetworkMethod: [String: [String: Any]]]
+typealias MockResponses = [ReplayNetworkMethod: [String: [String: Any]]]
 
 class NetworkSessionMock: ReplayNetworkSession {
 
-    var responses: [Replay.NetworkMethod: [String: [String: Any]]]
+    var responses: [ReplayNetworkMethod: [String: [String: Any]]]
 
     init(responses: MockResponses) {
         self.responses = responses
     }
 
-    func fetchAsync(path: String, method: NetworkMethod, jsonBody: JsonData?, onComplete: @escaping (JsonData) -> Void) {
+    func fetchAsync(path: String, method: ReplayNetworkMethod, jsonBody: ReplayJsonData?, onComplete: @escaping (ReplayJsonData) -> Void) {
         onComplete(responses[method]![path]!)
     }
 }

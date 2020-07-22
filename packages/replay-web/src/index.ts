@@ -1,6 +1,14 @@
-import { GameProps, Texture, DeviceSize, Store } from "@replay/core";
-import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
-import { CustomSprite, SpriteTextures } from "@replay/core/dist/sprite";
+import { GameProps, Texture, DeviceSize, Store, Device } from "@replay/core";
+import {
+  replayCore,
+  ReplayPlatform,
+  NativeSpriteMap,
+} from "@replay/core/dist/core";
+import {
+  CustomSprite,
+  SpriteTextures,
+  NativeSpriteUtils,
+} from "@replay/core/dist/sprite";
 import {
   getInputs,
   keyUpHandler as inputKeyUpHandler,
@@ -18,6 +26,8 @@ import { drawCanvas } from "./draw";
 import { getDeviceSize, setDeviceSize, calculateDeviceSize } from "./size";
 import { Dimensions } from "./dimensions";
 import { getDefaultProps } from "@replay/core/dist/props";
+import { getGameXToWebX, getGameYToWebY } from "./coordinates";
+import { getTimer } from "./timer";
 
 export { Inputs as WebInputs, mapInputCoordinates } from "./input";
 export { Dimensions } from "./dimensions";
@@ -48,6 +58,10 @@ export function renderCanvas<S>(
    * Preferred method of placing the game in the browser window
    */
   dimensions: Dimensions = "game-coords",
+  /**
+   * A map of Native Sprite names and their web implementation
+   */
+  nativeSpriteMap?: NativeSpriteMap,
   userCanvas?: HTMLCanvasElement,
   /**
    * Override the view size, instead of using the window size
@@ -84,6 +98,13 @@ export function renderCanvas<S>(
   let pointerUp: (e: PointerEvent) => void;
   let scale: number;
 
+  const nativeSpriteUtils: NativeSpriteUtils = {
+    didResize: false,
+    scale: 1,
+    gameXToPlatformX: (x) => x,
+    gameYToPlatformY: (y) => y,
+  };
+
   function updateDeviceSize(cleanup?: boolean) {
     if (prevDeviceSize) {
       ctx.restore();
@@ -116,6 +137,23 @@ export function renderCanvas<S>(
     );
     scale = renderCanvasResult.scale;
     render.ref = renderCanvasResult.render;
+
+    nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
+      canvasOffsetLeft: canvas.offsetLeft,
+      width: deviceSize.width,
+      widthMargin: deviceSize.widthMargin,
+      scale,
+    });
+
+    nativeSpriteUtils.gameYToPlatformY = getGameYToWebY({
+      canvasOffsetTop: canvas.offsetTop,
+      height: deviceSize.height,
+      heightMargin: deviceSize.heightMargin,
+      scale,
+    });
+
+    nativeSpriteUtils.didResize = true;
+    nativeSpriteUtils.scale = scale;
 
     const getX = clientXToGameX({
       canvasOffsetLeft: canvas.offsetLeft,
@@ -252,6 +290,10 @@ export function renderCanvas<S>(
 
     const { initTextures, getNextFrameTextures } = replayCore<S, Inputs>(
       domPlatform,
+      {
+        nativeSpriteMap: nativeSpriteMap || {},
+        nativeSpriteUtils,
+      },
       gameSprite
     );
 
@@ -303,11 +345,11 @@ function deviceCreator(
   defaultSize: DeviceSize
 ): ReplayPlatform<Inputs>["getGetDevice"] {
   // called once
-  const initDevice = {
+  const initDevice: Omit<Device<Inputs>, "inputs" | "size" | "now"> = {
     log: console.log,
     random: Math.random,
-    timeout: (callback: () => void, ms: number) => setTimeout(callback, ms),
-    audio: (filename: string) => {
+    timer: getTimer(),
+    audio: (filename) => {
       function getAudioElement(play: boolean) {
         let audioElement = audioElements[filename];
         if (!audioElement) {
@@ -321,7 +363,7 @@ function deviceCreator(
       }
       return {
         getPosition: () => getAudioElement(false).currentTime,
-        play: (fromPosition?: number, loop?: boolean) => {
+        play: (fromPosition, loop) => {
           const audioElement = getAudioElement(true);
           audioElement.play();
           if (fromPosition !== undefined) {
@@ -337,12 +379,12 @@ function deviceCreator(
       };
     },
     network: {
-      get: (url: string, callback: (data: unknown) => void) => {
+      get: (url, callback) => {
         fetch(url)
           .then((res) => res.json())
           .then(callback);
       },
-      post: (url: string, body: object, callback: (data: unknown) => void) => {
+      post: (url, body, callback) => {
         fetch(url, {
           method: "POST",
           body: JSON.stringify(body),
@@ -350,7 +392,7 @@ function deviceCreator(
           .then((res) => res.json())
           .then(callback);
       },
-      put: (url: string, body: object, callback: (data: unknown) => void) => {
+      put: (url, body, callback) => {
         fetch(url, {
           method: "PUT",
           body: JSON.stringify(body),
@@ -358,7 +400,7 @@ function deviceCreator(
           .then((res) => res.json())
           .then(callback);
       },
-      delete: (url: string, callback: (data: unknown) => void) => {
+      delete: (url, callback) => {
         fetch(url, {
           method: "DELETE",
         })
@@ -377,7 +419,7 @@ function deviceCreator(
         }
         return store;
       },
-      setStore: (store: Store) => {
+      setStore: (store) => {
         Object.entries(store).forEach(([field, value]) => {
           if (value === undefined) {
             localStorage.removeItem(field);
@@ -387,11 +429,43 @@ function deviceCreator(
         });
       },
     },
+    alert: {
+      ok: (message, onResponse) => {
+        alert(message);
+        onResponse?.();
+      },
+      okCancel: (message, onResponse) => {
+        const wasOk = confirm(message);
+        onResponse(wasOk);
+      },
+    },
+    clipboard: {
+      copy: (text, onComplete) => {
+        if (!navigator.clipboard) {
+          onComplete(
+            new Error(
+              window.isSecureContext
+                ? "Couldn't access clipboard"
+                : "Clipboard only available on HTTPS or localhost"
+            )
+          );
+          return;
+        }
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            onComplete();
+          })
+          .catch((error: Error) => {
+            onComplete(error);
+          });
+      },
+    },
   };
 
   return () => {
     // called every frame
-    const device = {
+    const device: Omit<Device<Inputs>, "inputs"> = {
       ...initDevice,
       size: getDeviceSize() || defaultSize,
       now: () => new Date(),

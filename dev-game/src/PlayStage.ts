@@ -5,6 +5,7 @@ import { bulletX, bulletY } from "./utils";
 import { Score } from "./Score";
 import { WalkingGreenCapChar } from "./SpriteSheet";
 import { PosLogger } from "./PosLogger";
+import { Clickable } from "./Clickable";
 
 interface State {
   playerRotation: number;
@@ -15,6 +16,8 @@ interface State {
     y: number;
   };
   score: number;
+  spawnEnemyTimerId: string;
+  paused: boolean;
 }
 
 export interface Bullet {
@@ -27,13 +30,6 @@ interface Enemy {
   y: number;
   speed: number;
 }
-const initState: State = {
-  playerRotation: 90,
-  bullets: [],
-  enemies: [],
-  pointer: { x: 0, y: 0 },
-  score: 0,
-};
 
 interface Props {
   bulletSpeed: number;
@@ -44,7 +40,9 @@ interface Props {
 export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
   init({ device, updateState }) {
     const spawnEnemy = () => {
-      device.timeout(() => {
+      device.log("Spawn");
+      const timerId = device.timer.start(() => {
+        const newId = spawnEnemy();
         updateState((state) => ({
           ...state,
           enemies: state.enemies.concat({
@@ -52,16 +50,27 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
             y: device.size.height / 2 + device.size.heightMargin + 10,
             speed: 2,
           }),
+          spawnEnemyTimerId: newId,
         }));
-        spawnEnemy();
       }, device.random() * 2000 + 1000);
+      return timerId;
     };
-    spawnEnemy();
+    const timerId = spawnEnemy();
 
-    return initState;
+    return {
+      playerRotation: 90,
+      bullets: [],
+      enemies: [],
+      pointer: { x: 0, y: 0 },
+      score: 0,
+      spawnEnemyTimerId: timerId,
+      paused: false,
+    };
   },
 
   loop({ state, device, props: { bulletSpeed, gameOver } }) {
+    if (state.paused) return state;
+
     const {
       inputs,
       size: { width, height, heightMargin, widthMargin },
@@ -114,6 +123,7 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
       });
     enemies.forEach((e) => {
       if (e.y < -fullHeight / 2) {
+        device.timer.cancel(state.spawnEnemyTimerId);
         gameOver(score);
       }
     });
@@ -127,6 +137,8 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         y: device.inputs.pointer.y,
       },
       score,
+      spawnEnemyTimerId: state.spawnEnemyTimerId,
+      paused: false,
     };
   },
 
@@ -134,11 +146,14 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
     state,
     props: { bulletSpeed, highScore },
     device: {
-      size: { height, heightMargin },
+      timer,
+      size: { height, heightMargin, width, widthMargin },
     },
     extrapolateFactor,
+    updateState,
   }) {
     const fullHeight = height + heightMargin * 2;
+    const fullWidth = width + widthMargin * 2;
     const bullets = state.bullets.map((b, i) =>
       t.circle({
         x: bulletX(b, extrapolateFactor * bulletSpeed),
@@ -225,6 +240,41 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         y: 0,
       }),
       PosLogger({ id: "posLogger", x: 100, y: 200 }),
+      state.paused
+        ? t.text({
+            text: "Paused",
+            color: "red",
+          })
+        : null,
+      Clickable({
+        id: "PauseButton",
+        sprites: () => [
+          t.rectangle({
+            width: 100,
+            height: 20,
+            color: "black",
+            opacity: 0.2,
+          }),
+          t.text({
+            text: state.paused ? "Resume" : "Pause",
+            color: "purple",
+          }),
+        ],
+        onPress: () => {
+          updateState((s) => {
+            if (s.paused) {
+              timer.resume(s.spawnEnemyTimerId);
+            } else {
+              timer.pause(s.spawnEnemyTimerId);
+            }
+            return { ...s, paused: !s.paused };
+          });
+        },
+        width: 100,
+        height: 20,
+        y: fullHeight / 2 - 15,
+        x: fullWidth / 2 - 55,
+      }),
     ];
   },
 });

@@ -7,10 +7,13 @@ import {
 } from "@replay/core/dist/sprite";
 import { TextTexture } from "@replay/core/dist/t";
 import { getParentCoordsForSprite } from "./coords";
+import { NativeSpriteMock } from "./nativeSpriteMock";
 
 interface Timer {
-  gameTime: number;
+  id: string;
   callback: () => void;
+  timeRemainingMs: number;
+  isPaused: boolean;
 }
 
 interface Options<I> {
@@ -58,6 +61,14 @@ interface Options<I> {
       [url: string]: () => object;
     };
   };
+  /**
+   * For ok / cancel alert, which choice is chosen. Default true (OK).
+   */
+  initAlertResponse?: boolean;
+  /**
+   * A list of Native Sprite names to mock
+   */
+  nativeSpriteNames?: string[];
 }
 
 /**
@@ -89,6 +100,8 @@ export function testSprite<P, S, I>(
     initStore = {},
     networkResponses = {},
     mapInputCoordinates = (_, inputs) => inputs,
+    initAlertResponse = true,
+    nativeSpriteNames = [],
   } = options;
   /**
    * Mock function for device log.
@@ -134,6 +147,35 @@ export function testSprite<P, S, I>(
         throw Error(`No DELETE response defined for url: ${url}`);
       }
       return cb(networkResponses.delete[url]());
+    }),
+  };
+
+  const okCancelValue = { ref: initAlertResponse };
+
+  /**
+   * Mock functions for alerts.
+   */
+  const alert: Device<I>["alert"] = {
+    ok: jest.fn((_, onResponse) => {
+      onResponse?.();
+    }),
+    okCancel: jest.fn((_, onResponse) => {
+      onResponse(okCancelValue.ref);
+    }),
+  };
+  /**
+   * Update whether okCancel alert chooses ok or cancel
+   */
+  function updateAlertResponse(isOk: boolean) {
+    okCancelValue.ref = isOk;
+  }
+
+  /**
+   * Mock functions for clipboard.
+   */
+  const clipboard: Device<I>["clipboard"] = {
+    copy: jest.fn((_, onComplete) => {
+      onComplete();
     }),
   };
 
@@ -201,8 +243,41 @@ export function testSprite<P, S, I>(
     };
   };
 
-  const timeout: Device<I>["timeout"] = (cb, ms) => {
-    timers.push({ callback: cb, gameTime: gameTime + ms });
+  const timer: Device<I>["timer"] = {
+    start: (callback, ms) => {
+      // Get a unique ID
+      let id = "";
+      let i = timers.length;
+      while (!id || timers.map((t) => t.id).includes(id)) {
+        i++;
+        id = `ID00${i}`;
+      }
+      timers.push({
+        id,
+        callback,
+        timeRemainingMs: ms,
+        isPaused: false,
+      });
+      return id;
+    },
+    pause: (id) => {
+      const timer = timers.find((t) => t.id === id);
+      if (!timer) return;
+
+      timer.isPaused = true;
+    },
+    resume: (id) => {
+      const timer = timers.find((t) => t.id === id);
+      if (!timer) return;
+
+      timer.isPaused = false;
+    },
+    cancel: (id) => {
+      const timerIndex = timers.findIndex((t) => t.id === id);
+      if (timerIndex === -1) return;
+
+      timers.splice(timerIndex, 1);
+    },
   };
 
   const store = { ...initStore };
@@ -236,11 +311,13 @@ export function testSprite<P, S, I>(
         size,
         log,
         random,
-        timeout,
+        timer,
         now,
         audio: audioFn,
         network,
         storage,
+        alert,
+        clipboard,
       });
     },
   };
@@ -253,6 +330,19 @@ export function testSprite<P, S, I>(
 
   const { initTextures, getNextFrameTextures } = replayCore(
     testPlatform,
+    {
+      // Mock the Native Sprites passed in to avoid errors when looked up
+      nativeSpriteMap: nativeSpriteNames.reduce(
+        (map, name) => ({ ...map, [name]: NativeSpriteMock }),
+        {}
+      ),
+      nativeSpriteUtils: {
+        scale: 1,
+        didResize: false,
+        gameXToPlatformX: (x) => x,
+        gameYToPlatformY: (y) => y,
+      },
+    },
     TestContainer(gameProps)
   );
 
@@ -260,11 +350,14 @@ export function testSprite<P, S, I>(
     // remove timer and call callback if its time is reached
     const removeIndexes: number[] = [];
     timers.forEach((timer, i) => {
-      if (gameTime < timer.gameTime) {
-        return;
+      if (!timer.isPaused) {
+        timer.timeRemainingMs -= 1000 / 60;
+
+        if (timer.timeRemainingMs <= 0) {
+          timer.callback();
+          removeIndexes.push(i);
+        }
       }
-      timer.callback();
-      removeIndexes.push(i);
     });
     removeIndexes.forEach((i) => {
       timers.splice(i, 1);
@@ -330,6 +423,8 @@ export function testSprite<P, S, I>(
    * pass and condition not met / still errors.
    */
   function jumpToFrame(condition: () => boolean | Texture) {
+    let lastErrorMsg: string | null = null;
+
     for (let i = 0; i < 60000; i++) {
       nextFrame();
       try {
@@ -337,10 +432,18 @@ export function testSprite<P, S, I>(
           return;
         }
       } catch (e) {
+        lastErrorMsg = (e as Error)?.message;
         // continue trying
       }
     }
-    throw Error("Timeout of 1000 gameplay seconds reached on jumpToFrame");
+
+    if (lastErrorMsg) {
+      throw Error(
+        `Timeout of 1000 gameplay seconds reached on jumpToFrame with error:\n\n${lastErrorMsg}`
+      );
+    } else {
+      throw Error("Timeout of 1000 gameplay seconds reached on jumpToFrame");
+    }
   }
 
   function getTextures() {
@@ -408,5 +511,8 @@ export function testSprite<P, S, I>(
     audio,
     network,
     store,
+    alert,
+    updateAlertResponse,
+    clipboard,
   };
 }

@@ -28,6 +28,8 @@ test("gameplay", () => {
     audio,
     store,
     log,
+    // alert,
+    // clipboard,
   } = testSprite(Game(gameProps), gameProps, {
     initInputs: inputs,
     mapInputCoordinates,
@@ -39,6 +41,7 @@ test("gameplay", () => {
         }),
       },
     },
+    nativeSpriteNames: ["TextInput"],
   });
 
   getByText("Loading");
@@ -46,6 +49,13 @@ test("gameplay", () => {
   jumpToFrame(() => textureExists("player"));
   expect(getTexture("player").props.x).toBe(0);
   expect(getTexture("player").props.y).toBe(-150);
+
+  // Uncomment in game to test
+  // expect(clipboard.copy).toHaveBeenCalledWith("Hello", expect.any(Function));
+  // expect(alert.okCancel).toHaveBeenCalledWith(
+  //   `Just copied "Hello" to your clipboard. Game is about to start`,
+  //   expect.any(Function)
+  // );
 
   // enemy spawns in middle
 

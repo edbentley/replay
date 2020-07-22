@@ -1,5 +1,6 @@
 import { Device, makeSprite, t, GameProps, DeviceSize } from "../index";
-import { ReplayPlatform } from "../core";
+import { ReplayPlatform, NativeSpriteSettings } from "../core";
+import { makeNativeSprite, NativeSpriteImplementation } from "../sprite";
 
 export const gameProps: GameProps = {
   id: "Game" as const,
@@ -26,7 +27,12 @@ interface TestPlatformInputs {
     action: boolean;
     log: boolean;
     setRandom: boolean;
-    startTimer: boolean;
+    timer: {
+      start: boolean;
+      pause: string;
+      cancel: string;
+      resume: string;
+    };
     setDate: boolean;
     sound: {
       play: boolean;
@@ -40,6 +46,13 @@ interface TestPlatformInputs {
       post: boolean;
       put: boolean;
       delete: boolean;
+    };
+    alert: {
+      ok: boolean;
+      okCancel: boolean;
+    };
+    clipboard: {
+      copyMessage: string;
     };
     moveWithUpdateState: boolean;
   };
@@ -55,7 +68,12 @@ function getInitTestPlatformInputs(): TestPlatformInputs {
       action: false,
       log: false,
       setRandom: false,
-      startTimer: false,
+      timer: {
+        start: false,
+        pause: "",
+        resume: "",
+        cancel: "",
+      },
       setDate: false,
       sound: {
         play: false,
@@ -69,6 +87,13 @@ function getInitTestPlatformInputs(): TestPlatformInputs {
         post: false,
         put: false,
         delete: false,
+      },
+      alert: {
+        ok: false,
+        okCancel: false,
+      },
+      clipboard: {
+        copyMessage: "",
       },
       moveWithUpdateState: false,
     },
@@ -112,8 +137,14 @@ export function getTestPlatform(customSize?: DeviceSize) {
     },
     log: jest.fn(),
     random: jest.fn(() => 0.5),
-    timeout(callback) {
-      callback();
+    timer: {
+      start(callback) {
+        callback();
+        return "id";
+      },
+      cancel: jest.fn(),
+      resume: jest.fn(),
+      pause: jest.fn(),
     },
     now: () => new Date(Date.UTC(1995, 12, 17, 3, 24, 0)),
     audio: () => audio,
@@ -121,6 +152,19 @@ export function getTestPlatform(customSize?: DeviceSize) {
     storage: {
       getStore: jest.fn(() => ({ text1: "storage" })),
       setStore: jest.fn(),
+    },
+    alert: {
+      ok: jest.fn((_, onResponse) => {
+        onResponse?.();
+      }),
+      okCancel: jest.fn((_, onResponse) => {
+        onResponse(true);
+      }),
+    },
+    clipboard: {
+      copy: jest.fn((message, onComplete) => {
+        onComplete(message === "Error" ? new Error("!") : undefined);
+      }),
     },
   };
 
@@ -144,6 +188,16 @@ export function getTestPlatform(customSize?: DeviceSize) {
     mutableTestDevice,
   };
 }
+
+export const nativeSpriteSettings: NativeSpriteSettings = {
+  nativeSpriteMap: {},
+  nativeSpriteUtils: {
+    didResize: false,
+    scale: 1,
+    gameXToPlatformX: (x) => x,
+    gameYToPlatformY: (y) => y,
+  },
+};
 
 interface TestGameState {
   position: number;
@@ -299,7 +353,7 @@ export const FullTestGame = makeSprite<
   TestPlatformInputs
 >({
   init({ updateState, device }) {
-    device.timeout(() => {
+    device.timer.start(() => {
       updateState((state) => ({
         ...state,
         testInitUpdateState: "initialised",
@@ -323,7 +377,7 @@ export const FullTestGame = makeSprite<
         ...prevState,
         testRenderUpdateState2: `render time 2: ${device.now().toISOString()}`,
       }));
-      device.timeout(() => {
+      device.timer.start(() => {
         updateState((prevState) => ({
           ...prevState,
           testRenderTimeout: "updateState from timeout in render",
@@ -335,10 +389,21 @@ export const FullTestGame = makeSprite<
       device.log("Log Message");
     }
 
-    if (device.inputs.buttonPressed.startTimer) {
-      device.timeout(() => {
+    // Timer
+    if (device.inputs.buttonPressed.timer.start) {
+      device.timer.start(() => {
         device.log("timeout complete");
       }, 100);
+    }
+    const { pause, resume, cancel } = device.inputs.buttonPressed.timer;
+    if (pause) {
+      device.timer.pause(pause);
+    }
+    if (resume) {
+      device.timer.resume(resume);
+    }
+    if (cancel) {
+      device.timer.cancel(cancel);
     }
 
     // Audio
@@ -386,6 +451,28 @@ export const FullTestGame = makeSprite<
 
     if (device.inputs.buttonPressed.setRandom) {
       device.log(device.random());
+    }
+
+    if (device.inputs.buttonPressed.alert.ok) {
+      device.alert.ok("Message", () => {
+        device.log("Hit ok");
+      });
+    }
+    if (device.inputs.buttonPressed.alert.okCancel) {
+      device.alert.okCancel("Message Confirm", (wasOk) => {
+        device.log(`Was ok: ${wasOk}`);
+      });
+    }
+
+    const { copyMessage } = device.inputs.buttonPressed.clipboard;
+    if (copyMessage) {
+      device.clipboard.copy(copyMessage, (error) => {
+        if (error) {
+          device.log(`Error copying: ${error.message}`);
+        } else {
+          device.log("Copied");
+        }
+      });
     }
 
     if (state.testInitUpdateState) {
@@ -537,3 +624,73 @@ export const LocalStorageGame = makeSprite<
     ];
   },
 });
+
+/// -- Test Native Sprites
+
+export const NativeSpriteGame = makeSprite<
+  GameProps,
+  undefined,
+  TestPlatformInputs
+>({
+  render({ device }) {
+    if (device.inputs.x === 100) {
+      return [];
+    }
+    return [NestedNativeSprite({ id: "nested" })];
+  },
+});
+const NestedNativeSprite = makeSprite({
+  render() {
+    return [MyWidget({ id: "widget", text: "hello" })];
+  },
+});
+
+type MyWidgetProps = {
+  id: string;
+  text: string;
+};
+export const MyWidget = makeNativeSprite<MyWidgetProps>("MyWidget");
+
+export const widgetState = {
+  text: "",
+  x: 0,
+  y: 0,
+  globalId: "",
+  width: 100,
+};
+export let widgetCallback = () => {
+  // Empty
+};
+
+// An example platform implementation
+export const MyWidgetImplementation: NativeSpriteImplementation<
+  MyWidgetProps,
+  { text: string; x: number }
+> = {
+  create: ({ props, parentGlobalId, getState, updateState, utils }) => {
+    widgetState.text = props.text;
+    widgetState.globalId = `${parentGlobalId}--${props.id}`;
+    widgetState.x = utils.gameXToPlatformX(0);
+    widgetState.y = utils.gameYToPlatformY(0);
+
+    // Double x on callback
+    widgetCallback = () => {
+      const state = getState();
+      updateState({ x: state.x * 2 });
+    };
+
+    return { text: props.text, x: widgetState.x };
+  },
+  loop: ({ state, utils }) => {
+    widgetState.x = state.x;
+
+    if (utils.didResize) {
+      widgetState.width *= 2 * utils.scale;
+    }
+
+    return state;
+  },
+  cleanup: () => {
+    widgetState.text = "";
+  },
+};

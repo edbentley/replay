@@ -8,8 +8,13 @@ import {
   gameProps,
   NestedSpriteGame,
   LocalStorageGame,
+  nativeSpriteSettings,
+  NativeSpriteGame,
+  MyWidgetImplementation,
+  widgetState,
+  widgetCallback,
 } from "./utils";
-import { SpriteTextures } from "../sprite";
+import { SpriteTextures, NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture } from "../t";
 
 test("can render simple game and getNextFrameTextures", () => {
@@ -22,6 +27,7 @@ test("can render simple game and getNextFrameTextures", () => {
 
   const { initTextures, getNextFrameTextures } = replayCore(
     platform,
+    nativeSpriteSettings,
     TestGame(gameProps)
   );
 
@@ -113,6 +119,7 @@ test("can render simple game with sprites", () => {
 
   const { initTextures, getNextFrameTextures } = replayCore(
     platform,
+    nativeSpriteSettings,
     TestGameWithSprites(gameProps)
   );
 
@@ -216,7 +223,11 @@ test("Can render simple game with sprites in landscape", () => {
     deviceHeight: 300,
   });
 
-  const { initTextures } = replayCore(platform, TestGameWithSprites(gameProps));
+  const { initTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    TestGameWithSprites(gameProps)
+  );
 
   const { text } = ((initTextures.textures[1] as SpriteTextures)
     .textures[0] as TextTexture).props;
@@ -233,7 +244,11 @@ test("Can render simple game with sprites in portrait", () => {
     deviceHeight: 500,
   });
 
-  const { initTextures } = replayCore(platform, TestGameWithSprites(gameProps));
+  const { initTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    TestGameWithSprites(gameProps)
+  );
 
   const { text } = ((initTextures.textures[1] as SpriteTextures)
     .textures[0] as TextTexture).props;
@@ -250,7 +265,11 @@ test("Can render simple game with sprites in XL landscape", () => {
     deviceHeight: 900,
   });
 
-  const { initTextures } = replayCore(platform, TestGameWithSprites(gameProps));
+  const { initTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    TestGameWithSprites(gameProps)
+  );
 
   const { text } = ((initTextures.textures[1] as SpriteTextures)
     .textures[0] as TextTexture).props;
@@ -267,7 +286,11 @@ test("Can render simple game with sprites in XL portrait", () => {
     deviceHeight: 1500,
   });
 
-  const { initTextures } = replayCore(platform, TestGameWithSprites(gameProps));
+  const { initTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    TestGameWithSprites(gameProps)
+  );
 
   const { text } = ((initTextures.textures[1] as SpriteTextures)
     .textures[0] as TextTexture).props;
@@ -280,6 +303,7 @@ test("can log", () => {
 
   const { getNextFrameTextures } = replayCore(
     platform,
+    nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
@@ -302,6 +326,7 @@ test("can provide a random number", () => {
 
   const { getNextFrameTextures } = replayCore(
     platform,
+    nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
@@ -312,21 +337,49 @@ test("can provide a random number", () => {
   expect(randomSpy).toBeCalledTimes(1);
 });
 
-test("supports timeout", () => {
+test("supports timer", () => {
   const { platform, mutableTestDevice } = getTestPlatform();
-  const timeoutSpy = jest.spyOn(mutableTestDevice, "timeout");
+  const startSpy = jest.spyOn(mutableTestDevice.timer, "start");
+  const cancelSpy = jest.spyOn(mutableTestDevice.timer, "cancel");
+  const pauseSpy = jest.spyOn(mutableTestDevice.timer, "pause");
+  const resumeSpy = jest.spyOn(mutableTestDevice.timer, "resume");
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const { getNextFrameTextures } = replayCore(
     platform,
+    nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
-  mutableTestDevice.inputs.buttonPressed.startTimer = true;
-  getNextFrameTextures(1000 * (1 / 60) + 1);
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time);
+  };
+
+  mutableTestDevice.inputs.buttonPressed.timer.start = true;
+  getNextFrameTexturesOverTime();
 
   expect(logSpy).toBeCalledWith("timeout complete");
-  expect(timeoutSpy).toBeCalledTimes(2); // once in init
+  expect(startSpy).toBeCalledTimes(2); // once in init
+
+  mutableTestDevice.inputs.buttonPressed.timer.start = false;
+  mutableTestDevice.inputs.buttonPressed.timer.pause = "abc";
+  getNextFrameTexturesOverTime();
+  expect(pauseSpy).toBeCalledTimes(1);
+  expect(pauseSpy).toBeCalledWith("abc");
+
+  mutableTestDevice.inputs.buttonPressed.timer.pause = "";
+  mutableTestDevice.inputs.buttonPressed.timer.resume = "abc";
+  getNextFrameTexturesOverTime();
+  expect(resumeSpy).toBeCalledTimes(1);
+  expect(resumeSpy).toBeCalledWith("abc");
+
+  mutableTestDevice.inputs.buttonPressed.timer.resume = "";
+  mutableTestDevice.inputs.buttonPressed.timer.cancel = "abc";
+  getNextFrameTexturesOverTime();
+  expect(cancelSpy).toBeCalledTimes(1);
+  expect(cancelSpy).toBeCalledWith("abc");
 });
 
 test("supports getting date now", () => {
@@ -336,6 +389,7 @@ test("supports getting date now", () => {
 
   const { getNextFrameTextures } = replayCore(
     platform,
+    nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
@@ -352,6 +406,7 @@ test("supports updateState", () => {
 
   const { getNextFrameTextures } = replayCore(
     platform,
+    nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
@@ -378,6 +433,7 @@ test("updateState in loop will update state in next render", () => {
 
   const { initTextures, getNextFrameTextures } = replayCore(
     platform,
+    nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
@@ -411,6 +467,7 @@ test("supports playing audio", () => {
 
   const { getNextFrameTextures } = replayCore(
     platform,
+    nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
@@ -456,6 +513,7 @@ test("supports network calls", () => {
 
   const { getNextFrameTextures } = replayCore(
     platform,
+    nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
@@ -497,6 +555,7 @@ test("supports local storage", () => {
 
   const { initTextures, getNextFrameTextures } = replayCore(
     platform,
+    nativeSpriteSettings,
     LocalStorageGame(gameProps)
   );
   expect(storageSpy.getStore).toBeCalled();
@@ -523,6 +582,77 @@ test("supports local storage", () => {
   getNextFrameTextures(1000 * (1 / 60) + 1);
 
   expect(storageSpy.setStore).toBeCalledWith({ text2: "new-val" });
+});
+
+test("supports alerts", () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+  const logSpy = jest.spyOn(mutableTestDevice, "log");
+
+  const { alert } = mutableTestDevice;
+  const alertSpy = {
+    ok: jest.spyOn(alert, "ok"),
+    okCancel: jest.spyOn(alert, "okCancel"),
+  };
+
+  const { getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    FullTestGame(gameProps)
+  );
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time);
+  };
+
+  mutableTestDevice.inputs.buttonPressed.alert.ok = true;
+  getNextFrameTexturesOverTime();
+  expect(alertSpy.ok).toBeCalled();
+  expect(logSpy).toBeCalledWith("Hit ok");
+
+  mutableTestDevice.inputs.buttonPressed.alert.okCancel = true;
+  getNextFrameTexturesOverTime();
+  expect(alertSpy.okCancel).toBeCalled();
+  expect(logSpy).toBeCalledWith("Was ok: true");
+});
+
+test("can copy to clipboard", () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+  const logSpy = jest.spyOn(mutableTestDevice, "log");
+
+  const { clipboard } = mutableTestDevice;
+  const clipboardSpy = {
+    copy: jest.spyOn(clipboard, "copy"),
+  };
+
+  const { getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    FullTestGame(gameProps)
+  );
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time);
+  };
+
+  expect(clipboardSpy.copy).not.toHaveBeenCalled();
+
+  mutableTestDevice.inputs.buttonPressed.clipboard.copyMessage =
+    "Hello clipboard";
+  getNextFrameTexturesOverTime();
+  expect(clipboardSpy.copy).toBeCalledWith(
+    "Hello clipboard",
+    expect.any(Function)
+  );
+  expect(logSpy).toBeCalledWith("Copied");
+
+  mutableTestDevice.inputs.buttonPressed.clipboard.copyMessage = "Error";
+  getNextFrameTexturesOverTime();
+  expect(clipboardSpy.copy).toBeCalledWith("Error", expect.any(Function));
+  expect(logSpy).toBeCalledWith("Error copying: !");
 });
 
 test("can define various texture shapes", () => {
@@ -580,7 +710,11 @@ test("deeply nested sprites and input position", () => {
   mutableTestDevice.inputs.x = 50;
   mutableTestDevice.inputs.y = 50;
 
-  const { initTextures } = replayCore(platform, NestedSpriteGame(gameProps));
+  const { initTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    NestedSpriteGame(gameProps)
+  );
 
   // Sprite positions local
 
@@ -625,4 +759,57 @@ test("deeply nested sprites and input position", () => {
   expect(logSpy).toBeCalledWith("NestedSpriteGame x: 50, y: 50");
   expect(logSpy).toBeCalledWith("NestedFirstSprite x: 30, y: -30");
   expect(logSpy).toBeCalledWith("NestedSecondSprite x: -50, y: 20");
+});
+
+test("supports Native Sprites", () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+
+  const mutableNativeSpriteUtils: NativeSpriteUtils = {
+    didResize: false,
+    scale: 3,
+    gameXToPlatformX: (x) => x + 10,
+    gameYToPlatformY: (y) => y - 10,
+  };
+
+  const { initTextures, getNextFrameTextures } = replayCore(
+    platform,
+    {
+      nativeSpriteUtils: mutableNativeSpriteUtils,
+      nativeSpriteMap: { MyWidget: MyWidgetImplementation },
+    },
+    NativeSpriteGame(gameProps)
+  );
+
+  // No Textures rendered
+  expect((initTextures.textures[0] as SpriteTextures).textures.length).toBe(0);
+
+  expect(widgetState).toEqual({
+    // test props
+    text: "hello",
+    // test gameXToPlatformX
+    x: 10,
+    // test gameYToPlatformY
+    y: -10,
+    // test parentGlobalId
+    globalId: "Game--nested--widget",
+    width: 100,
+  });
+
+  getNextFrameTextures(1000 * (1 / 60) + 1);
+
+  // test loop and didResize doubles width
+  mutableNativeSpriteUtils.didResize = true;
+  getNextFrameTextures(1000 * (1 / 60) + 1);
+  expect(widgetState.width).toBe(600); // scale x3
+  mutableNativeSpriteUtils.didResize = false;
+
+  // test getState and updateState in callback
+  widgetCallback();
+  getNextFrameTextures(1000 * (1 / 60) + 1);
+  expect(widgetState.x).toBe(20);
+
+  // test cleanup
+  mutableTestDevice.inputs.x = 100;
+  getNextFrameTextures(1000 * (1 / 60) + 1);
+  expect(widgetState.text).toBe("");
 });
