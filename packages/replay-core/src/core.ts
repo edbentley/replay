@@ -145,10 +145,6 @@ export function replayCore<S, I>(
   return {
     initTextures: textures,
     getNextFrameTextures(time, resetInputs) {
-      const getDevice = platform.getGetDevice();
-      const device = getDevice(globalToGameCoords);
-      const renderMethod = getRenderMethod(device.size, gameSize);
-
       const timeSinceLastCall = time - prevTime;
       prevTime = time;
       currentLag += timeSinceLastCall;
@@ -156,6 +152,11 @@ export function replayCore<S, I>(
       while (currentLag >= REPLAY_TIME_PER_UPDATE_MS) {
         currentLag -= REPLAY_TIME_PER_UPDATE_MS;
         const extrapolateFactor = currentLag / REPLAY_TIME_PER_UPDATE_MS;
+
+        const getDevice = platform.getGetDevice();
+        const device = getDevice(globalToGameCoords);
+        const renderMethod = getRenderMethod(device.size, gameSize);
+
         textures = traverseCustomSpriteContainer<GameProps, I>(
           gameContainer,
           gameSprite.props,
