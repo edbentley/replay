@@ -681,6 +681,45 @@ export const LocalStorageGame = makeSprite<
   },
 });
 
+/// -- Callback prop change test
+
+export const CallbackPropGame = makeSprite<
+  GameProps,
+  { counter: number },
+  TestPlatformInputs
+>({
+  init() {
+    return { counter: 0 };
+  },
+
+  render({ state, updateState }) {
+    return [
+      CallbackPropSprite({
+        id: "Sprite",
+        counter: state.counter,
+        updateCounter: (counter) => {
+          updateState((s) => ({ ...s, counter }));
+        },
+      }),
+    ];
+  },
+});
+
+const CallbackPropSprite = makeSprite<{
+  counter: number;
+  updateCounter: (counter: number) => void;
+}>({
+  loop({ props, device }) {
+    props.updateCounter(props.counter + 1);
+    device.log(props.counter + 1);
+    return undefined;
+  },
+
+  render() {
+    return [null];
+  },
+});
+
 /// -- Test Native Sprites
 
 export const NativeSpriteGame = makeSprite<
@@ -741,7 +780,7 @@ export const MyWidgetImplementation: NativeSpriteImplementation<
     widgetState.x = state.x;
 
     if (utils.didResize) {
-      widgetState.width *= 2 * utils.scale;
+      widgetState.width *= utils.scale;
     }
 
     return state;

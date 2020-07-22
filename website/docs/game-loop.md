@@ -3,7 +3,7 @@ id: game-loop
 title: Game Loop
 ---
 
-The `loop` method of every Sprite is guaranteed to run 60 times a second. `loop` can be called multiple times between `render` methods if the device is not able to render at 60 fps.
+The `loop` and `render` method of every Sprite is guaranteed to run 60 times a second, in that order. If the `render` method returns other Sprites, the returned Sprites will then call their own `loop` and `render` _after_ `render` returns.
 
 ![Sprite Lifecycle](/img/sprite-lifecycle.png)
 

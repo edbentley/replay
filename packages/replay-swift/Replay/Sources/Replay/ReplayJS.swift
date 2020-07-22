@@ -80,7 +80,9 @@ class ReplayJS {
         platform: ReplayPlatform,
         replayJsRuntime context: ReplayJsRuntime,
         deviceSize: DeviceSize,
-        nativeSpriteMap: ReplayNativeSpriteMap
+        nativeSpriteMap: ReplayNativeSpriteMap,
+        runtime: ReplayJsRuntime,
+        resetInputs: @escaping () -> Void
     ) -> (ReplaySpriteTextures, (Double) -> ReplaySpriteTextures) {
         
         // Set variable 'replay' in JS context
@@ -109,9 +111,15 @@ class ReplayJS {
         
         func getNextFrameTextures(timeMs: Double) -> ReplaySpriteTextures {
             let timeMsJs = NSNumber(value: timeMs)
+            let resetInputsBlock: @convention(block) () -> Void = {
+                resetInputs()
+            }
+            // Need to init function for callbacks
+            let resetInputsJs = JSValue.init(object: resetInputsBlock, in: runtime)
+            
             let spriteTexturesParsed = parseTextures(
                 getNextFrameTexturesCallback
-                    .call(withArguments: [timeMsJs])!
+                    .call(withArguments: [timeMsJs, resetInputsJs as Any])!
                     .toDictionary()!,
                 deviceSize: deviceSize,
                 isTopSprite: true

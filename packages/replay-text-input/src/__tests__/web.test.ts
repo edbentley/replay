@@ -29,6 +29,7 @@ test("can update single-line text input", async () => {
   );
 
   await loadPromise;
+  mockTime.nextFrame();
 
   // 1 canvas + 1 input
   expect(document.body.childNodes.length).toBe(2);

@@ -14,6 +14,7 @@ import {
   widgetState,
   widgetCallback,
   MaskGame,
+  CallbackPropGame,
 } from "./utils";
 import { SpriteTextures, NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture, RectangleTexture } from "../t";
@@ -35,7 +36,7 @@ test("can render simple game and getNextFrameTextures", () => {
   let time = 1;
   const getNextFrameTexturesOverTime = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time);
+    return getNextFrameTextures(time, jest.fn());
   };
 
   expect(platformSpy.getDevice).toBeCalledTimes(1);
@@ -131,7 +132,7 @@ test("can render simple game with sprites", () => {
   let time = 1;
   const getNextFrameTexturesOverTime = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time);
+    return getNextFrameTextures(time, jest.fn());
   };
 
   expect(platformSpy.getDevice).toBeCalledTimes(1);
@@ -319,7 +320,7 @@ test("can log", () => {
   let time = 1;
   const getNextFrameTexturesOverTime = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time);
+    return getNextFrameTextures(time, jest.fn());
   };
 
   mutableTestDevice.inputs.buttonPressed.log = true;
@@ -340,7 +341,7 @@ test("can provide a random number", () => {
   );
 
   mutableTestDevice.inputs.buttonPressed.setRandom = true;
-  getNextFrameTextures(1000 * (1 / 60) + 1);
+  getNextFrameTextures(1000 * (1 / 60) + 1, jest.fn());
 
   expect(logSpy).toBeCalledWith(0.5);
   expect(randomSpy).toBeCalledTimes(1);
@@ -363,7 +364,7 @@ test("supports timer", () => {
   let time = 1;
   const getNextFrameTexturesOverTime = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time);
+    return getNextFrameTextures(time, jest.fn());
   };
 
   mutableTestDevice.inputs.buttonPressed.timer.start = true;
@@ -403,7 +404,7 @@ test("supports getting date now", () => {
   );
 
   mutableTestDevice.inputs.buttonPressed.setDate = true;
-  getNextFrameTextures(1000 * (1 / 60) + 1);
+  getNextFrameTextures(1000 * (1 / 60) + 1, jest.fn());
 
   expect(logSpy).toBeCalledWith("1996-01-17T03:24:00.000Z");
   expect(setDateSpy).toBeCalledTimes(1);
@@ -422,7 +423,7 @@ test("supports updateState", () => {
   let time = 1;
   const getNextFrameTexturesOverTime = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time);
+    return getNextFrameTextures(time, jest.fn());
   };
 
   getNextFrameTexturesOverTime();
@@ -451,7 +452,7 @@ test("updateState in loop will update state in next render", () => {
   let time = 1;
   const getNextFrameTexturesOverTime = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time);
+    return getNextFrameTextures(time, jest.fn());
   };
 
   mutableTestDevice.inputs.buttonPressed.move = true;
@@ -483,7 +484,7 @@ test("supports playing audio", () => {
   let time = 1;
   const getNextFrameTexturesOverTime = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time);
+    return getNextFrameTextures(time, jest.fn());
   };
 
   mutableTestDevice.inputs.buttonPressed.sound.play = true;
@@ -529,7 +530,7 @@ test("supports network calls", () => {
   let time = 1;
   const getNextFrameTexturesOverTime = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time);
+    return getNextFrameTextures(time, jest.fn());
   };
 
   mutableTestDevice.inputs.buttonPressed.network.get = true;
@@ -589,7 +590,7 @@ test("supports local storage", () => {
     },
   ]);
 
-  getNextFrameTextures(1000 * (1 / 60) + 1);
+  getNextFrameTextures(1000 * (1 / 60) + 1, jest.fn());
 
   expect(storageSpy.setStore).toBeCalledWith({ text2: "new-val" });
 });
@@ -613,7 +614,7 @@ test("supports alerts", () => {
   let time = 1;
   const getNextFrameTexturesOverTime = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time);
+    return getNextFrameTextures(time, jest.fn());
   };
 
   mutableTestDevice.inputs.buttonPressed.alert.ok = true;
@@ -645,7 +646,7 @@ test("can copy to clipboard", () => {
   let time = 1;
   const getNextFrameTexturesOverTime = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time);
+    return getNextFrameTextures(time, jest.fn());
   };
 
   expect(clipboardSpy.copy).not.toHaveBeenCalled();
@@ -815,6 +816,47 @@ test("deeply nested sprites and input position", () => {
   expect(logSpy).toBeCalledWith("NestedSecondSprite x: -50, y: 20");
 });
 
+test("loop and render order for callback prop change on low render FPS", () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+  const resetInputs = jest.fn();
+
+  const { getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    CallbackPropGame(gameProps)
+  );
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    // note time skips 3 frames here
+    time += 1000 * (3 / 60);
+    return getNextFrameTextures(time, resetInputs);
+  };
+
+  expect(mutableTestDevice.log).not.toHaveBeenCalled();
+
+  getNextFrameTexturesOverTime();
+  expect(mutableTestDevice.log).toBeCalledTimes(3); // loop called 3 times
+  expect(mutableTestDevice.log).toHaveBeenNthCalledWith(1, 1);
+  expect(mutableTestDevice.log).toHaveBeenNthCalledWith(2, 2);
+  expect(mutableTestDevice.log).toHaveBeenNthCalledWith(3, 3);
+  expect(resetInputs).toBeCalledTimes(3);
+
+  getNextFrameTexturesOverTime();
+  expect(mutableTestDevice.log).toBeCalledTimes(6);
+  expect(mutableTestDevice.log).toHaveBeenNthCalledWith(4, 4);
+  expect(mutableTestDevice.log).toHaveBeenNthCalledWith(5, 5);
+  expect(mutableTestDevice.log).toHaveBeenNthCalledWith(6, 6);
+  expect(resetInputs).toBeCalledTimes(6);
+
+  getNextFrameTexturesOverTime();
+  expect(mutableTestDevice.log).toBeCalledTimes(9);
+  expect(mutableTestDevice.log).toHaveBeenNthCalledWith(7, 7);
+  expect(mutableTestDevice.log).toHaveBeenNthCalledWith(8, 8);
+  expect(mutableTestDevice.log).toHaveBeenNthCalledWith(9, 9);
+  expect(resetInputs).toBeCalledTimes(9);
+});
+
 test("supports Native Sprites", () => {
   const { platform, mutableTestDevice } = getTestPlatform();
 
@@ -849,21 +891,27 @@ test("supports Native Sprites", () => {
     width: 100,
   });
 
-  getNextFrameTextures(1000 * (1 / 60) + 1);
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time, jest.fn());
+  };
+
+  getNextFrameTexturesOverTime();
 
   // test loop and didResize doubles width
   mutableNativeSpriteUtils.didResize = true;
-  getNextFrameTextures(1000 * (1 / 60) + 1);
-  expect(widgetState.width).toBe(600); // scale x3
+  getNextFrameTexturesOverTime();
+  expect(widgetState.width).toBe(300); // scale x3
   mutableNativeSpriteUtils.didResize = false;
 
   // test getState and updateState in callback
   widgetCallback();
-  getNextFrameTextures(1000 * (1 / 60) + 1);
+  getNextFrameTexturesOverTime();
   expect(widgetState.x).toBe(20);
 
   // test cleanup
   mutableTestDevice.inputs.x = 100;
-  getNextFrameTextures(1000 * (1 / 60) + 1);
+  getNextFrameTexturesOverTime();
   expect(widgetState.text).toBe("");
 });

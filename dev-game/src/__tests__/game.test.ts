@@ -78,7 +78,7 @@ test("gameplay", () => {
   // fire bullet towards enemy
 
   expect(getTexture("bullet1").props.x).toBe(0);
-  expect(getTexture("bullet1").props.y).toBe(-140);
+  expect(getTexture("bullet1").props.y).toBe(-150);
   expect(audio.play).toBeCalledWith("shoot.wav");
 
   updateInputs({
@@ -93,14 +93,14 @@ test("gameplay", () => {
   nextFrame();
 
   expect(getTexture("bullet1").props.x).toBe(0);
-  expect(getTexture("bullet1").props.y).toBe(-130);
+  expect(getTexture("bullet1").props.y).toBe(-140);
 
   // enemy gets hit!
 
   jumpToFrame(() => !textureExists("enemy1"));
 
   expect(getTexture("bullet1").props.x).toBe(0);
-  expect(getTexture("bullet1").props.y).toBe(110);
+  expect(getTexture("bullet1").props.y).toBe(100);
 
   setRandomNumbers([0.2]);
 
