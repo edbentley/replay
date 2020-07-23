@@ -1,6 +1,7 @@
 import { Device, makeSprite, t, GameProps, DeviceSize } from "../index";
 import { ReplayPlatform, NativeSpriteSettings } from "../core";
 import { makeNativeSprite, NativeSpriteImplementation } from "../sprite";
+import { mask } from "../mask";
 
 export const gameProps: GameProps = {
   id: "Game" as const,
@@ -508,6 +509,61 @@ export const FullTestGame = makeSprite<
         rotation: 0,
         radius: 10,
         color: "#0095DD",
+      }),
+    ];
+  },
+});
+
+/// -- Mask test
+
+export const MaskGame = makeSprite<GameProps>({
+  render() {
+    return [
+      MaskSprite({
+        id: "MaskSprite",
+        mask: mask.circle({
+          radius: 10,
+          x: 5,
+          y: -5,
+        }),
+      }),
+    ];
+  },
+});
+
+const MaskSprite = makeSprite({
+  render() {
+    return [
+      t.rectangle({
+        width: 100,
+        height: 100,
+        color: "black",
+        mask: mask.circle({
+          radius: 5,
+          x: 10,
+        }),
+      }),
+      t.rectangle({
+        width: 100,
+        height: 100,
+        color: "black",
+        mask: mask.rectangle({
+          width: 5,
+          height: 5,
+          y: 10,
+        }),
+      }),
+      t.rectangle({
+        width: 100,
+        height: 100,
+        color: "black",
+        mask: mask.line({
+          path: [
+            [0, 0],
+            [10, 0],
+            [10, 10],
+          ],
+        }),
       }),
     ];
   },

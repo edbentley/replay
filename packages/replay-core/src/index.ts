@@ -10,3 +10,4 @@ export {
 } from "./sprite";
 export { Store, Device, DeviceSize } from "./device";
 export { GameProps, GameSize, GameOrientationSize } from "./core";
+export { mask } from "./mask";

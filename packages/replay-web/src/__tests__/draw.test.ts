@@ -1,6 +1,6 @@
 import { drawCanvas } from "../draw";
 import { canvasToImage } from "./utils";
-import { t, DeviceSize } from "@replay/core";
+import { t, DeviceSize, mask } from "@replay/core";
 import { SpriteTextures } from "@replay/core/dist/sprite";
 import { getDefaultProps } from "@replay/core/dist/props";
 
@@ -387,6 +387,54 @@ test("Can change anchor X and Y", () => {
         [50, 50],
       ],
       opacity: 0.5,
+    }),
+  ]);
+
+  expect(canvasToImage(canvas)).toMatchImageSnapshot();
+});
+
+test("Can mask with circle, rectangle and line", () => {
+  render([
+    t.rectangle({
+      x: -60,
+      width: 20,
+      height: 20,
+      color: "black",
+      mask: null,
+    }),
+    t.rectangle({
+      x: -20,
+      width: 20,
+      height: 20,
+      color: "black",
+      mask: mask.circle({
+        radius: 5,
+        x: 10,
+      }),
+    }),
+    t.rectangle({
+      x: 20,
+      width: 20,
+      height: 20,
+      color: "black",
+      mask: mask.rectangle({
+        width: 5,
+        height: 5,
+        y: 10,
+      }),
+    }),
+    t.rectangle({
+      x: 60,
+      width: 20,
+      height: 20,
+      color: "black",
+      mask: mask.line({
+        path: [
+          [0, 0],
+          [10, 0],
+          [10, 10],
+        ],
+      }),
     }),
   ]);
 

@@ -130,6 +130,10 @@ final class ReplayTests: XCTestCase {
         view.loop(currentTime: self.oneFrame * 4)
         XCTAssertEqual(self.view.spriteTextures.textures.count, 3)
         XCTAssertEqual(getProps(self.view.spriteTextures.textures[2]).x, CGFloat(100))
+        XCTAssertEqual(
+            getProps(self.view.spriteTextures.textures[2]).mask,
+            ReplayMask.circle(CircleMaskProps(radius: 5, x: 0, y: 0))
+        )
     }
 
     func testSize() {
