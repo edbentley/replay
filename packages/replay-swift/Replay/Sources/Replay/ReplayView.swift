@@ -70,7 +70,9 @@ public class ReplayView: UIView, ReplayPlatform {
             platform: self,
             replayJsRuntime: replayJsRuntime,
             deviceSize: deviceSize,
-            nativeSpriteMap: nativeSpriteMap ?? [:]
+            nativeSpriteMap: nativeSpriteMap ?? [:],
+            runtime: replayJsRuntime,
+            resetInputs: resetInputs
         )
         self.getNextFrameTextures = getNextFrameTextures
         self.spriteTextures = initTextures
@@ -104,9 +106,7 @@ extension ReplayView {
         }
         
         spriteTextures = getNextFrameTextures((currentTime - initTime!) * 1000)
-        
-        resetInputs()
-        
+                
         // Calls the draw method on the next frame
         setNeedsDisplay()
     }

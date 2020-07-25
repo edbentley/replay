@@ -308,8 +308,7 @@ export function renderCanvas<S>(
         if (initTime === null) {
           initTime = time - 1 / 60;
         }
-        loop(getNextFrameTextures(time - initTime));
-        resetInputs();
+        loop(getNextFrameTextures(time - initTime, resetInputs));
       });
     }
 

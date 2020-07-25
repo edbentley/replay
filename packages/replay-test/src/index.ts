@@ -413,7 +413,7 @@ export function testSprite<P, S, I>(
   function nextFrame() {
     gameTime += 1000 / 60;
     checkTimers();
-    render(getNextFrameTextures(gameTime));
+    render(getNextFrameTextures(gameTime, jest.fn()));
   }
 
   /**

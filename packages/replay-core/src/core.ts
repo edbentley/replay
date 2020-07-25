@@ -104,7 +104,10 @@ export function replayCore<S, I>(
   gameSizeArg?: GameSize
 ): {
   initTextures: SpriteTextures;
-  getNextFrameTextures: (time: number) => SpriteTextures;
+  getNextFrameTextures: (
+    time: number,
+    resetInputs: () => void
+  ) => SpriteTextures;
 } {
   const gameSprite =
     gameSpriteArg ||
@@ -123,35 +126,54 @@ export function replayCore<S, I>(
 
   const initRenderMethod = getRenderMethod(initDevice.size, gameSize);
 
+  let prevTime = 0;
+  let currentLag = 0;
+
+  let textures = traverseCustomSpriteContainer<GameProps, I>(
+    gameContainer,
+    gameSprite.props,
+    getInitDevice,
+    globalToGameCoords,
+    true,
+    initRenderMethod,
+    0,
+    1,
+    gameSprite.props.id,
+    nativeSpriteSettings
+  );
+
   return {
-    initTextures: traverseCustomSpriteContainer<GameProps, I>(
-      gameContainer,
-      gameSprite.props,
-      getInitDevice,
-      globalToGameCoords,
-      true,
-      initRenderMethod,
-      0,
-      1,
-      gameSprite.props.id,
-      nativeSpriteSettings
-    ),
-    getNextFrameTextures(time) {
-      const getDevice = platform.getGetDevice();
-      const device = getDevice(globalToGameCoords);
-      const renderMethod = getRenderMethod(device.size, gameSize);
-      return traverseCustomSpriteContainer<GameProps, I>(
-        gameContainer,
-        gameSprite.props,
-        getDevice,
-        globalToGameCoords,
-        false,
-        renderMethod,
-        time,
-        1,
-        gameSprite.props.id,
-        nativeSpriteSettings
-      );
+    initTextures: textures,
+    getNextFrameTextures(time, resetInputs) {
+      const timeSinceLastCall = time - prevTime;
+      prevTime = time;
+      currentLag += timeSinceLastCall;
+
+      while (currentLag >= REPLAY_TIME_PER_UPDATE_MS) {
+        currentLag -= REPLAY_TIME_PER_UPDATE_MS;
+        const extrapolateFactor = currentLag / REPLAY_TIME_PER_UPDATE_MS;
+
+        const getDevice = platform.getGetDevice();
+        const device = getDevice(globalToGameCoords);
+        const renderMethod = getRenderMethod(device.size, gameSize);
+
+        textures = traverseCustomSpriteContainer<GameProps, I>(
+          gameContainer,
+          gameSprite.props,
+          getDevice,
+          globalToGameCoords,
+          false,
+          renderMethod,
+          extrapolateFactor,
+          1,
+          gameSprite.props.id,
+          nativeSpriteSettings
+        );
+        // reset inputs after each update
+        resetInputs();
+      }
+
+      return textures;
     },
   };
 }
@@ -176,7 +198,7 @@ function traverseCustomSpriteContainer<P, I>(
   }) => { x: number; y: number },
   initCreation: boolean,
   renderMethod: RenderMethod,
-  time: number,
+  extrapolateFactor: number,
   parentOpacity: number,
   parentGlobalId: string,
   nativeSpriteSettings: NativeSpriteSettings
@@ -198,7 +220,7 @@ function traverseCustomSpriteContainer<P, I>(
     device,
     initCreation,
     renderMethod,
-    time
+    extrapolateFactor
   );
 
   const childIds: string[] = [];
@@ -285,7 +307,7 @@ function traverseCustomSpriteContainer<P, I>(
           getLocalCoords,
           spriteInitCreation,
           renderMethod,
-          time,
+          extrapolateFactor,
           baseProps.opacity,
           `${parentGlobalId}--${sprite.props.id}`,
           nativeSpriteSettings
@@ -369,14 +391,8 @@ function createCustomSpriteContainer<P, S, I>(
       device: Device<I>,
       initCreation: boolean,
       renderMethod: RenderMethod,
-      time: number
+      extrapolateFactor: number
     ) {
-      const timeSinceLastFrame = time - this.prevTime;
-      this.prevTime = time;
-      this.currentLag += timeSinceLastFrame;
-
-      let extrapolateFactor = 0;
-
       const runUpdateStateCallbacks = () => {
         this.state = updateStateQueue.reduce(
           (state, update) => update(state),
@@ -389,19 +405,13 @@ function createCustomSpriteContainer<P, S, I>(
       runUpdateStateCallbacks();
 
       // Do not run loop on init creation of sprites
-      if (!initCreation) {
-        if (spriteObj.loop) {
-          while (this.currentLag >= REPLAY_TIME_PER_UPDATE_MS) {
-            this.state = spriteObj.loop({
-              props,
-              state: this.state,
-              device,
-              updateState,
-            });
-            this.currentLag -= REPLAY_TIME_PER_UPDATE_MS;
-          }
-          extrapolateFactor = this.currentLag / REPLAY_TIME_PER_UPDATE_MS;
-        }
+      if (!initCreation && spriteObj.loop) {
+        this.state = spriteObj.loop({
+          props,
+          state: this.state,
+          device,
+          updateState,
+        });
       }
 
       // Run any updateState from callbacks in loop
