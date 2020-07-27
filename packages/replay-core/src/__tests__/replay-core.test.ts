@@ -15,6 +15,7 @@ import {
   widgetCallback,
   MaskGame,
   CallbackPropGame,
+  NestedSpriteGame2,
 } from "./utils";
 import { SpriteTextures, NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture, RectangleTexture } from "../t";
@@ -814,6 +815,18 @@ test("deeply nested sprites and input position", () => {
   expect(logSpy).toBeCalledWith("NestedSpriteGame x: 50, y: 50");
   expect(logSpy).toBeCalledWith("NestedFirstSprite x: 30, y: -30");
   expect(logSpy).toBeCalledWith("NestedSecondSprite x: -50, y: 20");
+});
+
+test("nested sprites and input position with scale", () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+  const logSpy = jest.spyOn(mutableTestDevice, "log");
+
+  mutableTestDevice.inputs.x = 10;
+  mutableTestDevice.inputs.y = 10;
+
+  replayCore(platform, nativeSpriteSettings, NestedSpriteGame2(gameProps));
+
+  expect(logSpy).toBeCalledWith("NestedFirstSprite2 x: -20, y: -10");
 });
 
 test("loop and render order for callback prop change on low render FPS", () => {

@@ -522,20 +522,21 @@ function isNotNull<T>(arg: T | null): arg is T {
  * coordinates
  */
 export function getLocalCoordsForSprite(baseProps: SpriteBaseProps) {
-  const h = baseProps.x;
-  const k = baseProps.y;
   const toRad = Math.PI / 180;
   const rotation = -(baseProps.rotation || 0) * toRad;
 
   return ({ x, y }: { x: number; y: number }) => {
     // This explains the equation for rotating: https://www.youtube.com/watch?v=AAx8JON4KeQ
-    const rotatedX =
-      (x - h) * Math.cos(rotation) + (y - k) * Math.sin(rotation);
-    const rotatedY =
-      -(x - h) * Math.sin(rotation) + (y - k) * Math.cos(rotation);
+    const relativeX = x - baseProps.x;
+    const relativeY = y - baseProps.y;
 
-    const scaledX = baseProps.x + (rotatedX - baseProps.x) / baseProps.scaleX;
-    const scaledY = baseProps.y + (rotatedY - baseProps.y) / baseProps.scaleY;
+    const rotatedX =
+      relativeX * Math.cos(rotation) + relativeY * Math.sin(rotation);
+    const rotatedY =
+      -relativeX * Math.sin(rotation) + relativeY * Math.cos(rotation);
+
+    const scaledX = rotatedX / baseProps.scaleX;
+    const scaledY = rotatedY / baseProps.scaleY;
 
     const anchoredX = scaledX + baseProps.anchorX;
     const anchoredY = scaledY + baseProps.anchorY;

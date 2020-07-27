@@ -637,6 +637,38 @@ const NestedSecondSprite = makeSprite<{}, undefined, TestPlatformInputs>({
   },
 });
 
+/// -- Nested Sprite for testing scale bug
+
+export const NestedSpriteGame2 = makeSprite<
+  GameProps,
+  undefined,
+  TestPlatformInputs
+>({
+  render() {
+    return [
+      NestedFirstSprite2({
+        id: "first",
+        x: 20,
+        y: 20,
+        scaleX: 0.5,
+      }),
+    ];
+  },
+});
+
+const NestedFirstSprite2 = makeSprite<{}, undefined, TestPlatformInputs>({
+  render({ device }) {
+    if (device.inputs.x) {
+      device.log(
+        `NestedFirstSprite2 x: ${Math.round(device.inputs.x)}, y: ${Math.round(
+          device.inputs.y
+        )}`
+      );
+    }
+    return [];
+  },
+});
+
 /// -- Test local storage
 
 interface LocalStorageGameState {
