@@ -5,8 +5,6 @@ import { SpriteBaseProps } from "@replay/core/dist/props";
  * coordinates. Opposite of `getLocalCoordsForSprite` in replay-core.
  */
 export function getParentCoordsForSprite(baseProps: SpriteBaseProps) {
-  const h = baseProps.x;
-  const k = baseProps.y;
   const toRad = Math.PI / 180;
   const rotation = -(baseProps.rotation || 0) * toRad;
 
@@ -14,12 +12,17 @@ export function getParentCoordsForSprite(baseProps: SpriteBaseProps) {
     const scaledX = anchoredX - baseProps.anchorX;
     const scaledY = anchoredY - baseProps.anchorY;
 
-    const rotatedX = (scaledX - baseProps.x) * baseProps.scaleX + baseProps.x;
-    const rotatedY = (scaledY - baseProps.y) * baseProps.scaleY + baseProps.y;
+    const rotatedX = scaledX * baseProps.scaleX;
+    const rotatedY = scaledY * baseProps.scaleY;
 
     // solve simulataneous equation from replay-core to reverse
-    const x = h + rotatedX * Math.cos(rotation) - rotatedY * Math.sin(rotation);
-    const y = k + rotatedX * Math.sin(rotation) + rotatedY * Math.cos(rotation);
+    const relativeX =
+      rotatedX * Math.cos(rotation) - rotatedY * Math.sin(rotation);
+    const relativeY =
+      rotatedX * Math.sin(rotation) + rotatedY * Math.cos(rotation);
+
+    const x = relativeX + baseProps.x;
+    const y = relativeY + baseProps.y;
 
     return { x, y };
   };
