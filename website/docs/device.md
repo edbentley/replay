@@ -143,6 +143,35 @@ Get the current play position of the sound in seconds.
 mySound.getPosition();
 ```
 
+#### `getStatus`
+
+Get the current status of the sound. There are three possibilities:
+
+* `playing`: sound currently playing
+* `paused`: sound is at position 0 and not playing
+* `ended`: sound has reached its end and is no longer playing
+
+```js
+mySound.getStatus();
+```
+
+#### `getVolume` / `setVolume`
+
+Get or set the volume for the sound. A volume of 0 is muted, a volume of 1 is maximum.
+
+```js
+mySound.getVolume();
+mySound.setVolume(0.25);
+```
+
+#### `getDuration`
+
+Get the duration of the sound in seconds.
+
+```js
+mySound.getDuration();
+```
+
 ### `network`
 
 Make platform-independent networks calls. Returns and sends data as a JSON object.

@@ -56,6 +56,10 @@ export interface Device<I> {
     getPosition: () => number;
     play: (fromPosition?: number, loop?: boolean) => void;
     pause: () => void;
+    getStatus: () => string;
+    getVolume: () => number;
+    setVolume: (volume: number) => void;
+    getDuration: () => number;
   };
 
   /**

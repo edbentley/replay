@@ -375,6 +375,25 @@ function deviceCreator(
         pause: () => {
           getAudioElement(false).pause();
         },
+        getVolume: () => {
+          return getAudioElement(false).volume;
+        },
+        setVolume: (volume) => {
+          getAudioElement(false).volume = volume;
+        },
+        getDuration: () => {
+          return getAudioElement(false).duration;
+        },
+        getStatus: () => {
+          const { paused, ended } = getAudioElement(false);
+          let status = "paused";
+          if (paused === false) {
+            status = "playing";
+          } else if (ended === true) {
+            status = "ended";
+          }
+          return status;
+        },
       };
     },
     network: {
