@@ -50,7 +50,8 @@ git tag v0.x.0
 npx lerna publish from-git
 
 # Push to remote with tag
-git push --follow-tags
+git push
+git push origin v0.x.0
 
 # Replay Swift clone
 cd ../replay-swift
@@ -59,7 +60,8 @@ cp -a ../replay/packages/replay-swift/Replay/. .
 git add .
 git commit -m "v0.x.0"
 git tag 0.x.0 # note: no v
-git push --follow-tags
+git push
+git push origin 0.x.0
 
 # Replay Text Input clone
 cd ../replay-text-input-swift
@@ -68,7 +70,8 @@ cp -a ../replay/packages/replay-text-input/ReplayTextInput/. .
 git add .
 git commit -m "v0.x.0"
 git tag 0.x.0 # note: no v
-git push --follow-tags
+git push
+git push origin 0.x.0
 
 # replay-starter-ts clone
 cd ../replay-starter-ts
@@ -77,7 +80,8 @@ rsync -av ../replay/packages/replay-starter-ts/ . --exclude node_modules
 git add .
 git commit -m "v0.x.0"
 git tag v0.x.0
-git push --follow-tags
+git push
+git push origin v0.x.0
 
 # replay-starter-js clone
 cd ../replay-starter-js
@@ -86,7 +90,8 @@ rsync -av ../replay/packages/replay-starter-js/ . --exclude node_modules
 git add .
 git commit -m "v0.x.0"
 git tag v0.x.0
-git push --follow-tags
+git push
+git push origin v0.x.0
 
 # Publish website
 cd ../replay/website

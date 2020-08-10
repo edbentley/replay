@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
 //        Uncomment below for local development with dev-game
 //        .package(path: "../../replay-swift/Replay")
-        .package(name: "Replay", url: "https://github.com/edbentley/replay-swift.git", .exact("0.3.0"))
+        .package(name: "Replay", url: "https://github.com/edbentley/replay-swift.git", .exact("0.4.0"))
     ],
     targets: [
         .target(
