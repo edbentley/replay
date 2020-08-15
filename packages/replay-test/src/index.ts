@@ -69,6 +69,12 @@ interface Options<I> {
    * A list of Native Sprite names to mock
    */
   nativeSpriteNames?: string[];
+  /**
+   * Test as a touch screen?
+   *
+   * @default false
+   */
+  isTouchScreen?: boolean;
 }
 
 /**
@@ -102,6 +108,7 @@ export function testSprite<P, S, I>(
     mapInputCoordinates = (_, inputs) => inputs,
     initAlertResponse = true,
     nativeSpriteNames = [],
+    isTouchScreen = false,
   } = options;
   /**
    * Mock function for device log.
@@ -308,6 +315,7 @@ export function testSprite<P, S, I>(
       // called individually by each Sprite
       return (globalToLocalCoords) => ({
         inputs: getInputs(globalToLocalCoords),
+        isTouchScreen,
         size,
         log,
         random,

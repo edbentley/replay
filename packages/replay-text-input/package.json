@@ -9,8 +9,7 @@
   ],
   "scripts": {
     "build": "rm -rf dist/ && tsc -p ./tsconfig.json",
-    "build-swift-test": "webpack --config webpack.swift.js",
-    "test": "jest && npm run build-swift-test && ./swift-tests.sh",
+    "test": "jest",
     "test:watch": "jest --watch"
   },
   "author": "Ed Bentley",
@@ -31,8 +30,6 @@
     "@replay/swift": "0.4.0",
     "@replay/web": "0.4.0",
     "jest": "^25.4.0",
-    "typescript": "^3.8.3",
-    "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.12"
+    "typescript": "^3.8.3"
   }
 }

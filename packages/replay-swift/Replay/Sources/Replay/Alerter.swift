@@ -1,11 +1,6 @@
 import UIKit
 
-public protocol ReplayAlerter {
-    func ok(_ message: String, onResponse: (() -> Void)?) -> Void
-    func okCancel(_ message: String, onResponse: @escaping (Bool) -> Void) -> Void
-}
-
-class Alerter: ReplayAlerter {
+class Alerter {
     func ok(_ message: String, onResponse: (() -> Void)?) {
         // https://stackoverflow.com/questions/12418177/how-to-get-root-view-controller/12418527
         let viewController = UIApplication.shared.windows.first!.rootViewController!

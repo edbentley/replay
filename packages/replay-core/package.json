@@ -13,9 +13,8 @@
     "build-dist": "rm -rf dist/ && tsc -p ./tsconfig.json",
     "build-umd": "webpack --config webpack.config.js",
     "build-swift": "webpack --config webpack.swift.js",
-    "build-test": "rm -rf test/build/ && tsc --skipLibCheck --lib es2018 --strict --outDir test/build src/__tests__/utils.ts",
-    "test": "npm run build-test && jest",
-    "test:watch": "npm run build-test && jest --watch"
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "author": "Ed Bentley",
   "repository": {
