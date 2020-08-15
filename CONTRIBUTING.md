@@ -63,16 +63,6 @@ git tag 0.x.0 # note: no v
 git push
 git push origin 0.x.0
 
-# Replay Text Input clone
-cd ../replay-text-input-swift
-git rm -r .
-cp -a ../replay/packages/replay-text-input/ReplayTextInput/. .
-git add .
-git commit -m "v0.x.0"
-git tag 0.x.0 # note: no v
-git push
-git push origin 0.x.0
-
 # replay-starter-ts clone
 cd ../replay-starter-ts
 git rm -r .
@@ -100,4 +90,4 @@ GIT_USER=<Your GitHub username> USE_SSH=true npm run deploy
 
 #### Note
 
-- The file [ReplayCore.swift](./packages/replay-swift/Replay/Sources/Replay/ReplayCore.swift) needs to be manually updated for now.
+- The file [Html.swift](./packages/replay-swift/Replay/Sources/Replay/Html.swift) needs to be manually updated for now.

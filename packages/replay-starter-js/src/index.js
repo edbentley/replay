@@ -1,4 +1,18 @@
+// defined in webpack
+/* global ASSET_NAMES */
+
 import { makeSprite, t } from "@replay/core";
+
+export const options = {
+  loadingTextures: [
+    t.text({
+      color: "black",
+      text: "Loading...",
+    }),
+  ],
+  assets: ASSET_NAMES,
+  dimensions: "scale-up",
+};
 
 export const gameProps = {
   id: "Game",
