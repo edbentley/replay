@@ -1,7 +1,7 @@
 {
   "name": "replay-starter-js",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "A starter template for building a Replay game (JavaScript)",
   "main": "src/index.js",
   "scripts": {
@@ -15,15 +15,15 @@
     "ci": "npm run lint && npm run build && npm run test"
   },
   "dependencies": {
-    "@replay/core": "0.4.0",
-    "@replay/web": "0.4.0",
+    "@replay/core": "0.5.0",
+    "@replay/web": "0.5.0",
     "core-js": "^3.6.5",
     "regenerator-runtime": "^0.13.5"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",
     "@babel/preset-env": "^7.9.5",
-    "@replay/test": "0.4.0",
+    "@replay/test": "0.5.0",
     "babel-loader": "^8.1.0",
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^5.1.1",
