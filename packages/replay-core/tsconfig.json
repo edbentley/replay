@@ -2,7 +2,7 @@
   "extends": "../../tsconfig",
   "compilerOptions": {
     "outDir": "dist",
-    "lib": ["ES2018"]
+    "lib": ["ES2019"]
   },
   "include": ["src"],
   "exclude": ["**/__tests__/**"]

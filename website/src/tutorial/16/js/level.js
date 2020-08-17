@@ -1,6 +1,5 @@
 import { makeSprite, t } from "@replay/core";
 import { Bird, birdWidth, birdHeight } from "./bird";
-import { isWebInput } from "./utils";
 import { Pipe, pipeWidth, pipeGap, getPipeYPositions } from "./pipe";
 
 const speedX = 2;
@@ -28,10 +27,7 @@ export const Level = makeSprite({
     birdGravity += 0.8;
     birdY -= birdGravity;
 
-    if (
-      inputs.pointer.justPressed ||
-      (isWebInput(inputs) && inputs.keysJustPressed[" "])
-    ) {
+    if (inputs.pointer.justPressed || inputs.keysJustPressed[" "]) {
       birdGravity = -12;
     }
 

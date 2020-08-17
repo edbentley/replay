@@ -15,6 +15,7 @@
 		2B8258EA245896DA004E7481 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2B8258E8245896DA004E7481 /* LaunchScreen.storyboard */; };
 		2BC691222458989900889706 /* boop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2BC691212458989900889706 /* boop.wav */; };
 		2BC6912824589A5300889706 /* game.js in Resources */ = {isa = PBXBuildFile; fileRef = 2BC6912724589A5200889706 /* game.js */; };
+		6416B37724E7FCA30091814A /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 6416B37624E7FCA30091814A /* icon.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,7 @@
 		2B8258EB245896DA004E7481 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2BC691212458989900889706 /* boop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = boop.wav; path = ../../assets/audio/boop.wav; sourceTree = "<group>"; };
 		2BC6912724589A5200889706 /* game.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = game.js; sourceTree = SOURCE_ROOT; };
+		6416B37624E7FCA30091814A /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = icon.png; path = ../../assets/images/icon.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +63,7 @@
 		2B8258DC245896D6004E7481 /* replay-starter-ts */ = {
 			isa = PBXGroup;
 			children = (
+				6416B37624E7FCA30091814A /* icon.png */,
 				2BC6912724589A5200889706 /* game.js */,
 				2B8258DD245896D6004E7481 /* AppDelegate.swift */,
 				2B8258DF245896D6004E7481 /* SceneDelegate.swift */,
@@ -154,6 +157,7 @@
 			files = (
 				2BC691222458989900889706 /* boop.wav in Resources */,
 				2BC6912824589A5300889706 /* game.js in Resources */,
+				6416B37724E7FCA30091814A /* icon.png in Resources */,
 				2B8258EA245896DA004E7481 /* LaunchScreen.storyboard in Resources */,
 				2B8258E7245896DA004E7481 /* Preview Assets.xcassets in Resources */,
 				2B8258E4245896DA004E7481 /* Assets.xcassets in Resources */,

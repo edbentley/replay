@@ -84,22 +84,13 @@ export type NativeSpriteMap = Record<
   NativeSpriteImplementation<any, any> | undefined
 >;
 
-/**
- * In some platforms (e.g. iOS) the game is loaded in the same container as a
- * global variable.
- */
-declare const game: {
-  Game: (props: GameProps) => CustomSprite<GameProps, unknown, unknown>;
-  gameProps: GameProps;
-};
-
 export function replayCore<S, I>(
   platform: ReplayPlatform<I>,
   nativeSpriteSettings: NativeSpriteSettings,
-  gameSpriteArg?: CustomSprite<GameProps, S, I>,
+  gameSprite: CustomSprite<GameProps, S, I>,
   /**
    * Optionally specify a game size when you want to override the
-   * `gameSpriteArg` prop
+   * `gameSprite` prop
    */
   gameSizeArg?: GameSize
 ): {
@@ -109,10 +100,6 @@ export function replayCore<S, I>(
     resetInputs: () => void
   ) => SpriteTextures;
 } {
-  const gameSprite =
-    gameSpriteArg ||
-    (game.Game(game.gameProps) as CustomSprite<GameProps, S, I>);
-
   const globalToGameCoords = ({ x, y }: { x: number; y: number }) => ({ x, y });
 
   const getInitDevice = platform.getGetDevice();

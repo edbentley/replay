@@ -1,6 +1,6 @@
 import { Sprite, makeSprite } from "../../packages/replay-core/src";
 import { WebInputs } from "../../packages/replay-web/src";
-import { iOSInputs } from "../../packages/replay-swift/index";
+import { iOSInputs } from "../../packages/replay-swift/src";
 
 type ClickableProps = {
   sprites: (isPressed: boolean) => Sprite[];

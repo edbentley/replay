@@ -1,4 +1,6 @@
+const fs = require("fs");
 const path = require("path");
+const webpack = require("webpack");
 
 module.exports = {
   entry: "./src/index.ts",
@@ -15,6 +17,11 @@ module.exports = {
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
   },
+  plugins: [
+    new webpack.DefinePlugin({
+      ASSET_NAMES: JSON.stringify(getAssetNames()),
+    }),
+  ],
   output: {
     filename: "game.js",
     path: path.resolve(__dirname, "swift/dev-game"),
@@ -23,4 +30,25 @@ module.exports = {
   optimization: {
     minimize: false,
   },
+  resolve: {
+    // Ensure import of web from swift is also local package
+    alias: {
+      "@replay/web": path.resolve(__dirname, "../packages/replay-web/src"),
+    },
+    extensions: [".wasm", ".mjs", ".js", ".json", ".ts"],
+  },
 };
+
+function getAssetNames() {
+  const imageFileNames = fs.readdirSync(
+    path.resolve(__dirname, "assets/images")
+  );
+  const audioFileNames = fs.readdirSync(
+    path.resolve(__dirname, "assets/audio")
+  );
+
+  return {
+    imageFileNames,
+    audioFileNames,
+  };
+}

@@ -1,6 +1,6 @@
 import { t, makeSprite, mask } from "../../packages/replay-core/src";
 import { WebInputs } from "../../packages/replay-web/src";
-import { iOSInputs } from "../../packages/replay-swift";
+import { iOSInputs } from "../../packages/replay-swift/src";
 import { bulletX, bulletY } from "./utils";
 import { Score } from "./Score";
 import { WalkingGreenCapChar } from "./SpriteSheet";

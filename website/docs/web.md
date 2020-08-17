@@ -5,19 +5,20 @@ title: Web
 
 To render a game for the browser use the `@replay/web` package.
 
-### `renderCanvas(game, loadingTextures, assets, dimensions, nativeSpriteMap, canvas, windowSize)`
+### `renderCanvas(game, options)`
 
 #### Parameters
 
 - `game`: Your [Top-Level Game](top-level-game.md) Sprite called with its props passed in, e.g. `Game(gameProps)`.
-- `loadingTextures`: (Optional) An array of textures to show while the game is loading.
-- `assets`: (Optional) An object containing image and audio file names to load.
-- `dimensions`: (Optional) A string that is either:
-  - `"game-coords"`: (default) Use the game coordinates as pixels in the browser.
-  - `"scale-up"`: Scales the game so that it fills up the browser window.
-- `nativeSpriteMap`: (Optional) A map of [Native Sprite](native-sprites.md) names and their web implementation.
-- `canvas`: (Optional) A canvas element to render to. If omitted, Replay will create a canvas in the document.
-- `windowSize`: (Optional) An object with width and height fields. Use to override the view size, instead of using the window size.
+- `options`: An object with the following properties:
+  - `loadingTextures`: (Optional) An array of textures to show while the game is loading.
+  - `assets`: (Optional) An object containing image and audio file names to load.
+  - `dimensions`: (Optional) A string that is either:
+    - `"game-coords"`: (default) Use the game coordinates as pixels in the browser.
+    - `"scale-up"`: Scales the game so that it fills up the browser window.
+  - `nativeSpriteMap`: (Optional) A map of [Native Sprite](native-sprites.md) names and their web implementation.
+  - `canvas`: (Optional) A canvas element to render to. If omitted, Replay will create a canvas in the document.
+  - `windowSize`: (Optional) An object with width and height fields. Use to override the view size, instead of using the window size.
 
 ```js
 import { renderCanvas } from "@replay/web";
@@ -31,15 +32,14 @@ const loadingTextures = [
   }),
 ];
 
-renderCanvas(
-  Game(gameProps),
+renderCanvas(Game(gameProps), {
   loadingTextures,
   {
     imageFileNames: ["player.png"],
     audioFileNames: ["shoot.wav"],
   },
-  "scale-up"
-);
+  dimensions: "scale-up",
+});
 ```
 
 ### `mapInputCoordinates(getLocalCoords, inputs)`
@@ -56,6 +56,7 @@ type WebInputs = {
   keysJustPressed: KeysPressed;
   pointer: {
     pressed: boolean;
+    numberPressed: number; // multi-touch
     justPressed: boolean;
     justReleased: boolean;
     x: number;

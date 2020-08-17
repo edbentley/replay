@@ -1,8 +1,8 @@
 import { GameProps, t, makeSprite } from "../../packages/replay-core/src";
-import { WebInputs } from "../../packages/replay-web/src";
-import { iOSInputs } from "../../packages/replay-swift";
+import { WebInputs, RenderCanvasOptions } from "../../packages/replay-web/src";
+import { iOSInputs } from "../../packages/replay-swift/src";
 import { PlayStage } from "./PlayStage";
-import { TextInput } from "../../packages/replay-text-input/src";
+import { TextInput, TextInputWeb } from "../../packages/replay-text-input/src";
 
 interface State {
   stage: GameStage;
@@ -23,6 +23,21 @@ const initState: Omit<State, "highScore"> = {
   bulletSpeed: 0, // updated in query
   gameOverText: "",
   text: "Hello",
+};
+
+// defined in webpack
+declare const ASSET_NAMES: {};
+
+export const options: RenderCanvasOptions = {
+  loadingTextures: [
+    t.text({
+      color: "black",
+      text: "Loading...",
+    }),
+  ],
+  assets: ASSET_NAMES,
+  dimensions: "scale-up",
+  nativeSpriteMap: { TextInput: TextInputWeb },
 };
 
 export const gameProps: GameProps = {

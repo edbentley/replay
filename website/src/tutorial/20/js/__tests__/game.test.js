@@ -5,11 +5,14 @@ test("Can start game", () => {
   const initInputs = {
     pointer: {
       pressed: false,
+      numberPressed: 0,
       justPressed: false,
       justReleased: false,
       x: 0,
       y: 0,
     },
+    keysDown: {},
+    keysJustPressed: {},
   };
   const mainMenuText = "Start";
 
@@ -26,11 +29,14 @@ test("Can start game", () => {
   updateInputs({
     pointer: {
       pressed: false,
+      numberPressed: 1,
       justPressed: false,
       justReleased: true,
       x: 0,
       y: 0,
     },
+    keysDown: {},
+    keysJustPressed: {},
   });
   nextFrame();
 

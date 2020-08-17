@@ -5,6 +5,12 @@ export interface Device<I> {
   inputs: I;
 
   /**
+   * Is the device a touch screen device - e.g. show buttons instead of relying
+   * on pinch gesture for zooming if there's no touch available.
+   */
+  isTouchScreen: boolean;
+
+  /**
    * Computed dimensions of game based on device
    */
   size: DeviceSize;

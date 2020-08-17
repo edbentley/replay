@@ -14,8 +14,9 @@
 		2BBA143424519F9E00C68FAD /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2BBA143224519F9E00C68FAD /* LaunchScreen.storyboard */; };
 		2BBA14402451FE5300C68FAD /* game.js in Resources */ = {isa = PBXBuildFile; fileRef = 2BBA143F2451FE5300C68FAD /* game.js */; };
 		2BBA1444245358F800C68FAD /* shoot.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2BBA1443245358F800C68FAD /* shoot.wav */; };
-		6498DAF624AF96EE007A5A9F /* ReplayTextInput in Resources */ = {isa = PBXBuildFile; fileRef = 6498DAF524AF96ED007A5A9F /* ReplayTextInput */; };
-		6498DAF824AF97B6007A5A9F /* ReplayTextInput in Frameworks */ = {isa = PBXBuildFile; productRef = 6498DAF724AF97B6007A5A9F /* ReplayTextInput */; };
+		6416B37124E6E3FD0091814A /* Replay in Frameworks */ = {isa = PBXBuildFile; productRef = 6416B37024E6E3FD0091814A /* Replay */; };
+		6416B37424E6E5650091814A /* spritesheet.png in Resources */ = {isa = PBXBuildFile; fileRef = 6416B37224E6E5650091814A /* spritesheet.png */; };
+		6416B37524E6E5650091814A /* enemy.png in Resources */ = {isa = PBXBuildFile; fileRef = 6416B37324E6E5650091814A /* enemy.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,7 +29,9 @@
 		2BBA143524519F9E00C68FAD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2BBA143F2451FE5300C68FAD /* game.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = game.js; sourceTree = "<group>"; };
 		2BBA1443245358F800C68FAD /* shoot.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = shoot.wav; path = ../../assets/audio/shoot.wav; sourceTree = "<group>"; };
-		6498DAF524AF96ED007A5A9F /* ReplayTextInput */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ReplayTextInput; path = "../../packages/replay-text-input/ReplayTextInput"; sourceTree = "<group>"; };
+		6416B36F24E6E3BD0091814A /* Replay */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Replay; path = "../../packages/replay-swift/Replay"; sourceTree = "<group>"; };
+		6416B37224E6E5650091814A /* spritesheet.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = spritesheet.png; path = ../../assets/images/spritesheet.png; sourceTree = "<group>"; };
+		6416B37324E6E5650091814A /* enemy.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = enemy.png; path = ../../assets/images/enemy.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,7 +39,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6498DAF824AF97B6007A5A9F /* ReplayTextInput in Frameworks */,
+				6416B37124E6E3FD0091814A /* Replay in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,7 +49,7 @@
 		2BBA141B24519F9D00C68FAD = {
 			isa = PBXGroup;
 			children = (
-				6498DAF524AF96ED007A5A9F /* ReplayTextInput */,
+				6416B36F24E6E3BD0091814A /* Replay */,
 				2BBA142624519F9D00C68FAD /* dev-game */,
 				2BBA142524519F9D00C68FAD /* Products */,
 				2BBA143C2451AA7D00C68FAD /* Frameworks */,
@@ -64,6 +67,8 @@
 		2BBA142624519F9D00C68FAD /* dev-game */ = {
 			isa = PBXGroup;
 			children = (
+				6416B37324E6E5650091814A /* enemy.png */,
+				6416B37224E6E5650091814A /* spritesheet.png */,
 				2BBA1443245358F800C68FAD /* shoot.wav */,
 				2BBA143F2451FE5300C68FAD /* game.js */,
 				2BBA142724519F9D00C68FAD /* AppDelegate.swift */,
@@ -108,7 +113,7 @@
 			);
 			name = "dev-game";
 			packageProductDependencies = (
-				6498DAF724AF97B6007A5A9F /* ReplayTextInput */,
+				6416B37024E6E3FD0091814A /* Replay */,
 			);
 			productName = "dev-game";
 			productReference = 2BBA142424519F9D00C68FAD /* dev-game.app */;
@@ -152,12 +157,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6416B37424E6E5650091814A /* spritesheet.png in Resources */,
 				2BBA14402451FE5300C68FAD /* game.js in Resources */,
+				6416B37524E6E5650091814A /* enemy.png in Resources */,
 				2BBA143424519F9E00C68FAD /* LaunchScreen.storyboard in Resources */,
 				2BBA143124519F9E00C68FAD /* Preview Assets.xcassets in Resources */,
 				2BBA1444245358F800C68FAD /* shoot.wav in Resources */,
 				2BBA142E24519F9E00C68FAD /* Assets.xcassets in Resources */,
-				6498DAF624AF96EE007A5A9F /* ReplayTextInput in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -365,9 +371,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		6498DAF724AF97B6007A5A9F /* ReplayTextInput */ = {
+		6416B37024E6E3FD0091814A /* Replay */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = ReplayTextInput;
+			productName = Replay;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

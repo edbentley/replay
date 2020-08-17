@@ -1,4 +1,4 @@
-import { GameProps, Texture, DeviceSize, Store, Device } from "@replay/core";
+import { GameProps, Texture, DeviceSize, Device } from "@replay/core";
 import {
   replayCore,
   ReplayPlatform,
@@ -28,6 +28,8 @@ import { Dimensions } from "./dimensions";
 import { getDefaultProps } from "@replay/core/dist/props";
 import { getGameXToWebX, getGameYToWebY } from "./coordinates";
 import { getTimer } from "./timer";
+import { getAudio, getNetwork, getStorage } from "./device";
+import { isTouchDevice } from "./isTouchDevice";
 
 export { Inputs as WebInputs, mapInputCoordinates } from "./input";
 export { Dimensions } from "./dimensions";
@@ -37,36 +39,63 @@ const DEFAULT_FONT = {
   size: 12,
 };
 
+interface AudioContextWindow extends Window {
+  AudioContext: FunctionConstructor;
+  webkitAudioContext: FunctionConstructor;
+}
+declare let window: AudioContextWindow;
+
+export type RenderCanvasOptions = {
+  /**
+   * What the user sees as the game is loading. Avoid using assets here.
+   *
+   * @default []
+   */
+  loadingTextures?: Texture[];
+  /**
+   * These assets will be preloaded before game starts.
+   *
+   * @default {}
+   */
+  assets?: {
+    imageFileNames?: string[];
+    audioFileNames?: string[];
+  };
+  /**
+   * Preferred method of placing the game in the browser window
+   *
+   * @default "game-coords"
+   */
+  dimensions?: Dimensions;
+  /**
+   * A map of Native Sprite names and their web implementation
+   */
+  nativeSpriteMap?: NativeSpriteMap;
+  /**
+   * Supply a canvas element to render to. Will create a new one if not
+   * provided.
+   */
+  canvas?: HTMLCanvasElement;
+  /**
+   * Override the view size, instead of using the window size
+   */
+  windowSize?: { width: number; height: number };
+};
+
 /**
  * Render your Replay game to the web canvas. Call this at your game's entry
  * file.
  */
 export function renderCanvas<S>(
   gameSprite: CustomSprite<GameProps, S, Inputs>,
-  /**
-   * What the user sees as the game is loading. Avoid using assets here.
-   */
-  loadingTextures: Texture[] = [],
-  /**
-   * These assets will be preloaded before game starts.
-   */
-  assets: {
-    imageFileNames?: string[];
-    audioFileNames?: string[];
-  } = {},
-  /**
-   * Preferred method of placing the game in the browser window
-   */
-  dimensions: Dimensions = "game-coords",
-  /**
-   * A map of Native Sprite names and their web implementation
-   */
-  nativeSpriteMap?: NativeSpriteMap,
-  userCanvas?: HTMLCanvasElement,
-  /**
-   * Override the view size, instead of using the window size
-   */
-  windowSize?: { width: number; height: number }
+  {
+    loadingTextures = [],
+    assets = {},
+    dimensions = "game-coords",
+    nativeSpriteMap = {},
+    canvas: userCanvas,
+    windowSize,
+  }: RenderCanvasOptions
 ) {
   const canvas = userCanvas || document.createElement("canvas");
   if (!userCanvas) {
@@ -75,6 +104,12 @@ export function renderCanvas<S>(
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const ctx = canvas.getContext("2d", { alpha: false })!;
+
+  // https://stackoverflow.com/questions/22216954/whats-causing-this-slow-delayed-audio-playback-in-safari
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (AudioContext) {
+    new AudioContext();
+  }
 
   let isInFocus = true;
 
@@ -96,6 +131,7 @@ export function renderCanvas<S>(
   let pointerDown: (e: PointerEvent) => void;
   let pointerMove: (e: PointerEvent) => void;
   let pointerUp: (e: PointerEvent) => void;
+  let pointerOut: (e: PointerEvent) => void;
   let scale: number;
 
   const nativeSpriteUtils: NativeSpriteUtils = {
@@ -111,7 +147,7 @@ export function renderCanvas<S>(
       document.removeEventListener("pointerdown", pointerDown);
       document.removeEventListener("pointermove", pointerMove);
       document.removeEventListener("pointerup", pointerUp);
-      document.removeEventListener("pointerout", pointerOutHandler);
+      document.removeEventListener("pointerout", pointerOut);
       if (cleanup === true) {
         return;
       }
@@ -183,7 +219,7 @@ export function renderCanvas<S>(
       }
       isInFocus = true;
 
-      pointerDownHandler(x, y);
+      pointerDownHandler(x, y, e.pointerId);
     };
     pointerMove = (e: PointerEvent) => {
       const x = getX(e);
@@ -197,15 +233,18 @@ export function renderCanvas<S>(
       const x = getX(e);
       const y = getY(e);
       if (isPointerOutsideGame(x, y)) {
-        pointerOutHandler();
+        pointerOutHandler(e.pointerId);
         return;
       }
-      pointerUpHandler(x, y);
+      pointerUpHandler(x, y, e.pointerId);
+    };
+    pointerOut = (e: PointerEvent) => {
+      pointerOutHandler(e.pointerId);
     };
     document.addEventListener("pointerdown", pointerDown, false);
     document.addEventListener("pointermove", pointerMove, false);
     document.addEventListener("pointerup", pointerUp, false);
-    document.addEventListener("pointerout", pointerOutHandler, false);
+    document.addEventListener("pointerout", pointerOut, false);
 
     prevDeviceSize = deviceSize;
   }
@@ -291,7 +330,7 @@ export function renderCanvas<S>(
     const { initTextures, getNextFrameTextures } = replayCore<S, Inputs>(
       domPlatform,
       {
-        nativeSpriteMap: nativeSpriteMap || {},
+        nativeSpriteMap,
         nativeSpriteUtils,
       },
       gameSprite
@@ -345,89 +384,13 @@ function deviceCreator(
 ): ReplayPlatform<Inputs>["getGetDevice"] {
   // called once
   const initDevice: Omit<Device<Inputs>, "inputs" | "size" | "now"> = {
+    isTouchScreen: isTouchDevice(),
     log: console.log,
     random: Math.random,
     timer: getTimer(),
-    audio: (filename) => {
-      function getAudioElement(play: boolean) {
-        let audioElement = audioElements[filename];
-        if (!audioElement) {
-          throw Error(`Cannot find audio file ${filename}`);
-        }
-        if (play && !audioElement.paused) {
-          // it's being played somewhere else, need a new audio element
-          audioElement = new Audio(filename);
-        }
-        return audioElement;
-      }
-      return {
-        getPosition: () => getAudioElement(false).currentTime,
-        play: (fromPosition, loop) => {
-          const audioElement = getAudioElement(true);
-          audioElement.play();
-          if (fromPosition !== undefined) {
-            audioElement.currentTime = fromPosition;
-          }
-          if (loop) {
-            audioElement.loop = true;
-          }
-        },
-        pause: () => {
-          getAudioElement(false).pause();
-        },
-      };
-    },
-    network: {
-      get: (url, callback) => {
-        fetch(url)
-          .then((res) => res.json())
-          .then(callback);
-      },
-      post: (url, body, callback) => {
-        fetch(url, {
-          method: "POST",
-          body: JSON.stringify(body),
-        })
-          .then((res) => res.json())
-          .then(callback);
-      },
-      put: (url, body, callback) => {
-        fetch(url, {
-          method: "PUT",
-          body: JSON.stringify(body),
-        })
-          .then((res) => res.json())
-          .then(callback);
-      },
-      delete: (url, callback) => {
-        fetch(url, {
-          method: "DELETE",
-        })
-          .then((res) => res.json())
-          .then(callback);
-      },
-    },
-    storage: {
-      getStore: () => {
-        const store: Store = {};
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key) {
-            store[key] = localStorage.getItem(key) ?? undefined;
-          }
-        }
-        return store;
-      },
-      setStore: (store) => {
-        Object.entries(store).forEach(([field, value]) => {
-          if (value === undefined) {
-            localStorage.removeItem(field);
-          } else {
-            localStorage.setItem(field, value);
-          }
-        });
-      },
-    },
+    audio: getAudio(audioElements),
+    network: getNetwork(),
+    storage: getStorage(),
     alert: {
       ok: (message, onResponse) => {
         alert(message);
@@ -440,6 +403,7 @@ function deviceCreator(
     },
     clipboard: {
       copy: (text, onComplete) => {
+        // Currently not working on iOS, it may work in iOS 14?
         if (!navigator.clipboard) {
           onComplete(
             new Error(

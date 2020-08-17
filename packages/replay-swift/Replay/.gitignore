@@ -3,6 +3,6 @@
 /*.xcodeproj
 xcuserdata/
 .swiftpm
-replay-core.js
+renderCanvas.js
 game.js
 .DS_Store

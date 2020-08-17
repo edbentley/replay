@@ -1,6 +1,20 @@
 import { makeSprite, t, GameProps } from "@replay/core";
-import { WebInputs } from "@replay/web";
+import { WebInputs, RenderCanvasOptions } from "@replay/web";
 import { iOSInputs } from "@replay/swift";
+
+// defined in webpack
+declare const ASSET_NAMES: {};
+
+export const options: RenderCanvasOptions = {
+  loadingTextures: [
+    t.text({
+      color: "black",
+      text: "Loading...",
+    }),
+  ],
+  assets: ASSET_NAMES,
+  dimensions: "scale-up",
+};
 
 export const gameProps: GameProps = {
   id: "Game",

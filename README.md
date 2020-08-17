@@ -123,7 +123,7 @@ const loadingTextures = [
 ];
 
 // Render in the browser using canvas
-renderCanvas(Game(gameProps), loadingTextures, {}, "scale-up");
+renderCanvas(Game(gameProps), { loadingTextures, dimensions: "scale-up" });
 
 </script>
 </body>

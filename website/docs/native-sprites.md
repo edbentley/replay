@@ -209,44 +209,16 @@ export const MyWidgetWeb: NativeSpriteImplementation<
 </TabItem>
 </Tabs>
 
-### Swift example
-
-Swift implementations must make use of [JavaScriptCore](https://nshipster.com/javascriptcore) to create a JS-compatible object:
-
-```swift
-import JavaScriptCore
-import Replay
-
-@objc class MyWidgetSwift : NSObject, ReplayNativeSpriteImplementation {
-
-    var create: @convention(block) (JSValue) -> NSDictionary = { argsObj in
-        let args = ReplayNativeSpriteArgs.parseCreateArgs(argsObj)
-
-        // Setup
-
-        return ["stateField": "Hello"]
-    }
-
-    var loop: @convention(block) (JSValue) -> NSDictionary = { argsObj in
-        let args = ReplayNativeSpriteArgs.parseLoopArgs(argsObj)
-
-        // Loop
-
-        return args.state.toDictionary()! as NSDictionary
-    }
-
-    var cleanup: @convention(block) (JSValue) -> Void = { argsObj in
-        let args = ReplayNativeSpriteArgs.parseCleanupArgs(argsObj)
-
-        // Cleanup
-    }
-
-}
-```
-
 ## Platform usage
 
-You must import each Native Sprite implementation into its respective platform. See the `nativeSpriteMap` field in the [Web](web.md) and [iOS](ios.md) platforms. For example:
+You must import each Native Sprite implementation into its respective platform. See the `nativeSpriteMap` field in the [Web](web.md) platform.
+
+:::tip Important
+Since the [iOS](ios.md) platform uses a web view, you can also use the web native sprite with it.
+:::
+
+
+For example:
 
 ```js
 import { renderCanvas } from "@replay/web";
@@ -257,16 +229,15 @@ const nativeSpriteMap = {
   MyWidget: MyWidgetWeb,
 };
 
-renderCanvas(
-  Game(gameProps),
-  [
+renderCanvas(Game(gameProps), {
+  loadingTextures: [
     t.text({
       color: "black",
       text: "Loading...",
     }),
   ],
-  ASSET_NAMES,
-  "scale-up",
-  nativeSpriteMap
-);
+  assets: ASSET_NAMES,
+  dimensions: "scale-up",
+  nativeSpriteMap,
+});
 ```

@@ -26,27 +26,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 Your image and audio assets also need to be added to your Xcode project. See [Replay Starter](starter.md) for an example setup.
 
-### `ReplayViewController(nativeSpriteMap, hideStatusBar)`
+### `ReplayViewController(hideStatusBar, useLocalHost)`
 
 #### Parameters
 
-- `nativeSpriteMap`: (Optional) A dictionary of [Native Sprite](native-sprites.md) names and their iOS implementation.
 - `hideStatusBar`: (Optional) A boolean to set if the status bar is hidden or not. Default `true`.
+- `useLocalHost`: (Optional) Set to `true` to debug JavaScript errors, but note that assets can't be loaded in this mode. Default `false`.
 
 ## Inputs
 
-The `device.inputs` parameter of Sprite methods is of type:
+Since Replay Swift embeds your game as a web view, the `device.inputs` parameter of Sprite methods is an alias of the [Web package](web.md)'s inputs:
 
 ```ts
-type iOSInputs = {
-  pointer: {
-    pressed: boolean;
-    justPressed: boolean;
-    justReleased: boolean;
-    x: number;
-    y: number;
-  };
-};
+type iOSInputs = WebInputs;
 ```
 
 The `@replay/swift` package exports this type for TypeScript projects.

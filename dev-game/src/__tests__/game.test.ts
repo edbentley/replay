@@ -2,7 +2,7 @@ import {
   WebInputs,
   mapInputCoordinates,
 } from "../../../packages/replay-web/src";
-import { iOSInputs } from "../../../packages/replay-swift";
+import { iOSInputs } from "../../../packages/replay-swift/src";
 import { testSprite } from "../../../packages/replay-test/src";
 import { Game, gameProps } from "..";
 
@@ -10,11 +10,14 @@ test("gameplay", () => {
   const inputs: WebInputs | iOSInputs = {
     pointer: {
       pressed: false,
+      numberPressed: 0,
       justPressed: false,
       justReleased: false,
       x: 0,
       y: 0,
     },
+    keysDown: {},
+    keysJustPressed: {},
   };
 
   const {
@@ -67,11 +70,14 @@ test("gameplay", () => {
   updateInputs({
     pointer: {
       pressed: true,
+      numberPressed: 1,
       justPressed: true,
       justReleased: false,
       x: 0,
       y: 0,
     },
+    keysDown: {},
+    keysJustPressed: {},
   });
   nextFrame();
 
@@ -84,11 +90,14 @@ test("gameplay", () => {
   updateInputs({
     pointer: {
       pressed: false,
+      numberPressed: 0,
       justPressed: false,
       justReleased: true,
       x: 0,
       y: 0,
     },
+    keysDown: {},
+    keysJustPressed: {},
   });
   nextFrame();
 
@@ -114,11 +123,14 @@ test("gameplay", () => {
   updateInputs({
     pointer: {
       pressed: true,
+      numberPressed: 1,
       justPressed: true,
       justReleased: false,
       x: 0,
       y: 0,
     },
+    keysDown: {},
+    keysJustPressed: {},
   });
   nextFrame();
 
@@ -127,11 +139,14 @@ test("gameplay", () => {
   updateInputs({
     pointer: {
       pressed: false,
+      numberPressed: 0,
       justPressed: false,
       justReleased: true,
       x: 0,
       y: 0,
     },
+    keysDown: {},
+    keysJustPressed: {},
   });
 
   // bullet misses enemy and game over!

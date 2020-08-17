@@ -39,20 +39,21 @@ test("Can render image moving across screen", async () => {
   const canvas = document.createElement("canvas");
   const { loadPromise, audioElements } = renderCanvas(
     TestGameWithAssets(testGameProps),
-    [
-      t.text({
-        x: 0,
-        y: 0,
-        rotation: 0,
-        font: { name: "serif", size: 22 },
-        text: "Loading...",
-        color: "black",
-      }),
-    ],
-    getTestAssets(),
-    "game-coords",
-    undefined,
-    canvas
+    {
+      loadingTextures: [
+        t.text({
+          x: 0,
+          y: 0,
+          rotation: 0,
+          font: { name: "serif", size: 22 },
+          text: "Loading...",
+          color: "black",
+        }),
+      ],
+      assets: getTestAssets(),
+      dimensions: "game-coords",
+      canvas,
+    }
   );
 
   // 1: loading scene
@@ -86,9 +87,8 @@ test("Can render image moving across screen", async () => {
 
 test("Canvas elements are drawn in order of sprites passed in", () => {
   const canvas = document.createElement("canvas");
-  renderCanvas(
-    TestGameWithAssets(testGameProps),
-    [
+  renderCanvas(TestGameWithAssets(testGameProps), {
+    loadingTextures: [
       t.circle({
         x: 0,
         y: 0,
@@ -104,11 +104,10 @@ test("Canvas elements are drawn in order of sprites passed in", () => {
         color: "blue",
       }),
     ],
-    getTestAssets(),
-    "game-coords",
-    undefined,
-    canvas
-  );
+    assets: getTestAssets(),
+    dimensions: "game-coords",
+    canvas,
+  });
 
   // blue circle on red circle
   expect(canvasToImage(canvas)).toMatchImageSnapshot();
@@ -116,14 +115,9 @@ test("Canvas elements are drawn in order of sprites passed in", () => {
 
 test("Can render game with Sprites", async () => {
   const canvas = document.createElement("canvas");
-  const { loadPromise } = renderCanvas(
-    TestGameWithSprites(testGameProps),
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    canvas
-  );
+  const { loadPromise } = renderCanvas(TestGameWithSprites(testGameProps), {
+    canvas,
+  });
 
   await loadPromise;
   mockTime.nextFrame();
@@ -156,14 +150,7 @@ test("Dimension 'game-coords' renders the minimum size", () => {
     id: "Game",
     size: { width: 200, height: 200, maxWidthMargin: 10, maxHeightMargin: 20 },
   };
-  renderCanvas(
-    TestGame(props),
-    undefined,
-    undefined,
-    "game-coords",
-    undefined,
-    canvas
-  );
+  renderCanvas(TestGame(props), { dimensions: "game-coords", canvas });
 
   expect(canvas.width).toBe(200);
   expect(canvas.height).toBe(200);
@@ -178,14 +165,7 @@ test("Dimension 'scale-up' renders up to browser size and resizes", () => {
     id: "Game",
     size: { width: 200, height: 200, maxWidthMargin: 10, maxHeightMargin: 20 },
   };
-  renderCanvas(
-    TestGame(props),
-    undefined,
-    undefined,
-    "scale-up",
-    undefined,
-    canvas
-  );
+  renderCanvas(TestGame(props), { dimensions: "scale-up", canvas });
 
   // the game is square so width scales up to max 400px (scale 2)
   // so a margin of 10 game coordinates allowed on each side = 40px extra width
@@ -205,11 +185,7 @@ test("Unknown image name throws readable error", async () => {
   try {
     const { loadPromise } = renderCanvas(
       TestGameThrowImageError(testGameProps),
-      undefined,
-      undefined,
-      "scale-up",
-      undefined,
-      canvas
+      { dimensions: "scale-up", canvas }
     );
     await loadPromise;
   } catch (e) {
@@ -225,11 +201,7 @@ test("Supports Native Sprites", async () => {
   const canvas = document.createElement("canvas");
   const { loadPromise } = renderCanvas(
     TestGameWithNativeSprite(testGameProps),
-    undefined,
-    undefined,
-    undefined,
-    { TestNativeSprite: TestNativeSpriteWeb },
-    canvas
+    { nativeSpriteMap: { TestNativeSprite: TestNativeSpriteWeb }, canvas }
   );
   await loadPromise;
 

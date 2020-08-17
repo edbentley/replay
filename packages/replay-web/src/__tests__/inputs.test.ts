@@ -30,14 +30,7 @@ test("Key events press and release keys", async () => {
   (canvas as any).getContext = () => ctx;
   const textSpy = jest.spyOn(ctx, "fillText");
 
-  const { loadPromise } = renderCanvas(
-    KeyboardGame(testGameProps),
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    canvas
-  );
+  const { loadPromise } = renderCanvas(KeyboardGame(testGameProps), { canvas });
 
   await loadPromise;
   mockTime.nextFrame();
@@ -110,14 +103,7 @@ test("Pointer clicks and move", async () => {
   (canvas as any).getContext = () => ctx;
   const textSpy = jest.spyOn(ctx, "fillText");
 
-  const { loadPromise } = renderCanvas(
-    PointerGame(testGameProps),
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    canvas
-  );
+  const { loadPromise } = renderCanvas(PointerGame(testGameProps), { canvas });
 
   await loadPromise;
   mockTime.nextFrame();
@@ -215,14 +201,9 @@ test("Pointer position within sprite", async () => {
   const ctx = canvas.getContext("2d", { alpha: false })!;
   (canvas as any).getContext = () => ctx;
 
-  const { loadPromise } = renderCanvas(
-    PointerGameWithSprite(testGameProps),
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    canvas
-  );
+  const { loadPromise } = renderCanvas(PointerGameWithSprite(testGameProps), {
+    canvas,
+  });
 
   await loadPromise;
   mockTime.nextFrame();
@@ -267,14 +248,10 @@ test("Pointer clicks in scaled canvas with margins and canvas offset", async () 
     size: { width: 200, height: 200, maxWidthMargin: 10, maxHeightMargin: 20 },
   };
 
-  const { loadPromise } = renderCanvas(
-    PointerGame(props),
-    undefined,
-    undefined,
-    "scale-up",
-    undefined,
-    canvas
-  );
+  const { loadPromise } = renderCanvas(PointerGame(props), {
+    dimensions: "scale-up",
+    canvas,
+  });
 
   await loadPromise;
   mockTime.nextFrame();

@@ -34,6 +34,7 @@ The `@replay/test` package is useful for writing tests in Jest for your Replay g
   ```
   - `initAlertResponse`: (Optional) Set which choice is chosen for OK / cancel alerts. Default `true`.
   - `nativeSpriteNames`: (Optional) A list of [Native Sprite](native-sprites.md) names to mock.
+  - `isTouchScreen`: (Optional) Set the `isTouchScreen` parameter.
 
 `testSprite` returns an object with the following fields:
 

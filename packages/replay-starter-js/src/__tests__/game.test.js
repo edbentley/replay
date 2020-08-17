@@ -6,11 +6,14 @@ test("gameplay", () => {
   const initInputs = {
     pointer: {
       pressed: false,
+      numberPressed: 0,
       justPressed: false,
       justReleased: false,
       x: 0,
       y: 0,
     },
+    keysDown: {},
+    keysJustPressed: {},
   };
 
   const {
@@ -31,11 +34,14 @@ test("gameplay", () => {
   updateInputs({
     pointer: {
       pressed: true,
+      numberPressed: 1,
       justPressed: true,
       justReleased: false,
       x: 100,
       y: 100,
     },
+    keysDown: {},
+    keysJustPressed: {},
   });
 
   nextFrame();

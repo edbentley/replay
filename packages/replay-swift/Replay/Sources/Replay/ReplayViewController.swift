@@ -1,15 +1,12 @@
 import UIKit
 
-// Allow access to view from Native Sprites
-public var replayViewGlobal: ReplayView?
-
 public class ReplayViewController: UIViewController {
     var hideStatusBar: Bool
-    var nativeSpriteMap: ReplayNativeSpriteMap
+    public var webView: ReplayWebView
     
-    public init(nativeSpriteMap: ReplayNativeSpriteMap? = nil, hideStatusBar: Bool? = nil) {
-        self.hideStatusBar = hideStatusBar ?? true
-        self.nativeSpriteMap = nativeSpriteMap ?? [:]
+    public init(hideStatusBar: Bool = true, useLocalHost: Bool = false) {
+        self.hideStatusBar = hideStatusBar
+        self.webView = ReplayWebViewManager(useLocalHost: useLocalHost).webView
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -19,7 +16,8 @@ public class ReplayViewController: UIViewController {
     
     override public func viewDidLoad() {
         super.viewDidLoad()
-        self.view = TopView(frame: UIScreen.main.bounds, nativeSpriteMap: nativeSpriteMap)
+        
+        self.view = webView
     }
     
     public override var prefersStatusBarHidden: Bool {
@@ -35,25 +33,5 @@ public class ReplayViewController: UIViewController {
                 gr.delaysTouchesBegan = false
             }
         }
-    }
-}
-
-class TopView: UIView {
-    init(frame: CGRect, nativeSpriteMap: ReplayNativeSpriteMap) {
-        super.init(frame: frame)
-        let view = ReplayView(frame: frame, nativeSpriteMap: nativeSpriteMap)
-        
-        replayViewGlobal = view
-        
-        // scale to device
-        view.transform = CGAffineTransform(scaleX: view.gameViewSize.scale, y: view.gameViewSize.scale)
-            // center view
-            .concatenating(CGAffineTransform(translationX: view.gameViewSize.offset.x, y: view.gameViewSize.offset.y))
-        
-        self.addSubview(view)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
 }

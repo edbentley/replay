@@ -2,7 +2,6 @@ import { makeSprite, t, Device, DeviceSize } from "@replay/core";
 import { WebInputs } from "@replay/web";
 import { iOSInputs } from "@replay/swift";
 import { Bird, birdWidth, birdHeight } from "./bird";
-import { isWebInput } from "./utils";
 import { Pipe, PipeT, pipeWidth, pipeGap, getPipeYPositions } from "./pipe";
 
 const speedX = 2;
@@ -42,10 +41,7 @@ export const Level = makeSprite<LevelProps, LevelState, WebInputs | iOSInputs>({
     birdGravity += 0.8;
     birdY -= birdGravity;
 
-    if (
-      inputs.pointer.justPressed ||
-      (isWebInput(inputs) && inputs.keysJustPressed[" "])
-    ) {
+    if (inputs.pointer.justPressed || inputs.keysJustPressed[" "]) {
       birdGravity = -12;
     }
 

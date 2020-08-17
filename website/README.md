@@ -26,6 +26,15 @@ npm run build
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service.
 
+### Serve
+
+```
+npm run serve
+```
+
+Locally serve the static content in the `build` directory.
+
+
 ### Deployment
 
 ```
