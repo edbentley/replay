@@ -2,7 +2,7 @@ import React from "react";
 import { Page } from "../../tutorial/Page";
 
 // Game
-import { Game, gameProps } from "../../tutorial/21/js";
+import { Game, gameProps } from "../../tutorial/22/js/src";
 
 // MD
 import MDXContent from "../../../docs/tutorial/1.md";

@@ -107,7 +107,9 @@ export function renderCanvas<S>(
 
   // https://stackoverflow.com/questions/22216954/whats-causing-this-slow-delayed-audio-playback-in-safari
   const AudioContext = window.AudioContext || window.webkitAudioContext;
-  new AudioContext();
+  if (AudioContext) {
+    new AudioContext();
+  }
 
   let isInFocus = true;
 

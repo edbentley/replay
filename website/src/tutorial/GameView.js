@@ -35,15 +35,13 @@ export function GameView({ Game, gameProps, showReload, assets }) {
 
     const canvas = document.getElementById("myCanvas");
 
-    const { cleanup } = renderCanvas(
-      Game(gameProps),
-      [t.text({ color: "black", text: "Loading..." })],
+    const { cleanup } = renderCanvas(Game(gameProps), {
+      loadingTextures: [t.text({ color: "black", text: "Loading..." })],
       assets,
-      "scale-up",
-      {},
+      dimensions: "scale-up",
       canvas,
-      { width, height }
-    );
+      windowSize: { width, height },
+    });
 
     return () => {
       cleanup();

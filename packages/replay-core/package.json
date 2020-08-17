@@ -9,10 +9,9 @@
     "umd"
   ],
   "scripts": {
-    "build": "npm run build-dist && npm run build-umd && npm run build-swift",
+    "build": "npm run build-dist && npm run build-umd",
     "build-dist": "rm -rf dist/ && tsc -p ./tsconfig.json",
     "build-umd": "webpack --config webpack.config.js",
-    "build-swift": "webpack --config webpack.swift.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },

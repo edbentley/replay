@@ -3,7 +3,7 @@ id: text-input
 title: TextInput
 ---
 
-To add a text input to your game, use the `@replay/text-input` package and [ReplayTextInput](https://github.com/edbentley/replay-text-input-swift) Swift package.
+To add a text input to your game, use the `@replay/text-input` package.
 
 #### Example
 
@@ -30,33 +30,14 @@ const MySprite = makeSprite({
 });
 ```
 
-```js {1,4} title="web/index.js"
+```js {1,6} title="src/index.js"
 import { TextInputWeb } from "@replay/text-input";
 
-renderCanvas(Game(gameProps), loadingTextures, ASSET_NAMES, "scale-up", {
-  TextInput: TextInputWeb,
-});
-```
-
-```swift {2,10,11} title="SceneDelegate.swift"
-import Replay
-import ReplayTextInput
-
-class SceneDelegate: UIResponder, UIWindowSceneDelegate {
-
-    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        if let windowScene = scene as? UIWindowScene {
-            let window = UIWindow(windowScene: windowScene)
-
-            let nativeSpriteMap = ["TextInput": ReplayTextInputSwift()]
-            window.rootViewController = ReplayViewController(nativeSpriteMap: nativeSpriteMap)
-
-            self.window = window
-            window.makeKeyAndVisible()
-        }
-    }
-
-}
+export const options = {
+  loadingTextures,
+  assets: ASSET_NAMES,
+  { TextInput: TextInputWeb }
+};
 ```
 
 #### Props

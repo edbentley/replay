@@ -4,6 +4,21 @@ import { TextInputWeb } from "../web";
 
 const mockTime: MockTime = { nextFrame: () => undefined };
 
+// https://jestjs.io/docs/en/manual-mocks#mocking-methods-which-are-not-implemented-in-jsdom
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: jest.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(), // deprecated
+    removeListener: jest.fn(), // deprecated
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
+
 beforeEach(() => {
   // Clean up DOM
   document.body.childNodes.forEach((node) => document.body.removeChild(node));
@@ -18,15 +33,11 @@ afterEach(() => {
 test("can update single-line text input", async () => {
   expect(document.body.childNodes.length).toBe(0);
 
-  const { loadPromise } = renderCanvas(
-    Game(gameProps),
-    undefined,
-    undefined,
-    undefined,
-    {
+  const { loadPromise } = renderCanvas(Game(gameProps), {
+    nativeSpriteMap: {
       TextInput: TextInputWeb,
-    }
-  );
+    },
+  });
 
   await loadPromise;
   mockTime.nextFrame();
@@ -48,15 +59,11 @@ test("can update single-line text input", async () => {
 test("can destroy text input", async () => {
   expect(document.body.childNodes.length).toBe(0);
 
-  const { loadPromise } = renderCanvas(
-    Game(gameProps),
-    undefined,
-    undefined,
-    undefined,
-    {
+  const { loadPromise } = renderCanvas(Game(gameProps), {
+    nativeSpriteMap: {
       TextInput: TextInputWeb,
-    }
-  );
+    },
+  });
 
   await loadPromise;
 
@@ -76,15 +83,11 @@ test("can destroy text input", async () => {
 test("can update multi-line text input", async () => {
   expect(document.body.childNodes.length).toBe(0);
 
-  const { loadPromise } = renderCanvas(
-    Game(gameProps),
-    undefined,
-    undefined,
-    undefined,
-    {
+  const { loadPromise } = renderCanvas(Game(gameProps), {
+    nativeSpriteMap: {
       TextInput: TextInputWeb,
-    }
-  );
+    },
+  });
 
   await loadPromise;
 
@@ -109,15 +112,11 @@ test("can update multi-line text input", async () => {
 });
 
 test("can handle five inputs", async () => {
-  const { loadPromise } = renderCanvas(
-    Game(gameProps),
-    undefined,
-    undefined,
-    undefined,
-    {
+  const { loadPromise } = renderCanvas(Game(gameProps), {
+    nativeSpriteMap: {
       TextInput: TextInputWeb,
-    }
-  );
+    },
+  });
 
   await loadPromise;
 
@@ -141,15 +140,11 @@ test("can handle five inputs", async () => {
 });
 
 test("can handle fixed value input", async () => {
-  const { loadPromise } = renderCanvas(
-    Game(gameProps),
-    undefined,
-    undefined,
-    undefined,
-    {
+  const { loadPromise } = renderCanvas(Game(gameProps), {
+    nativeSpriteMap: {
       TextInput: TextInputWeb,
-    }
-  );
+    },
+  });
 
   await loadPromise;
 

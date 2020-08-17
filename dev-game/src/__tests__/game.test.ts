@@ -2,7 +2,7 @@ import {
   WebInputs,
   mapInputCoordinates,
 } from "../../../packages/replay-web/src";
-import { iOSInputs } from "../../../packages/replay-swift";
+import { iOSInputs } from "../../../packages/replay-swift/src";
 import { testSprite } from "../../../packages/replay-test/src";
 import { Game, gameProps } from "..";
 

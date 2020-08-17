@@ -1,6 +1,6 @@
 import { GameProps, t, makeSprite } from "../../packages/replay-core/src";
 import { WebInputs, RenderCanvasOptions } from "../../packages/replay-web/src";
-import { iOSInputs } from "../../packages/replay-swift";
+import { iOSInputs } from "../../packages/replay-swift/src";
 import { PlayStage } from "./PlayStage";
 import { TextInput, TextInputWeb } from "../../packages/replay-text-input/src";
 

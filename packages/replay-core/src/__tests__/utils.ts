@@ -128,6 +128,7 @@ export function getTestPlatform(customSize?: DeviceSize) {
 
   const mutableTestDevice: Device<TestPlatformInputs> = {
     inputs: getInitTestPlatformInputs(),
+    isTouchScreen: false,
     size: customSize || {
       width: 300,
       height: 200,

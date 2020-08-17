@@ -31,12 +31,12 @@ function Tutorial() {
         {
           file: "level.ts",
           code: levelTs,
-          highlight: [13, 63],
+          highlight: [12, 59],
         },
         {
           file: "menu.ts",
           code: menuTs,
-          highlight: [8, "30-35"],
+          highlight: [7, "26-31"],
         },
       ]}
       codesJs={[
@@ -48,12 +48,12 @@ function Tutorial() {
         {
           file: "level.js",
           code: levelJs,
-          highlight: [49],
+          highlight: [45],
         },
         {
           file: "menu.js",
           code: menuJs,
-          highlight: ["23-28"],
+          highlight: ["19-24"],
         },
       ]}
       Game={Game}

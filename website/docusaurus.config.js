@@ -6,17 +6,18 @@ module.exports = {
   favicon: "img/favicon.ico",
   organizationName: "edbentley",
   projectName: "replay",
-  plugins: ["@docusaurus/plugin-google-analytics"],
   themeConfig: {
     image: "/img/social-image.png",
-    disableDarkMode: true,
+    colorMode: {
+      disableSwitch: true,
+    },
     navbar: {
       // title: "Replay",
       logo: {
         alt: "Replay Logo",
         src: "img/logo.svg",
       },
-      links: [
+      items: [
         { to: "tutorial", label: "Tutorial", position: "left" },
         {
           to: "docs/intro",

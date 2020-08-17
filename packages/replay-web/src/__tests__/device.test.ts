@@ -37,7 +37,7 @@ beforeEach(() => {
 });
 
 test("Can log a random number", async () => {
-  const { loadPromise } = renderCanvas(TestGame(testGameProps));
+  const { loadPromise } = renderCanvas(TestGame(testGameProps), {});
   await loadPromise;
   mockTime.nextFrame();
 
@@ -53,7 +53,7 @@ test("Can log a random number", async () => {
 
 describe("timer", () => {
   test("Can call function after timeout with timer", async () => {
-    const { loadPromise } = renderCanvas(TestGame(testGameProps));
+    const { loadPromise } = renderCanvas(TestGame(testGameProps), {});
     await loadPromise;
     mockTime.nextFrame();
 
@@ -69,7 +69,7 @@ describe("timer", () => {
   });
 
   test("Can pause and resume timer", async () => {
-    const { loadPromise } = renderCanvas(TestGame(testGameProps));
+    const { loadPromise } = renderCanvas(TestGame(testGameProps), {});
     await loadPromise;
     mockTime.nextFrame();
 
@@ -98,7 +98,7 @@ describe("timer", () => {
   });
 
   test("Can cancel timer", async () => {
-    const { loadPromise } = renderCanvas(TestGame(testGameProps));
+    const { loadPromise } = renderCanvas(TestGame(testGameProps), {});
     await loadPromise;
     mockTime.nextFrame();
 
@@ -127,7 +127,7 @@ describe("timer", () => {
   });
 
   test("No-op for ID that doesn't exist", async () => {
-    const { loadPromise } = renderCanvas(TestGame(testGameProps));
+    const { loadPromise } = renderCanvas(TestGame(testGameProps), {});
     await loadPromise;
     mockTime.nextFrame();
 
@@ -149,7 +149,7 @@ test("Can get the current date", async () => {
     }
   };
 
-  const { loadPromise } = renderCanvas(TestGame(testGameProps));
+  const { loadPromise } = renderCanvas(TestGame(testGameProps), {});
   await loadPromise;
   mockTime.nextFrame();
 
@@ -167,7 +167,7 @@ test("Can make network requests with fetch", async () => {
     .put("/put", { name: "replay" })
     .delete("/delete", { name: "replay" });
 
-  const { loadPromise } = renderCanvas(TestGame(testGameProps));
+  const { loadPromise } = renderCanvas(TestGame(testGameProps), {});
   await loadPromise;
   mockTime.nextFrame();
 
@@ -216,8 +216,7 @@ Array [
 test("Can play audio, pause and get position", async () => {
   const { audioElements, loadPromise } = renderCanvas(
     TestGameWithAssets(testGameProps),
-    [],
-    getTestAssets()
+    { assets: getTestAssets() }
   );
 
   audioElements["shoot.wav"].play = jest.fn(() => Promise.resolve());
@@ -255,7 +254,7 @@ test("Can show alerts", async () => {
   jest.spyOn(window, "alert").mockImplementation(() => null);
   jest.spyOn(window, "confirm").mockImplementation(() => true);
 
-  const { loadPromise } = renderCanvas(TestGame(testGameProps));
+  const { loadPromise } = renderCanvas(TestGame(testGameProps), {});
 
   await loadPromise;
   mockTime.nextFrame();
@@ -286,7 +285,7 @@ test("Can copy to clipboard", async () => {
       }
     });
 
-  const { loadPromise } = renderCanvas(TestGame(testGameProps));
+  const { loadPromise } = renderCanvas(TestGame(testGameProps), {});
 
   await loadPromise;
   mockTime.nextFrame();

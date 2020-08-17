@@ -1,14 +1,17 @@
-import { renderCanvas } from "@replay/web";
+import { renderCanvas, RenderCanvasOptions } from "@replay/web";
 import { t } from "@replay/core";
 import { Game, gameProps } from "../src";
 
-const loadingTextures = [
-  t.text({
-    color: "black",
-    text: "Loading...",
-  }),
-];
+const options: RenderCanvasOptions = {
+  loadingTextures: [
+    t.text({
+      color: "black",
+      text: "Loading...",
+    }),
+  ],
+  assets: {
+    imageFileNames: ["bird.png"],
+  },
+};
 
-renderCanvas(Game(gameProps), loadingTextures, {
-  imageFileNames: ["bird.png"],
-});
+renderCanvas(Game(gameProps), options);

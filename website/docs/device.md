@@ -19,6 +19,7 @@ The `device` parameter of the Sprite methods can be used to interact with the pl
       storage,
       alert,
       clipboard,
+      isTouchScreen,
     } = device;
 
     ...
@@ -233,4 +234,12 @@ clipboard.copy("ABCDEFG", (error) => {
     // Success
   }
 });
+```
+
+### `isTouchScreen`
+
+Boolean to indicate if the device is a touch screen device.
+
+```js
+const text = isTouchScreen ? "Tap to Start" : "Space Bar to Start";
 ```

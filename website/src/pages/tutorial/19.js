@@ -24,7 +24,7 @@ function Tutorial() {
         {
           file: "level.ts",
           code: levelTs,
-          highlight: [63],
+          highlight: [59],
         },
         { file: "web/index.ts", code: webIndexTs, highlight: [14] },
       ]}
@@ -32,7 +32,7 @@ function Tutorial() {
         {
           file: "level.js",
           code: levelJs,
-          highlight: [49],
+          highlight: [45],
         },
         { file: "web/index.js", code: webIndexJs, highlight: [14] },
       ]}

@@ -30,6 +30,13 @@ module.exports = {
   optimization: {
     minimize: false,
   },
+  resolve: {
+    // Ensure import of web from swift is also local package
+    alias: {
+      "@replay/web": path.resolve(__dirname, "../packages/replay-web/src"),
+    },
+    extensions: [".wasm", ".mjs", ".js", ".json", ".ts"],
+  },
 };
 
 function getAssetNames() {
