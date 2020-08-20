@@ -26,6 +26,28 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
+// Web Audio API mocks
+Object.defineProperty(window, "AudioContext", {
+  writable: true,
+  value: jest.fn().mockImplementation(() => ({
+    decodeAudioData: jest.fn((_, res) => res(new ArrayBuffer(0))),
+    currentTime: 5,
+    createBufferSource: jest.fn(() => ({
+      buffer: {},
+      connect: jest.fn(),
+      start: jest.fn(),
+      stop: jest.fn(),
+      loop: false,
+      onended: jest.fn(),
+    })),
+    destination: {},
+  })),
+});
+Object.defineProperty(window, "AudioBuffer", {
+  writable: true,
+  value: jest.fn().mockImplementation(() => ({})),
+});
+
 afterEach(() => {
   // Clean up canvas in DOM
   const canvases = document.getElementsByTagName("canvas");

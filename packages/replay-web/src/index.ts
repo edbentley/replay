@@ -28,7 +28,13 @@ import { Dimensions } from "./dimensions";
 import { getDefaultProps } from "@replay/core/dist/props";
 import { getGameXToWebX, getGameYToWebY } from "./coordinates";
 import { getTimer } from "./timer";
-import { getAudio, getNetwork, getStorage } from "./device";
+import {
+  getAudio,
+  getNetwork,
+  getStorage,
+  getFileBuffer,
+  AudioMap,
+} from "./device";
 import { isTouchDevice } from "./isTouchDevice";
 
 export { Inputs as WebInputs, mapInputCoordinates } from "./input";
@@ -40,10 +46,9 @@ const DEFAULT_FONT = {
 };
 
 interface AudioContextWindow extends Window {
-  AudioContext: FunctionConstructor;
-  webkitAudioContext: FunctionConstructor;
+  webkitAudioContext: globalThis.AudioContext;
 }
-declare let window: AudioContextWindow;
+declare let window: AudioContextWindow & typeof globalThis;
 
 export type RenderCanvasOptions = {
   /**
@@ -105,11 +110,8 @@ export function renderCanvas<S>(
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const ctx = canvas.getContext("2d", { alpha: false })!;
 
-  // https://stackoverflow.com/questions/22216954/whats-causing-this-slow-delayed-audio-playback-in-safari
   const AudioContext = window.AudioContext || window.webkitAudioContext;
-  if (AudioContext) {
-    new AudioContext();
-  }
+  const audioContext = new AudioContext();
 
   let isInFocus = true;
 
@@ -249,11 +251,12 @@ export function renderCanvas<S>(
     prevDeviceSize = deviceSize;
   }
 
-  const audioElements: { [fileName: string]: HTMLAudioElement } = {};
+  const audioElements: AudioMap = {};
   const imageElements: { [fileName: string]: HTMLImageElement } = {};
 
   const domPlatform: ReplayPlatform<Inputs> = {
     getGetDevice: deviceCreator(
+      audioContext,
       audioElements,
       calculateDeviceSize(
         windowSize?.width || window.innerWidth,
@@ -274,17 +277,14 @@ export function renderCanvas<S>(
 
   const preloadFiles = async () => {
     // Get every file load as a promise and wait for all before returning
-    const loadPromises: Promise<{}>[] = [];
+    const loadPromises: Promise<unknown>[] = [];
 
     (assets.audioFileNames || []).forEach((fileName) => {
-      audioElements[fileName] = new Audio(fileName);
       loadPromises.push(
-        new Promise((resolve, reject) => {
-          audioElements[fileName].addEventListener("canplaythrough", resolve);
-          audioElements[fileName].addEventListener("error", reject);
+        getFileBuffer(audioContext, fileName).then((buffer) => {
+          audioElements[fileName] = { data: buffer };
         })
       );
-      audioElements[fileName].load();
     });
 
     (assets.imageFileNames || []).forEach((fileName) => {
@@ -309,23 +309,18 @@ export function renderCanvas<S>(
   });
 
   const loadPromise = preloadFiles().then(() => {
-    const handleAutoPlay = () => {
-      document.removeEventListener("keydown", handleAutoPlay, false);
-      document.removeEventListener("pointerdown", handleAutoPlay, false);
+    const onFirstInteraction = () => {
+      document.removeEventListener("keydown", onFirstInteraction, false);
+      document.removeEventListener("pointerdown", onFirstInteraction, false);
 
-      // We need to play all sounds on first interaction for iOS Safari
-      // See https://rosswintle.uk/2019/01/skirting-the-ios-safari-audio-auto-play-policy-for-ui-sound-effects/
-      Object.values(audioElements).forEach((audioEl) => {
-        audioEl.muted = true;
-        audioEl.play().then(() => {
-          audioEl.pause();
-          audioEl.muted = false;
-        });
-      });
+      // check if context is in suspended state (autoplay policy)
+      if (audioContext.state === "suspended") {
+        audioContext.resume();
+      }
     };
 
-    document.addEventListener("keydown", handleAutoPlay, false);
-    document.addEventListener("pointerdown", handleAutoPlay, false);
+    document.addEventListener("keydown", onFirstInteraction, false);
+    document.addEventListener("pointerdown", onFirstInteraction, false);
 
     const { initTextures, getNextFrameTextures } = replayCore<S, Inputs>(
       domPlatform,
@@ -373,13 +368,18 @@ export function renderCanvas<S>(
     updateDeviceSize(true);
   }
 
-  return { cleanup, loadPromise, audioElements }; // audioElements exported for testing
+  return {
+    cleanup,
+    loadPromise,
+    // audio exported for testing
+    audioElements,
+    audioContext,
+  };
 }
 
 function deviceCreator(
-  audioElements: {
-    [filename: string]: HTMLAudioElement;
-  },
+  audioContext: AudioContext,
+  audioElements: AudioMap,
   defaultSize: DeviceSize
 ): ReplayPlatform<Inputs>["getGetDevice"] {
   // called once
@@ -388,7 +388,7 @@ function deviceCreator(
     log: console.log,
     random: Math.random,
     timer: getTimer(),
-    audio: getAudio(audioElements),
+    audio: getAudio(audioContext, audioElements),
     network: getNetwork(),
     storage: getStorage(),
     alert: {

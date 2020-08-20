@@ -1,3 +1,4 @@
+import fetchMock from "fetch-mock";
 import { renderCanvas } from "../index";
 import {
   TestGameWithAssets,
@@ -7,7 +8,6 @@ import {
   MockTime,
   updateMockTime,
   getTestAssets,
-  loadAudio,
   testGameProps,
   TestGameWithSprites,
   TestGame,
@@ -21,45 +21,31 @@ import { t, GameProps } from "@replay/core";
 
 const mockTime: MockTime = { nextFrame: () => undefined };
 
-jest
-  .spyOn(window.HTMLAudioElement.prototype, "load")
-  .mockImplementation(() => undefined);
-jest
-  .spyOn(window.HTMLAudioElement.prototype, "play")
-  .mockImplementation(() => Promise.resolve());
-jest
-  .spyOn(window.HTMLAudioElement.prototype, "pause")
-  .mockImplementation(() => Promise.resolve());
-
 beforeEach(() => {
   updateMockTime(mockTime);
+  fetchMock.getOnce("shoot.wav", { arrayBuffer: jest.fn() });
 });
 
 test("Can render image moving across screen", async () => {
   const canvas = document.createElement("canvas");
-  const { loadPromise, audioElements } = renderCanvas(
-    TestGameWithAssets(testGameProps),
-    {
-      loadingTextures: [
-        t.text({
-          x: 0,
-          y: 0,
-          rotation: 0,
-          font: { name: "serif", size: 22 },
-          text: "Loading...",
-          color: "black",
-        }),
-      ],
-      assets: getTestAssets(),
-      dimensions: "game-coords",
-      canvas,
-    }
-  );
+  const { loadPromise } = renderCanvas(TestGameWithAssets(testGameProps), {
+    loadingTextures: [
+      t.text({
+        x: 0,
+        y: 0,
+        rotation: 0,
+        font: { name: "serif", size: 22 },
+        text: "Loading...",
+        color: "black",
+      }),
+    ],
+    assets: getTestAssets(),
+    dimensions: "game-coords",
+    canvas,
+  });
 
   // 1: loading scene
   expect(canvasToImage(canvas)).toMatchImageSnapshot();
-
-  loadAudio(Object.values(audioElements));
 
   await loadPromise;
   mockTime.nextFrame();

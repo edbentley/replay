@@ -35,6 +35,10 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate {
         webConfiguration.userContentController = contentController
         webConfiguration.mediaTypesRequiringUserActionForPlayback = []
         
+        // Allow fetching local files in JS. This is not documented, but Stack Overflow says it's ok
+        // https://stackoverflow.com/questions/36013645/setting-disable-web-security-and-allow-file-access-from-files-in-ios-wkwebvi
+        webConfiguration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs");
+        
         webView = ReplayWebView(frame: .zero, configuration: webConfiguration)
         webView.scrollView.isScrollEnabled = false
         webView.isMultipleTouchEnabled = true

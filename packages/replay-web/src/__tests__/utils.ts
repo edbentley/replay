@@ -182,7 +182,11 @@ export const TestGameWithAssets = makeSprite<
       } else if (pointer.x === 2) {
         device.audio("shoot.wav").pause();
       } else if (pointer.x === 3) {
-        device.log(`Current time: ${device.audio("shoot.wav").getPosition()}`);
+        device.log(
+          `Current time: ${
+            Math.round(device.audio("shoot.wav").getPosition() * 1000) / 1000
+          }`
+        );
       }
     }
 
@@ -318,13 +322,4 @@ export function updateMockTime(mockTime: MockTime) {
     };
     return 0;
   };
-}
-
-/**
- * Audio does not load in jsdom so need to manually mock load
- */
-export function loadAudio(elements: HTMLAudioElement[]) {
-  elements.forEach((el) => {
-    el.dispatchEvent(new Event("canplaythrough"));
-  });
 }

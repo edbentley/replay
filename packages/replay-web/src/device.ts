@@ -1,34 +1,89 @@
 import { Device, Store } from "@replay/core";
 
-export function getAudio(audioElements: {
-  [filename: string]: HTMLAudioElement;
-}): Device<{}>["audio"] {
-  return (filename) => {
-    function getAudioElement(play: boolean) {
-      let audioElement = audioElements[filename];
-      if (!audioElement) {
-        throw Error(`Cannot find audio file ${filename}`);
-      }
-      if (play && !audioElement.paused) {
-        // it's being played somewhere else, need a new audio element
-        audioElement = new Audio(filename);
-      }
-      return audioElement;
-    }
+/**
+ * Load a file into memory using Web Audio API. Allows for immediate playback.
+ */
+export async function getFileBuffer(
+  audioContext: AudioContext,
+  fileName: string
+) {
+  const response = await fetch(fileName);
+  const arrayBuffer = await response.arrayBuffer();
+  const audioBuffer = await new Promise<AudioBuffer>((res, rej) => {
+    audioContext.decodeAudioData(arrayBuffer, res, rej);
+  });
+  return audioBuffer;
+}
+
+export type AudioMap = Record<
+  string,
+  {
+    data: AudioBuffer;
+    mutPlayState?: {
+      isPaused: boolean;
+      startTime: number; // seconds
+      alreadyPlayedTime: number;
+      sample: AudioBufferSourceNode;
+    };
+  }
+>;
+
+export function getAudio(
+  audioContext: AudioContext,
+  audioElements: AudioMap
+): Device<{}>["audio"] {
+  return (fileName) => {
+    const { data, mutPlayState } = audioElements[fileName];
+
     return {
-      getPosition: () => getAudioElement(false).currentTime,
-      play: (fromPosition, loop) => {
-        const audioElement = getAudioElement(true);
-        audioElement.play();
-        if (fromPosition !== undefined) {
-          audioElement.currentTime = fromPosition;
+      getPosition: () => {
+        if (mutPlayState) {
+          if (mutPlayState.isPaused) {
+            return mutPlayState.alreadyPlayedTime;
+          }
+          return audioContext.currentTime - mutPlayState.startTime;
         }
-        if (loop) {
-          audioElement.loop = true;
+        return 0;
+      },
+      play: (fromPosition, loop = false) => {
+        const sampleSource = audioContext.createBufferSource();
+        sampleSource.buffer = data;
+        sampleSource.connect(audioContext.destination);
+
+        const alreadyPlayedTime =
+          fromPosition ?? mutPlayState?.alreadyPlayedTime ?? 0;
+
+        sampleSource.start(undefined, alreadyPlayedTime);
+        sampleSource.loop = loop;
+        sampleSource.onended = () => {
+          if (audioElements[fileName].mutPlayState?.isPaused === false) {
+            delete audioElements[fileName].mutPlayState;
+          }
+        };
+
+        const soundIsAlreadyPlaying = mutPlayState && !mutPlayState.isPaused;
+
+        // If the sound is already playing, we fire and forget a new one.
+        // Otherwise, we save its info here for pausing etc.
+        if (!soundIsAlreadyPlaying) {
+          audioElements[fileName].mutPlayState = {
+            startTime: audioContext.currentTime - alreadyPlayedTime,
+            sample: sampleSource,
+            alreadyPlayedTime,
+            isPaused: false,
+          };
         }
       },
       pause: () => {
-        getAudioElement(false).pause();
+        if (mutPlayState && !mutPlayState.isPaused) {
+          mutPlayState.sample.stop();
+          audioElements[fileName].mutPlayState = {
+            ...mutPlayState,
+            alreadyPlayedTime:
+              audioContext.currentTime - mutPlayState.startTime,
+            isPaused: true,
+          };
+        }
       },
     };
   };
