@@ -57,6 +57,12 @@ npm run build-web
 
 Creates an HTML, JS and assets bundle in `web/dist`. You can then deploy this somewhere to share with the world!
 
+Play the build locally with
+
+```bash
+npm run serve
+```
+
 ## Run on iOS
 
 ```bash

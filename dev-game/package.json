@@ -9,11 +9,13 @@
     "build": "npm run build-web && npm run build-swift",
     "build-web": "webpack --config webpack.web.js",
     "build-swift": "webpack --config webpack.swift.js",
+    "serve": "serve dist",
     "test": "jest",
     "test:watch": "jest --watch"
   },
   "devDependencies": {
     "jest": "^25.4.0",
+    "serve": "^11.3.2",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.11.0"
