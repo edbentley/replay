@@ -107,6 +107,12 @@ export function renderCanvas<S>(
     document.body.appendChild(canvas);
   }
 
+  // Support on mobile browsers that don't support this
+  const pointerDownEv = window.PointerEvent ? "pointerdown" : "touchstart";
+  const pointerMoveEv = window.PointerEvent ? "pointermove" : "touchmove";
+  const pointerUpEv = window.PointerEvent ? "pointerup" : "touchend";
+  const pointerOutEv = window.PointerEvent ? "pointerout" : "touchcancel";
+
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const ctx = canvas.getContext("2d", { alpha: false })!;
 
@@ -130,10 +136,10 @@ export function renderCanvas<S>(
   window.addEventListener("resize", updateDeviceSize as () => void, false);
 
   let prevDeviceSize: DeviceSize | undefined;
-  let pointerDown: (e: PointerEvent) => void;
-  let pointerMove: (e: PointerEvent) => void;
-  let pointerUp: (e: PointerEvent) => void;
-  let pointerOut: (e: PointerEvent) => void;
+  let pointerDown: (e: PointerEvent | TouchEvent) => void;
+  let pointerMove: (e: PointerEvent | TouchEvent) => void;
+  let pointerUp: (e: PointerEvent | TouchEvent) => void;
+  let pointerOut: (e: PointerEvent | TouchEvent) => void;
   let scale: number;
 
   const nativeSpriteUtils: NativeSpriteUtils = {
@@ -146,10 +152,10 @@ export function renderCanvas<S>(
   function updateDeviceSize(cleanup?: boolean) {
     if (prevDeviceSize) {
       ctx.restore();
-      document.removeEventListener("pointerdown", pointerDown);
-      document.removeEventListener("pointermove", pointerMove);
-      document.removeEventListener("pointerup", pointerUp);
-      document.removeEventListener("pointerout", pointerOut);
+      document.removeEventListener(pointerDownEv, pointerDown);
+      document.removeEventListener(pointerMoveEv, pointerMove);
+      document.removeEventListener(pointerUpEv, pointerUp);
+      document.removeEventListener(pointerOutEv, pointerOut);
       if (cleanup === true) {
         return;
       }
@@ -212,7 +218,22 @@ export function renderCanvas<S>(
       y > deviceSize.height / 2 + deviceSize.heightMargin ||
       y < -deviceSize.height / 2 - deviceSize.heightMargin;
 
-    pointerDown = (e: PointerEvent) => {
+    pointerDown = (e: PointerEvent | TouchEvent) => {
+      if ("changedTouches" in e) {
+        isInFocus = false;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const touch = e.changedTouches[i];
+          const x = getX({ clientX: touch.screenX });
+          const y = getY({ clientY: touch.screenY });
+          if (isPointerOutsideGame(x, y)) {
+            continue;
+          }
+          isInFocus = true;
+          pointerDownHandler(x, y, touch.identifier);
+        }
+        return;
+      }
+
       const x = getX(e);
       const y = getY(e);
       if (isPointerOutsideGame(x, y)) {
@@ -220,10 +241,22 @@ export function renderCanvas<S>(
         return;
       }
       isInFocus = true;
-
       pointerDownHandler(x, y, e.pointerId);
     };
-    pointerMove = (e: PointerEvent) => {
+    pointerMove = (e: PointerEvent | TouchEvent) => {
+      if ("changedTouches" in e) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const touch = e.changedTouches[i];
+          const x = getX({ clientX: touch.screenX });
+          const y = getY({ clientY: touch.screenY });
+          if (isPointerOutsideGame(x, y)) {
+            continue;
+          }
+          pointerMoveHandler(x, y);
+        }
+        return;
+      }
+
       const x = getX(e);
       const y = getY(e);
       if (isPointerOutsideGame(x, y)) {
@@ -231,7 +264,21 @@ export function renderCanvas<S>(
       }
       pointerMoveHandler(x, y);
     };
-    pointerUp = (e: PointerEvent) => {
+    pointerUp = (e: PointerEvent | TouchEvent) => {
+      if ("changedTouches" in e) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const touch = e.changedTouches[i];
+          const x = getX({ clientX: touch.screenX });
+          const y = getY({ clientY: touch.screenY });
+          if (isPointerOutsideGame(x, y)) {
+            pointerOutHandler(touch.identifier);
+            continue;
+          }
+          pointerUpHandler(x, y, touch.identifier);
+        }
+        return;
+      }
+
       const x = getX(e);
       const y = getY(e);
       if (isPointerOutsideGame(x, y)) {
@@ -240,13 +287,19 @@ export function renderCanvas<S>(
       }
       pointerUpHandler(x, y, e.pointerId);
     };
-    pointerOut = (e: PointerEvent) => {
+    pointerOut = (e: PointerEvent | TouchEvent) => {
+      if ("changedTouches" in e) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          pointerOutHandler(e.changedTouches[i].identifier);
+        }
+        return;
+      }
       pointerOutHandler(e.pointerId);
     };
-    document.addEventListener("pointerdown", pointerDown, false);
-    document.addEventListener("pointermove", pointerMove, false);
-    document.addEventListener("pointerup", pointerUp, false);
-    document.addEventListener("pointerout", pointerOut, false);
+    document.addEventListener(pointerDownEv, pointerDown, false);
+    document.addEventListener(pointerMoveEv, pointerMove, false);
+    document.addEventListener(pointerUpEv, pointerUp, false);
+    document.addEventListener(pointerOutEv, pointerOut, false);
 
     prevDeviceSize = deviceSize;
   }
@@ -311,7 +364,7 @@ export function renderCanvas<S>(
   const loadPromise = preloadFiles().then(() => {
     const onFirstInteraction = () => {
       document.removeEventListener("keydown", onFirstInteraction, false);
-      document.removeEventListener("pointerdown", onFirstInteraction, false);
+      document.removeEventListener(pointerDownEv, onFirstInteraction, false);
 
       // check if context is in suspended state (autoplay policy)
       if (audioContext.state === "suspended") {
@@ -320,7 +373,7 @@ export function renderCanvas<S>(
     };
 
     document.addEventListener("keydown", onFirstInteraction, false);
-    document.addEventListener("pointerdown", onFirstInteraction, false);
+    document.addEventListener(pointerDownEv, onFirstInteraction, false);
 
     const { initTextures, getNextFrameTextures } = replayCore<S, Inputs>(
       domPlatform,

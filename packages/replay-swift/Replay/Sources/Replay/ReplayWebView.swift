@@ -77,7 +77,7 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate {
         webView.evaluateJavaScript(gameJsString) { (_, error) in
             if let error = error {
                 // Hi 👋! You can temporarily set useLocalHost in ReplayViewController to true to read this error message - but your game will not be able to load any audio or image assets.
-                fatalError(error.localizedDescription)
+                fatalError("\(error)")
             }
             
             self.webView.loadHTMLString(
