@@ -133,6 +133,11 @@ export const t = {
      * starts
      */
     path: [number, number][];
+    /**
+     * Add a rounded cap to the line ends
+     * @default false
+     */
+    rounded?: boolean;
     x?: number;
     y?: number;
     rotation?: number;
@@ -145,6 +150,7 @@ export const t = {
         ...getDefaultProps(props),
         color: props.color,
         thickness: props.thickness ?? 1,
+        rounded: props.rounded || false,
         path: props.path,
       },
     };
@@ -270,6 +276,7 @@ type LineProps = BaseProps & {
   color: string;
   thickness: number;
   path: [number, number][];
+  rounded: boolean;
 };
 export interface LineTexture {
   type: "line";
