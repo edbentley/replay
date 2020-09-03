@@ -47,6 +47,10 @@ Object.defineProperty(window, "AudioBuffer", {
   writable: true,
   value: jest.fn().mockImplementation(() => ({})),
 });
+// Use pointer events
+Object.defineProperty(window, "PointerEvent", {
+  value: jest.fn().mockImplementation(() => ({})),
+});
 
 afterEach(() => {
   // Clean up canvas in DOM

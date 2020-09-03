@@ -45,7 +45,7 @@ final class ReplayTests: XCTestCase {
                 XCTFail(err.localizedDescription)
             }
             
-            assertSnapshot(matching: image!, as: .image)
+            assertSnapshot(matching: image!, as: .image(precision: 0.99))
             
             expectationSnapshot.fulfill()
         }

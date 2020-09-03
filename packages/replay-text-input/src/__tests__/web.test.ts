@@ -40,6 +40,9 @@ Object.defineProperty(window, "AudioBuffer", {
   writable: true,
   value: jest.fn().mockImplementation(() => ({})),
 });
+Object.defineProperty(window, "PointerEvent", {
+  value: jest.fn().mockImplementation(() => ({})),
+});
 
 beforeEach(() => {
   // Clean up DOM
