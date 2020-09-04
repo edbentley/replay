@@ -116,7 +116,6 @@ test("Can draw lines", () => {
     t.line({
       x: 0,
       y: 50,
-      thickness: 1,
       color: "blue",
       opacity: 0.5,
       path: [
@@ -142,6 +141,34 @@ test("Can draw lines", () => {
       thickness: 5,
       color: "red",
       path: [], // nothing drawn
+    }),
+  ]);
+
+  expect(canvasToImage(canvas)).toMatchImageSnapshot();
+});
+
+test("Can draw shapes", () => {
+  render([
+    t.line({
+      x: 0,
+      y: 50,
+      fillColor: "blue",
+      path: [
+        [0, 0],
+        [30, 30],
+        [60, 30],
+      ],
+    }),
+    t.line({
+      fillColor: "red",
+      path: [
+        [0, 0],
+        [-50, -50],
+        [-40, -100],
+        [40, -100],
+        [50, -50],
+        [0, 0],
+      ],
     }),
   ]);
 

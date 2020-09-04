@@ -209,7 +209,7 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         y: 0,
         color: "red",
         opacity: 0.5,
-        thickness: 2,
+        fillColor: "blue",
         path: [
           [0, 10],
           [0, -10],
