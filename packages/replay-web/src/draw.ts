@@ -103,7 +103,7 @@ function drawTexture(
         texture.props.path,
         texture.props.thickness,
         texture.props.color,
-        texture.props.rounded
+        texture.props.lineCap
       );
       return 0;
     case "image":
@@ -217,7 +217,7 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
     path: [number, number][],
     lineWidth: number,
     strokeStyle: string,
-    rounded: boolean
+    lineCap: "butt" | "round" | "square"
   ) {
     if (path.length < 2) {
       return;
@@ -226,7 +226,7 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
 
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
-    ctx.lineCap = rounded ? "round" : "butt";
+    ctx.lineCap = lineCap;
 
     ctx.beginPath();
     ctx.moveTo(moveToX, -moveToY);

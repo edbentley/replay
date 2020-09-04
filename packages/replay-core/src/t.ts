@@ -134,10 +134,11 @@ export const t = {
      */
     path: [number, number][];
     /**
-     * Add a rounded cap to the line ends
-     * @default false
+     * The shape of the line ends. `"square"` adds a box sticking out with half
+     * the line thickness.
+     * @default "butt"
      */
-    rounded?: boolean;
+    lineCap?: "butt" | "round" | "square";
     x?: number;
     y?: number;
     rotation?: number;
@@ -150,7 +151,7 @@ export const t = {
         ...getDefaultProps(props),
         color: props.color,
         thickness: props.thickness ?? 1,
-        rounded: props.rounded || false,
+        lineCap: props.lineCap || "butt",
         path: props.path,
       },
     };
@@ -276,7 +277,7 @@ type LineProps = BaseProps & {
   color: string;
   thickness: number;
   path: [number, number][];
-  rounded: boolean;
+  lineCap: "butt" | "round" | "square";
 };
 export interface LineTexture {
   type: "line";
