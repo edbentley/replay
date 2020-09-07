@@ -115,8 +115,9 @@ export const t = {
   line: (props: {
     /**
      * An RGB hex value (e.g. `#ff0000`) or CSS Level 1 keyword (e.g. `green`)
+     * of the stroke colour. Default no stroke.
      */
-    color: string;
+    color?: string;
     opacity?: number;
     scaleX?: number;
     scaleY?: number;
@@ -134,6 +135,11 @@ export const t = {
      */
     path: [number, number][];
     /**
+     * An RGB hex value (e.g. `#ff0000`) or CSS Level 1 keyword (e.g. `green`)
+     * to fill in the shape of the path with a colour. Default no fill.
+     */
+    fillColor?: string;
+    /**
      * The shape of the line ends. `"square"` adds a box sticking out with half
      * the line thickness.
      * @default "butt"
@@ -150,6 +156,7 @@ export const t = {
         testId: props.testId,
         ...getDefaultProps(props),
         color: props.color,
+        fillColor: props.fillColor,
         thickness: props.thickness ?? 1,
         lineCap: props.lineCap || "butt",
         path: props.path,
@@ -274,9 +281,10 @@ export interface RectangleTexture {
 
 // -- Line
 type LineProps = BaseProps & {
-  color: string;
+  color?: string;
   thickness: number;
   path: [number, number][];
+  fillColor?: string;
   lineCap: "butt" | "round" | "square";
 };
 export interface LineTexture {

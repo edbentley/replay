@@ -103,6 +103,7 @@ function drawTexture(
         texture.props.path,
         texture.props.thickness,
         texture.props.color,
+        texture.props.fillColor,
         texture.props.lineCap
       );
       return 0;
@@ -216,7 +217,8 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
   line(
     path: [number, number][],
     lineWidth: number,
-    strokeStyle: string,
+    strokeStyle: string | undefined,
+    fillStyle: string | undefined,
     lineCap: "butt" | "round" | "square"
   ) {
     if (path.length < 2) {
@@ -224,16 +226,22 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
     }
     const [[moveToX, moveToY], ...lineTo] = path;
 
-    ctx.strokeStyle = strokeStyle;
-    ctx.lineWidth = lineWidth;
-    ctx.lineCap = lineCap;
-
     ctx.beginPath();
     ctx.moveTo(moveToX, -moveToY);
     lineTo.forEach(([x, y]) => {
       ctx.lineTo(x, -y);
     });
-    ctx.stroke();
+
+    if (fillStyle) {
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+    }
+    if (strokeStyle) {
+      ctx.strokeStyle = strokeStyle;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = lineCap;
+      ctx.stroke();
+    }
   },
   text(
     font: TextureFont,

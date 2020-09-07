@@ -63,7 +63,10 @@ t.line({
 
 #### Props
 
-- `color`: An RGB hex value (e.g. `#ff0000`) or [CSS Level 1 keyword](https://developer.mozilla.org/docs/Web/CSS/color_value) (e.g. `green`).
+> Make sure one of `color` or `fillColor` is set, otherwise nothing will be drawn!
+
+- `color`: (Optional) An RGB hex value (e.g. `#ff0000`) or [CSS Level 1 keyword](https://developer.mozilla.org/docs/Web/CSS/color_value) (e.g. `green`) of the stroke colour. Default no stroke.
+- `fillColor`: (Optional) An RGB hex value (e.g. `#ff0000`) or [CSS Level 1 keyword](https://developer.mozilla.org/docs/Web/CSS/color_value) (e.g. `green`) to fill in the shape of the path with a colour. Default no fill.
 - `path`: An array of `[x, y]` coordinates to draw the line.
 - `thickness`: (Optional) Line thickness. Default `1`.
 - `lineCap`: (Optional) The shape of the line ends. Can be one of:
