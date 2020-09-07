@@ -146,7 +146,15 @@ export function renderCanvas<S>(
     if (!document.hidden && !isPageVisible) {
       // visible again
       needsToUpdateNotVisibleTime = true;
-      audioContext.resume();
+
+      // There's a strange bug on mobile iOS that won't restart the audio unless
+      // you suspend and resume again with a small delay in between.
+      setTimeout(() => {
+        audioContext.suspend();
+        setTimeout(() => {
+          audioContext.resume();
+        }, 75);
+      }, 75);
     }
     isPageVisible = !document.hidden;
   };
