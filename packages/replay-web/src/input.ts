@@ -101,7 +101,7 @@ export const clientXToGameX = ({
   widthMargin: number;
   scale: number;
   width: number;
-}) => (e: PointerEvent) =>
+}) => (e: { clientX: number }) =>
   (e.clientX - canvasOffsetLeft) / scale - widthMargin - width / 2;
 
 /**
@@ -117,7 +117,7 @@ export const clientYToGameY = ({
   heightMargin: number;
   scale: number;
   height: number;
-}) => (e: PointerEvent) =>
+}) => (e: { clientY: number }) =>
   -(e.clientY - canvasOffsetTop) / scale + heightMargin + height / 2;
 
 export function pointerDownHandler(x: number, y: number, pointerId: number) {
@@ -149,7 +149,7 @@ export function pointerUpHandler(x: number, y: number, pointerId: number) {
   mutableInputs.pointer.y = y;
 }
 
-export function pointerOutHandler(pointerId: number) {
+export function pointerCancelHandler(pointerId: number) {
   pointerIds = pointerIds.filter((id) => id !== pointerId);
 
   mutableInputs.pointer.numberPressed = pointerIds.length;
