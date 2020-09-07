@@ -52,7 +52,7 @@ t.rectangle({
 ```js
 t.line({
   color: "#ff0000",
-  thickness: 1,
+  thickness: 2,
   path: [
     [10, 20],
     [10, 30],
@@ -64,8 +64,12 @@ t.line({
 #### Props
 
 - `color`: An RGB hex value (e.g. `#ff0000`) or [CSS Level 1 keyword](https://developer.mozilla.org/docs/Web/CSS/color_value) (e.g. `green`).
-- `thickness`: Line thickness.
 - `path`: An array of `[x, y]` coordinates to draw the line.
+- `thickness`: (Optional) Line thickness. Default `1`.
+- `lineCap`: (Optional) The shape of the line ends. Can be one of:
+  - `"butt"`: (Default) The ends of lines are squared off at the endpoints.
+  - `"round"`: The ends of lines are rounded.
+  - `"square"`: The ends of lines are squared off by adding a box with an equal width and half the height of the line's thickness.
 
 ## Text
 

@@ -102,7 +102,8 @@ function drawTexture(
       drawUtilsCtx.line(
         texture.props.path,
         texture.props.thickness,
-        texture.props.color
+        texture.props.color,
+        texture.props.lineCap
       );
       return 0;
     case "image":
@@ -212,7 +213,12 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
     ctx.fillRect(-width / 2, -height / 2, width, height);
     ctx.closePath();
   },
-  line(path: [number, number][], lineWidth: number, strokeStyle: string) {
+  line(
+    path: [number, number][],
+    lineWidth: number,
+    strokeStyle: string,
+    lineCap: "butt" | "round" | "square"
+  ) {
     if (path.length < 2) {
       return;
     }
@@ -220,6 +226,7 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
 
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
+    ctx.lineCap = lineCap;
 
     ctx.beginPath();
     ctx.moveTo(moveToX, -moveToY);

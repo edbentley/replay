@@ -133,6 +133,12 @@ export const t = {
      * starts
      */
     path: [number, number][];
+    /**
+     * The shape of the line ends. `"square"` adds a box sticking out with half
+     * the line thickness.
+     * @default "butt"
+     */
+    lineCap?: "butt" | "round" | "square";
     x?: number;
     y?: number;
     rotation?: number;
@@ -145,6 +151,7 @@ export const t = {
         ...getDefaultProps(props),
         color: props.color,
         thickness: props.thickness ?? 1,
+        lineCap: props.lineCap || "butt",
         path: props.path,
       },
     };
@@ -270,6 +277,7 @@ type LineProps = BaseProps & {
   color: string;
   thickness: number;
   path: [number, number][];
+  lineCap: "butt" | "round" | "square";
 };
 export interface LineTexture {
   type: "line";
