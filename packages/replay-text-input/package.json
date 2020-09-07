@@ -1,6 +1,6 @@
 {
   "name": "@replay/text-input",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A Native Sprite text input for Replay",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,12 +23,12 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "@replay/core": "~0.5.0"
+    "@replay/core": "~0.6.0"
   },
   "devDependencies": {
-    "@replay/core": "0.5.0",
-    "@replay/swift": "0.5.0",
-    "@replay/web": "0.5.0",
+    "@replay/core": "0.6.0",
+    "@replay/swift": "0.6.0",
+    "@replay/web": "0.6.0",
     "jest": "^25.4.0",
     "typescript": "^3.8.3"
   }
