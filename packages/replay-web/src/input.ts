@@ -149,7 +149,7 @@ export function pointerUpHandler(x: number, y: number, pointerId: number) {
   mutableInputs.pointer.y = y;
 }
 
-export function pointerOutHandler(pointerId: number) {
+export function pointerCancelHandler(pointerId: number) {
   pointerIds = pointerIds.filter((id) => id !== pointerId);
 
   mutableInputs.pointer.numberPressed = pointerIds.length;

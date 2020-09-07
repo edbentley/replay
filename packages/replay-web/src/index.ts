@@ -20,7 +20,7 @@ import {
   pointerMoveHandler,
   clientXToGameX,
   clientYToGameY,
-  pointerOutHandler,
+  pointerCancelHandler,
 } from "./input";
 import { drawCanvas } from "./draw";
 import { getDeviceSize, setDeviceSize, calculateDeviceSize } from "./size";
@@ -111,7 +111,7 @@ export function renderCanvas<S>(
   const pointerDownEv = window.PointerEvent ? "pointerdown" : "touchstart";
   const pointerMoveEv = window.PointerEvent ? "pointermove" : "touchmove";
   const pointerUpEv = window.PointerEvent ? "pointerup" : "touchend";
-  const pointerOutEv = window.PointerEvent ? "pointerout" : "touchcancel";
+  const pointerCancelEv = window.PointerEvent ? "pointercancel" : "touchcancel";
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const ctx = canvas.getContext("2d", { alpha: false })!;
@@ -135,11 +135,16 @@ export function renderCanvas<S>(
 
   window.addEventListener("resize", updateDeviceSize as () => void, false);
 
+  // Disable right click
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+  });
+
   let prevDeviceSize: DeviceSize | undefined;
   let pointerDown: (e: PointerEvent | TouchEvent) => void;
   let pointerMove: (e: PointerEvent | TouchEvent) => void;
   let pointerUp: (e: PointerEvent | TouchEvent) => void;
-  let pointerOut: (e: PointerEvent | TouchEvent) => void;
+  let pointerCancel: (e: PointerEvent | TouchEvent) => void;
   let scale: number;
 
   const nativeSpriteUtils: NativeSpriteUtils = {
@@ -155,7 +160,7 @@ export function renderCanvas<S>(
       document.removeEventListener(pointerDownEv, pointerDown);
       document.removeEventListener(pointerMoveEv, pointerMove);
       document.removeEventListener(pointerUpEv, pointerUp);
-      document.removeEventListener(pointerOutEv, pointerOut);
+      document.removeEventListener(pointerCancelEv, pointerCancel);
       if (cleanup === true) {
         return;
       }
@@ -271,7 +276,7 @@ export function renderCanvas<S>(
           const x = getX({ clientX: touch.screenX });
           const y = getY({ clientY: touch.screenY });
           if (isPointerOutsideGame(x, y)) {
-            pointerOutHandler(touch.identifier);
+            pointerCancelHandler(touch.identifier);
             continue;
           }
           pointerUpHandler(x, y, touch.identifier);
@@ -282,24 +287,24 @@ export function renderCanvas<S>(
       const x = getX(e);
       const y = getY(e);
       if (isPointerOutsideGame(x, y)) {
-        pointerOutHandler(e.pointerId);
+        pointerCancelHandler(e.pointerId);
         return;
       }
       pointerUpHandler(x, y, e.pointerId);
     };
-    pointerOut = (e: PointerEvent | TouchEvent) => {
+    pointerCancel = (e: PointerEvent | TouchEvent) => {
       if ("changedTouches" in e) {
         for (let i = 0; i < e.changedTouches.length; i++) {
-          pointerOutHandler(e.changedTouches[i].identifier);
+          pointerCancelHandler(e.changedTouches[i].identifier);
         }
         return;
       }
-      pointerOutHandler(e.pointerId);
+      pointerCancelHandler(e.pointerId);
     };
     document.addEventListener(pointerDownEv, pointerDown, false);
     document.addEventListener(pointerMoveEv, pointerMove, false);
     document.addEventListener(pointerUpEv, pointerUp, false);
-    document.addEventListener(pointerOutEv, pointerOut, false);
+    document.addEventListener(pointerCancelEv, pointerCancel, false);
 
     prevDeviceSize = deviceSize;
   }
