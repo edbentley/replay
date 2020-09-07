@@ -8,7 +8,6 @@ import {
   releasePointer,
   TestGameWithAssets,
   getTestAssets,
-  loadAudio,
   testGameProps,
 } from "./utils";
 import { resetInputs } from "../input";
@@ -16,10 +15,6 @@ import { resetInputs } from "../input";
 const mockTime: MockTime = { nextFrame: () => undefined };
 
 jest.useFakeTimers();
-
-jest
-  .spyOn(window.HTMLAudioElement.prototype, "load")
-  .mockImplementation(() => undefined);
 
 // Setup clipboard
 Object.assign(navigator, {
@@ -214,40 +209,60 @@ Array [
 });
 
 test("Can play audio, pause and get position", async () => {
-  const { audioElements, loadPromise } = renderCanvas(
+  fetchMock.getOnce("shoot.wav", { arrayBuffer: jest.fn() });
+
+  const { audioElements, audioContext, loadPromise } = renderCanvas(
     TestGameWithAssets(testGameProps),
-    { assets: getTestAssets() }
+    {
+      assets: getTestAssets(),
+    }
   );
 
-  audioElements["shoot.wav"].play = jest.fn(() => Promise.resolve());
-  audioElements["shoot.wav"].pause = jest.fn();
-  audioElements["shoot.wav"].currentTime = 5;
-
-  loadAudio(Object.values(audioElements));
+  const nextFrame = () => {
+    mockTime.nextFrame();
+    if (audioElements["shoot.wav"].mutPlayState?.isPaused === false) {
+      audioElements["shoot.wav"].mutPlayState.alreadyPlayedTime += 0.016; // advance a frame
+    }
+    const { currentTime } = audioContext;
+    Object.defineProperty(audioContext, "currentTime", {
+      get: () => currentTime + 0.016,
+    });
+  };
 
   await loadPromise;
-  mockTime.nextFrame();
+  nextFrame();
 
   clickPointer(101, 0);
-  mockTime.nextFrame();
+  nextFrame();
   releasePointer(101, 0);
-  mockTime.nextFrame();
+  nextFrame();
 
-  expect(audioElements["shoot.wav"].play).toBeCalled();
+  // Sound plays
+  expect(audioElements["shoot.wav"].mutPlayState).toEqual({
+    alreadyPlayedTime: 0.032,
+    isPaused: false,
+    sample: expect.any(Object),
+    startTime: 5.016,
+  });
 
   clickPointer(102, 0);
-  mockTime.nextFrame();
+  nextFrame();
   releasePointer(102, 0);
-  mockTime.nextFrame();
+  nextFrame();
 
-  expect(audioElements["shoot.wav"].pause).toBeCalled();
+  // Sound paused
+  expect(audioElements["shoot.wav"].mutPlayState?.isPaused).toBe(true);
+  expect(
+    audioElements["shoot.wav"].mutPlayState?.alreadyPlayedTime
+  ).toBeCloseTo(0.032);
 
   clickPointer(103, 0);
-  mockTime.nextFrame();
+  nextFrame();
   releasePointer(103, 0);
-  mockTime.nextFrame();
+  nextFrame();
 
-  expect(console.log).toBeCalledWith("Current time: 5");
+  // Can get sound's position
+  expect(console.log).toBeCalledWith("Current time: 0.032");
 });
 
 test("Can show alerts", async () => {

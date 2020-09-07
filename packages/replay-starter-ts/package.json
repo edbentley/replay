@@ -11,6 +11,7 @@
     "build": "npm run build-web && npm run build-swift",
     "build-web": "webpack --config ./web/webpack.config.js",
     "build-swift": "webpack --config ./swift/webpack.config.js",
+    "serve": "serve web/dist",
     "test": "jest",
     "test:watch": "jest --watch",
     "ci": "npm run lint && npm run build && npm run types && npm run test"
@@ -34,6 +35,7 @@
     "html-webpack-plugin": "^4.2.0",
     "jest": "^25.4.0",
     "prettier": "2.0.5",
+    "serve": "^11.3.2",
     "ts-jest": "^25.4.0",
     "ts-loader": "^7.0.1",
     "typescript": "^3.8.3",
