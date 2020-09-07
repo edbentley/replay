@@ -121,6 +121,13 @@ export function renderCanvas<S>(
 
   let isInFocus = true;
 
+  // Visibility vars
+  let isPageVisible = true;
+  let lastTimeValue = 0;
+  let needsToUpdateNotVisibleTime = false;
+  let lastPageNotVisibleTime = 0;
+  let totalPageNotVisibleTime = 0;
+
   const keyDownHandler = (e: KeyboardEvent) => {
     if (!isInFocus) return;
     inputKeyDownHandler(e);
@@ -130,8 +137,32 @@ export function renderCanvas<S>(
     inputKeyUpHandler(e);
   };
 
+  const handlePageVisible = () => {
+    if (document.hidden && isPageVisible) {
+      // out of visibility
+      lastPageNotVisibleTime = lastTimeValue;
+      audioContext.suspend();
+    }
+    if (!document.hidden && !isPageVisible) {
+      // visible again
+      needsToUpdateNotVisibleTime = true;
+
+      // There's a strange bug on mobile iOS that won't restart the audio unless
+      // you suspend and resume again with a small delay in between.
+      setTimeout(() => {
+        audioContext.suspend();
+        setTimeout(() => {
+          audioContext.resume();
+        }, 75);
+      }, 75);
+    }
+    isPageVisible = !document.hidden;
+  };
+
   document.addEventListener("keydown", keyDownHandler, false);
   document.addEventListener("keyup", keyUpHandler, false);
+
+  document.addEventListener("visibilitychange", handlePageVisible, false);
 
   window.addEventListener("resize", updateDeviceSize as () => void, false);
 
@@ -400,7 +431,17 @@ export function renderCanvas<S>(
         if (initTime === null) {
           initTime = time - 1 / 60;
         }
-        loop(getNextFrameTextures(time - initTime, resetInputs));
+        if (needsToUpdateNotVisibleTime) {
+          needsToUpdateNotVisibleTime = false;
+          totalPageNotVisibleTime += time - lastPageNotVisibleTime;
+        }
+        lastTimeValue = time;
+        loop(
+          getNextFrameTextures(
+            time - initTime - totalPageNotVisibleTime,
+            resetInputs
+          )
+        );
       });
     }
 
@@ -422,6 +463,7 @@ export function renderCanvas<S>(
     isCleanedUp = true;
     document.removeEventListener("keydown", inputKeyDownHandler, false);
     document.removeEventListener("keyup", inputKeyUpHandler, false);
+    document.removeEventListener("visibilitychange", handlePageVisible, false);
     window.removeEventListener("resize", updateDeviceSize as () => void, false);
     updateDeviceSize(true);
   }
