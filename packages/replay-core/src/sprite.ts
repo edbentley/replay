@@ -1,4 +1,4 @@
-import { Device } from "./device";
+import { Device, DeviceSize } from "./device";
 import { Texture } from "./t";
 import { SpriteBaseProps, ExcludeSpriteBaseProps } from "./props";
 
@@ -9,9 +9,13 @@ import { SpriteBaseProps, ExcludeSpriteBaseProps } from "./props";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Sprite<P = any, S = any, I = any> =
   | CustomSprite<P, S, I>
+  | PureCustomSprite<P>
   | NativeSprite<P>
   | Texture
   | null;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type PureSprite<P = any> = PureCustomSprite<P> | Texture | null;
 
 /**
  * Function to define a custom sprite, returns a new function which can be
@@ -132,6 +136,74 @@ interface SpriteObjBase<P, S, I> {
     updateState: (update: (state: S) => S) => void;
   }) => Sprite[];
 }
+
+/**
+ * Pure Sprites are an optimisation for dealing with large numbers of Sprites
+ * with only a render function. They can only depend on props and device size,
+ * and may only return other Pure Sprites or Textures.
+ */
+export type PureCustomSprite<P> = {
+  type: "pure";
+  spriteObj: PureSpriteObj<P>;
+  props: CustomSpriteProps<P>;
+};
+
+/**
+ * Function to define a Pure Sprite, returns a new function which can be
+ * called to create instance in other Sprites. Example:
+ *
+ * ```js
+ * const Player = makePureSprite({ ... })
+ *
+ * Player(props)
+ * ```
+ */
+export function makePureSprite<P extends ExcludeSpriteBaseProps<P>>(
+  spriteObj: PureSpriteObj<P>
+): (props: CustomSpriteProps<P>) => PureCustomSprite<P> {
+  return (props) => ({
+    type: "pure",
+    spriteObj,
+    props,
+  });
+}
+
+type PureSpriteObj<P> = {
+  /**
+   * Return whether the render function needs to be called again based on the
+   * change of props. Reducing the number of renders can boost performance.
+   */
+  shouldRerender: (prevProps: P, newProps: P) => boolean;
+
+  /**
+   * Return an array of sprites to render.
+   */
+  render: (params: { props: Readonly<P>; size: DeviceSize }) => PureSprite[];
+
+  /**
+   * An alternative render method run if the device is in portrait. Note: this
+   * method is only required if the game supports both landscape and portrait,
+   * where `render` will only run for landscape.
+   */
+  renderP?: (params: { props: Readonly<P>; size: DeviceSize }) => PureSprite[];
+
+  /**
+   * An alternative render method run if the device's width or height is beyond
+   * `minWidthXL` or `minHeightXL` set in game props.
+   */
+  renderXL?: (params: { props: Readonly<P>; size: DeviceSize }) => PureSprite[];
+
+  /**
+   * An alternative render method run if the device is in portrait and its width
+   * or height is beyond `minWidthXL` or `minHeightXL` set in game props. Note:
+   * this method is only required if the game supports both landscape and
+   * portrait, where `renderXL` will only run for landscape.
+   */
+  renderPXL?: (params: {
+    props: Readonly<P>;
+    size: DeviceSize;
+  }) => PureSprite[];
+};
 
 /**
  * A nesting of textures sent to the platform to render. The nesting allows for

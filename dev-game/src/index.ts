@@ -1,4 +1,9 @@
-import { GameProps, t, makeSprite } from "../../packages/replay-core/src";
+import {
+  GameProps,
+  t,
+  makeSprite,
+  makePureSprite,
+} from "../../packages/replay-core/src";
 import { WebInputs, RenderCanvasOptions } from "../../packages/replay-web/src";
 import { iOSInputs } from "../../packages/replay-swift/src";
 import { PlayStage } from "./PlayStage";
@@ -167,6 +172,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
         ];
       case GameStage.Play:
         return [
+          PureCircleGroup({ id: "Circles" }),
           PlayStage({
             id: "play-stage",
             bulletSpeed: state.bulletSpeed,
@@ -186,5 +192,32 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
           input,
         ];
     }
+  },
+});
+
+const PureCircleGroup = makePureSprite({
+  shouldRerender() {
+    return true;
+  },
+
+  render() {
+    return Array.from({ length: 2000 }).map((_, index) =>
+      PureCircle({ id: `Circle-${index}` })
+    );
+  },
+});
+
+const PureCircle = makePureSprite({
+  shouldRerender() {
+    return false;
+  },
+
+  render() {
+    return [
+      t.circle({
+        radius: 4,
+        color: "red",
+      }),
+    ];
   },
 });
