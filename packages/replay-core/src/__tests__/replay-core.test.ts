@@ -16,6 +16,10 @@ import {
   MaskGame,
   CallbackPropGame,
   NestedSpriteGame2,
+  PureSpriteGame,
+  pureSpriteAlwaysRendersFn,
+  pureSpriteNeverRendersFn,
+  pureSpriteConditionalRendersFn,
 } from "./utils";
 import { SpriteTextures, NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture, RectangleTexture } from "../t";
@@ -868,6 +872,39 @@ test("loop and render order for callback prop change on low render FPS", () => {
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(8, 8);
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(9, 9);
   expect(resetInputs).toBeCalledTimes(9);
+});
+
+test("supports Pure Sprites", () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+
+  const { getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    PureSpriteGame(gameProps)
+  );
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time, jest.fn());
+  };
+
+  expect(pureSpriteAlwaysRendersFn).toBeCalledTimes(1);
+  expect(pureSpriteNeverRendersFn).toBeCalledTimes(1);
+  expect(pureSpriteConditionalRendersFn).toBeCalledTimes(1);
+
+  getNextFrameTexturesOverTime();
+
+  expect(pureSpriteAlwaysRendersFn).toBeCalledTimes(2);
+  expect(pureSpriteNeverRendersFn).toBeCalledTimes(1);
+  expect(pureSpriteConditionalRendersFn).toBeCalledTimes(1);
+
+  mutableTestDevice.inputs.buttonPressed.show = false;
+  getNextFrameTexturesOverTime();
+
+  expect(pureSpriteAlwaysRendersFn).toBeCalledTimes(3);
+  expect(pureSpriteNeverRendersFn).toBeCalledTimes(1);
+  expect(pureSpriteConditionalRendersFn).toBeCalledTimes(2);
 });
 
 test("supports Native Sprites", () => {
