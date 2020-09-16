@@ -3,7 +3,9 @@
 export { t, Texture, TextureFont } from "./t";
 export {
   Sprite,
+  PureSprite,
   makeSprite,
+  makePureSprite,
   makeNativeSprite,
   NativeSpriteImplementation,
   NativeSpriteUtils,

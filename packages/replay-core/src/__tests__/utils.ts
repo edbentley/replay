@@ -1,6 +1,10 @@
 import { Device, makeSprite, t, GameProps, DeviceSize } from "../index";
 import { ReplayPlatform, NativeSpriteSettings } from "../core";
-import { makeNativeSprite, NativeSpriteImplementation } from "../sprite";
+import {
+  makeNativeSprite,
+  NativeSpriteImplementation,
+  makePureSprite,
+} from "../sprite";
 import { mask } from "../mask";
 
 export const gameProps: GameProps = {
@@ -750,6 +754,83 @@ const CallbackPropSprite = makeSprite<{
 
   render() {
     return [null];
+  },
+});
+
+/// -- Test Pure Sprites
+
+export const PureSpriteGame = makeSprite<
+  GameProps,
+  { show: boolean },
+  TestPlatformInputs
+>({
+  init() {
+    return { show: true };
+  },
+
+  loop({ device }) {
+    return { show: device.inputs.buttonPressed.show };
+  },
+
+  render({ state }) {
+    return [
+      PureSpriteAlwaysRenders({ id: "Always" }),
+      PureSpriteNeverRenders({ id: "Never" }),
+      PureSpriteConditionalRenders({ id: "Conditional", show: state.show }),
+    ];
+  },
+});
+
+export const pureSpriteAlwaysRendersFn = jest.fn();
+const PureSpriteAlwaysRenders = makePureSprite({
+  shouldRerender() {
+    return true;
+  },
+
+  render() {
+    pureSpriteAlwaysRendersFn();
+    return [
+      t.circle({
+        radius: 5,
+        color: "red",
+      }),
+    ];
+  },
+});
+
+export const pureSpriteNeverRendersFn = jest.fn();
+const PureSpriteNeverRenders = makePureSprite({
+  shouldRerender() {
+    return false;
+  },
+
+  render() {
+    pureSpriteNeverRendersFn();
+    return [
+      t.circle({
+        radius: 5,
+        color: "red",
+      }),
+    ];
+  },
+});
+
+export const pureSpriteConditionalRendersFn = jest.fn();
+const PureSpriteConditionalRenders = makePureSprite<{ show: boolean }>({
+  shouldRerender(prevProps, newProps) {
+    return prevProps.show !== newProps.show;
+  },
+
+  render({ props }) {
+    pureSpriteConditionalRendersFn();
+    return props.show
+      ? [
+          t.circle({
+            radius: 5,
+            color: "red",
+          }),
+        ]
+      : [];
   },
 });
 
