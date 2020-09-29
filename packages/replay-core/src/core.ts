@@ -334,7 +334,7 @@ function traverseCustomSpriteContainer<P, I>(
 
       return sprite;
     })
-    .filter(isNotNull);
+    .filter(isNotNullOrUndefined);
 
   nativeSpriteUtils.didResize = false;
 
@@ -647,7 +647,7 @@ function traversePureCustomSpriteContainer<P, I>(
 
       return sprite;
     })
-    .filter(isNotNull);
+    .filter(isNotNullOrUndefined);
 
   unusedChildIds.forEach((id) => {
     delete customSpriteContainer.childContainers[id];
@@ -678,8 +678,8 @@ export type NativeSpriteSettings = {
   nativeSpriteUtils: NativeSpriteUtils;
 };
 
-function isNotNull<T>(arg: T | null): arg is T {
-  return arg !== null;
+function isNotNullOrUndefined<T>(arg: T | null | undefined): arg is T {
+  return arg !== null && arg !== undefined;
 }
 
 /**
