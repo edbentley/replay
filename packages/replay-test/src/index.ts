@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { GameProps, Texture, Device, DeviceSize, Store } from "@replay/core";
 import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
 import {
@@ -77,6 +79,38 @@ interface Options<I> {
   isTouchScreen?: boolean;
 }
 
+interface TestSpriteUtils<I> {
+  nextFrame: () => void;
+  jumpToFrame: (condition: () => boolean | Texture) => Promise<void>;
+  setRandomNumbers: (numbers: number[]) => void;
+  updateInputs: (newInputs: I) => void;
+  getTextures: () => Texture[];
+  getTexture: (testId: string) => Texture;
+  textureExists: (testId: string) => boolean;
+  getByText: (text: string) => TextTexture[];
+  log: jest.Mock<any, any>;
+  audio: {
+    getPosition: jest.Mock<number>;
+    play: jest.Mock<any, any>;
+    pause: jest.Mock<any, any>;
+  };
+  network: {
+    get: jest.Mock<any, [string, (data: unknown) => void]>;
+    post: jest.Mock<any, [string, object, (data: unknown) => void]>;
+    put: jest.Mock<any, [string, object, (data: unknown) => void]>;
+    delete: jest.Mock<any, [string, (data: unknown) => void]>;
+  };
+  store: Store;
+  alert: {
+    ok: jest.Mock<any, [string, (() => void) | undefined]>;
+    okCancel: jest.Mock<any, [string, (wasOk: boolean) => void]>;
+  };
+  updateAlertResponse: (isOk: boolean) => void;
+  clipboard: {
+    copy: jest.Mock<any, [string, (error?: Error | undefined) => void]>;
+  };
+}
+
 /**
  * `testSprite` provides a way of testing your gameplay with helper functions to
  * play and record the game.
@@ -85,7 +119,7 @@ export function testSprite<P, S, I>(
   sprite: CustomSprite<P, S, I>,
   gameProps: GameProps,
   options: Options<I> = {}
-) {
+): TestSpriteUtils<I> {
   const {
     initInputs = {} as I,
     initRandom = [0.5],
@@ -130,7 +164,7 @@ export function testSprite<P, S, I>(
    * Mock functions for network calls. Pass in the responses as a parameter to
    * testSprite.
    */
-  const network: Device<I>["network"] = {
+  const network: TestSpriteUtils<I>["network"] = {
     get: jest.fn((url, cb) => {
       if (!networkResponses.get || !networkResponses.get[url]) {
         throw Error(`No GET response defined for url: ${url}`);
@@ -162,7 +196,7 @@ export function testSprite<P, S, I>(
   /**
    * Mock functions for alerts.
    */
-  const alert: Device<I>["alert"] = {
+  const alert: TestSpriteUtils<I>["alert"] = {
     ok: jest.fn((_, onResponse) => {
       onResponse?.();
     }),
@@ -180,7 +214,7 @@ export function testSprite<P, S, I>(
   /**
    * Mock functions for clipboard.
    */
-  const clipboard: Device<I>["clipboard"] = {
+  const clipboard: TestSpriteUtils<I>["clipboard"] = {
     copy: jest.fn((_, onComplete) => {
       onComplete();
     }),
