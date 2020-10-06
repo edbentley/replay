@@ -3,7 +3,7 @@ import { Game, gameProps } from "..";
 import { pipeGap } from "../pipe";
 import { birdHeight } from "../bird";
 
-test("Can reach a score of 2", () => {
+test("Can reach a score of 2", async () => {
   const initInputs = {
     pointer: {
       pressed: false,
@@ -77,7 +77,7 @@ test("Can reach a score of 2", () => {
     nextFrame();
   }
 
-  jumpToFrame(() => {
+  await jumpToFrame(() => {
     keepBirdInMiddle();
 
     // Exit when main menu appears again

@@ -425,33 +425,46 @@ export function testSprite<P, S, I>(
   }
 
   /**
-   * Synchronously progress frames of the game until condition is met and no
-   * errors thrown. Condition can also return a Texture (useful for throwing
-   * methods like getByText). Throws if 1000 gameplay seconds (60,000 loops)
+   * Asynchronously progress frames of the game until condition is met and no
+   * errors are thrown. Condition can also return a Texture (useful for throwing
+   * methods like `getTexture`). Rejects if 1000 gameplay seconds (60,000 loops)
    * pass and condition not met / still errors.
+   *
+   * Note that this will run at almost synchronous speed, but doesn't block the
+   * event loop.
    */
-  function jumpToFrame(condition: () => boolean | Texture) {
+  async function jumpToFrame(condition: () => boolean | Texture) {
     let lastErrorMsg: string | null = null;
 
-    for (let i = 0; i < 60000; i++) {
-      nextFrame();
-      try {
-        if (condition()) {
+    await new Promise((res, rej) => {
+      let i = 0;
+
+      function loop() {
+        nextFrame();
+        try {
+          if (condition()) {
+            res();
+            return;
+          }
+        } catch (e) {
+          lastErrorMsg = (e as Error)?.message;
+          // continue trying
+        }
+        i++;
+        if (i < 60000) {
+          setImmediate(loop);
           return;
         }
-      } catch (e) {
-        lastErrorMsg = (e as Error)?.message;
-        // continue trying
+        let errMessage =
+          "Timeout of 1000 gameplay seconds reached on jumpToFrame";
+        if (lastErrorMsg) {
+          errMessage += ` with error:\n\n${lastErrorMsg}`;
+        }
+        rej(Error(errMessage));
       }
-    }
 
-    if (lastErrorMsg) {
-      throw Error(
-        `Timeout of 1000 gameplay seconds reached on jumpToFrame with error:\n\n${lastErrorMsg}`
-      );
-    } else {
-      throw Error("Timeout of 1000 gameplay seconds reached on jumpToFrame");
-    }
+      loop();
+    });
   }
 
   function getTextures() {

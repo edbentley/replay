@@ -3,7 +3,7 @@ import { WebInputs, mapInputCoordinates } from "@replay/web";
 import { iOSInputs } from "@replay/swift";
 import { Game, gameProps } from "..";
 
-test("gameplay", () => {
+test("gameplay", async () => {
   const initInputs: WebInputs | iOSInputs = {
     pointer: {
       pressed: false,
@@ -51,7 +51,7 @@ test("gameplay", () => {
 
   expect(audio.play).toBeCalledWith("boop.wav");
 
-  jumpToFrame(() => getTexture("icon").props.x > 99.99);
+  await jumpToFrame(() => getTexture("icon").props.x > 99.99);
 
   expect(getTexture("icon").props.y).toBeCloseTo(100);
 

@@ -48,10 +48,12 @@ nextFrame();
 
 ### `jumpToFrame(() => condition)`
 
-Synchronously progress frames of the game until condition is met and no errors are thrown. Condition can also return a Texture (useful for throwing methods like `getByText`). Throws if 1000 gameplay seconds (60,000 loops) pass and condition not met / still errors.
+Asynchronously progress frames of the game until condition is met and no errors are thrown. Condition can also return a Texture (useful for throwing methods like `getTexture`). Rejects if 1000 gameplay seconds (60,000 loops) pass and condition not met / still errors.
+
+Note that this will run at almost synchronous speed, but doesn't block the event loop.
 
 ```js
-jumpToFrame(() => props.x > 10);
+await jumpToFrame(() => props.x > 10);
 ```
 
 ### `setRandomNumbers(array)`

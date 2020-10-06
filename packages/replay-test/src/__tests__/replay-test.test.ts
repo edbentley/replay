@@ -111,14 +111,14 @@ test("getTextures, nextFrame", () => {
   `);
 });
 
-test("jumpToFrame, getTexture", () => {
+test("jumpToFrame, getTexture", async () => {
   const { jumpToFrame, getTexture } = testSprite(Game(gameProps), gameProps, {
     initInputs: {
       pressed: true,
     },
   });
 
-  jumpToFrame(() => getTexture("player").props.x > 10);
+  await jumpToFrame(() => getTexture("player").props.x > 10);
 
   expect(getTexture("player").props.x).toBe(11);
 });
@@ -495,14 +495,20 @@ test("can get global position and rotation of deeply nested textures", () => {
   expect(textures[0].props.rotation).toBe(0);
 });
 
-test("jumpToFrame throws last error", () => {
+test("jumpToFrame throws last error", async () => {
   const { jumpToFrame, getTexture } = testSprite(Game(gameProps), gameProps, {
     initInputs: {},
   });
 
-  expect(() => jumpToFrame(() => getTexture("i-dont-exist"))).toThrowError(
-    `Timeout of 1000 gameplay seconds reached on jumpToFrame with error:\n\nNo textures found with test id "i-dont-exist"`
-  );
+  expect.assertions(1);
+
+  try {
+    await jumpToFrame(() => getTexture("i-dont-exist"));
+  } catch (e) {
+    expect(e.message).toBe(
+      `Timeout of 1000 gameplay seconds reached on jumpToFrame with error:\n\nNo textures found with test id "i-dont-exist"`
+    );
+  }
 });
 
 test("can mock Native Sprites", () => {
