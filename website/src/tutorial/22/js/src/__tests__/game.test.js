@@ -31,7 +31,7 @@ test("Can reach a score of 2", async () => {
     initRandom: [0.5, 0.5, 0],
   });
 
-  expect(getByText(mainMenuText)).toBeDefined();
+  expect(getByText(mainMenuText).length).toBe(1);
 
   updateInputs({
     pointer: {
@@ -51,7 +51,7 @@ test("Can reach a score of 2", async () => {
   nextFrame();
 
   // Main menu gone, game has started
-  expect(() => getByText(mainMenuText)).toThrowError();
+  expect(getByText(mainMenuText).length).toBe(0);
 
   // Keeps the bird hovering in the middle to pass the first 2 pipes
   function keepBirdInMiddle() {
@@ -81,7 +81,7 @@ test("Can reach a score of 2", async () => {
     keepBirdInMiddle();
 
     // Exit when main menu appears again
-    return getByText(mainMenuText)[0];
+    return getByText(mainMenuText).length > 0;
   });
 
   getByText("Score: 2");

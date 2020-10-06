@@ -47,7 +47,7 @@ test("gameplay", async () => {
     nativeSpriteNames: ["TextInput"],
   });
 
-  getByText("Loading");
+  expect(getByText("Loading").length).toBe(1);
 
   await jumpToFrame(() => textureExists("player"));
   expect(getTexture("player").props.x).toBe(0);
@@ -151,7 +151,7 @@ test("gameplay", async () => {
 
   // bullet misses enemy and game over!
 
-  await jumpToFrame(() => getByText("Game Over")[0]);
+  await jumpToFrame(() => getByText("Game Over").length > 0);
 
   expect(store).toEqual({ highScore: "1" });
 

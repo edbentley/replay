@@ -200,7 +200,7 @@ test("getByText", () => {
 
   nextFrame();
   expect(getByText("x: 2").length).toBe(1);
-  expect(() => getByText("x: 1")).toThrowError();
+  expect(getByText("x: 1").length).toBe(0);
 });
 
 test("now", () => {
@@ -462,7 +462,7 @@ test("can test individual Sprites", () => {
   );
 
   expect(getTextures().length).toBe(1);
-  expect(getByText("Hello")).toBeTruthy();
+  expect(getByText("Hello").length).toBe(1);
 });
 
 test("can map input coordinates to relative coordinates within Sprite", () => {

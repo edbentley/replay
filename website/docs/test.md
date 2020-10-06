@@ -109,7 +109,7 @@ expect(textureExists("player")).toBe(true);
 
 ### `getByText(text)`
 
-Get a text Texture based on its text content. Returns an array of all matches, throws if there are no matches.
+Get an array of text Textures which include text content. Case insensitive. Returns empty array if no matches found.
 
 ```js
 const scoreLabel = getByText("Score: 10")[0];

@@ -502,18 +502,14 @@ export function testSprite<P, S, I>(
 
   /**
    * Get an array of text textures which include text content. Case insensitive.
-   * Throws if no matches found.
+   * Returns empty array if no matches found.
    */
   function getByText(text: string) {
-    const matches = textures
+    return textures
       .filter(isTextTexture)
       .filter((texture) =>
         texture.props.text.toLowerCase().includes(text.toLowerCase())
       );
-    if (matches.length === 0) {
-      throw Error(`No text textures found with content "${text}"`);
-    }
-    return matches;
   }
 
   // Init render
