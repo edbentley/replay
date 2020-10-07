@@ -470,6 +470,10 @@ export function testSprite<P, S, I>(
   async function jumpToFrame(condition: () => boolean | Texture) {
     let lastErrorMsg: string | null = null;
 
+    // Keep this for improved error stack reporting
+    const stackObj: Error = {} as Error;
+    Error.captureStackTrace(stackObj);
+
     await new Promise((res, rej) => {
       let i = 0;
 
@@ -494,7 +498,14 @@ export function testSprite<P, S, I>(
         if (lastErrorMsg) {
           errMessage += ` with error:\n\n${lastErrorMsg}`;
         }
-        rej(Error(errMessage));
+        const error = new Error(errMessage);
+
+        // Only keep stack trace relevant to user's test code
+        error.stack = removeStackLines(
+          stackObj.stack || "",
+          "at jumpToFrame ("
+        );
+        rej(error);
       }
 
       loop();
@@ -566,4 +577,27 @@ export function testSprite<P, S, I>(
     updateAlertResponse,
     clipboard,
   };
+}
+
+/**
+ * Stack is of format:
+ * ```
+  Error:
+        at jumpToFrame (.../replay/packages/replay-test/src/index.ts:475:11)
+        at Object.<anonymous> (.../replay/packages/replay-test/src/__tests__/replay-test.test.ts:506:11)
+        ...
+   ```
+
+   We only want lines after `at jumpToFrame`
+ */
+function removeStackLines(stack: string, removeLineContaining: string) {
+  const stackLines = stack.split("\n");
+  if (!stackLines) return stack;
+
+  const jumpToFrameLine = stackLines.findIndex((line) =>
+    line.includes(removeLineContaining)
+  );
+  if (jumpToFrameLine === -1) return stack;
+
+  return [stackLines[0], ...stackLines.slice(jumpToFrameLine + 1)].join("\n");
 }

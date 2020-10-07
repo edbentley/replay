@@ -500,7 +500,7 @@ test("jumpToFrame throws last error", async () => {
     initInputs: {},
   });
 
-  expect.assertions(1);
+  expect.assertions(2);
 
   try {
     await jumpToFrame(() => getTexture("i-dont-exist"));
@@ -508,6 +508,10 @@ test("jumpToFrame throws last error", async () => {
     expect(e.message).toBe(
       `Timeout of 1000 gameplay seconds reached on jumpToFrame with error:\n\nNo textures found with test id "i-dont-exist"`
     );
+    // First line of stack is the code in this file
+    expect(
+      e.stack.split("\n")[1].includes("src/__tests__/replay-test.test.ts")
+    ).toBe(true);
   }
 });
 
