@@ -111,14 +111,14 @@ test("getTextures, nextFrame", () => {
   `);
 });
 
-test("jumpToFrame, getTexture", () => {
+test("jumpToFrame, getTexture", async () => {
   const { jumpToFrame, getTexture } = testSprite(Game(gameProps), gameProps, {
     initInputs: {
       pressed: true,
     },
   });
 
-  jumpToFrame(() => getTexture("player").props.x > 10);
+  await jumpToFrame(() => getTexture("player").props.x > 10);
 
   expect(getTexture("player").props.x).toBe(11);
 });
@@ -200,7 +200,7 @@ test("getByText", () => {
 
   nextFrame();
   expect(getByText("x: 2").length).toBe(1);
-  expect(() => getByText("x: 1")).toThrowError();
+  expect(getByText("x: 1").length).toBe(0);
 });
 
 test("now", () => {
@@ -462,7 +462,7 @@ test("can test individual Sprites", () => {
   );
 
   expect(getTextures().length).toBe(1);
-  expect(getByText("Hello")).toBeTruthy();
+  expect(getByText("Hello").length).toBe(1);
 });
 
 test("can map input coordinates to relative coordinates within Sprite", () => {
@@ -495,14 +495,24 @@ test("can get global position and rotation of deeply nested textures", () => {
   expect(textures[0].props.rotation).toBe(0);
 });
 
-test("jumpToFrame throws last error", () => {
+test("jumpToFrame throws last error", async () => {
   const { jumpToFrame, getTexture } = testSprite(Game(gameProps), gameProps, {
     initInputs: {},
   });
 
-  expect(() => jumpToFrame(() => getTexture("i-dont-exist"))).toThrowError(
-    `Timeout of 1000 gameplay seconds reached on jumpToFrame with error:\n\nNo textures found with test id "i-dont-exist"`
-  );
+  expect.assertions(2);
+
+  try {
+    await jumpToFrame(() => getTexture("i-dont-exist"));
+  } catch (e) {
+    expect(e.message).toBe(
+      `Timeout of 1000 gameplay seconds reached on jumpToFrame with error:\n\nNo textures found with test id "i-dont-exist"`
+    );
+    // First line of stack is the code in this file
+    expect(
+      e.stack.split("\n")[1].includes("src/__tests__/replay-test.test.ts")
+    ).toBe(true);
+  }
 });
 
 test("can mock Native Sprites", () => {

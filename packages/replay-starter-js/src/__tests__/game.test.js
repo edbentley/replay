@@ -2,7 +2,7 @@ import { testSprite } from "@replay/test";
 import { mapInputCoordinates } from "@replay/web";
 import { Game, gameProps } from "..";
 
-test("gameplay", () => {
+test("gameplay", async () => {
   const initInputs = {
     pointer: {
       pressed: false,
@@ -50,7 +50,7 @@ test("gameplay", () => {
 
   expect(audio.play).toBeCalledWith("boop.wav");
 
-  jumpToFrame(() => getTexture("icon").props.x > 99.99);
+  await jumpToFrame(() => getTexture("icon").props.x > 99.99);
 
   expect(getTexture("icon").props.y).toBeCloseTo(100);
 

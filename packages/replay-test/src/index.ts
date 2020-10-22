@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { GameProps, Texture, Device, DeviceSize, Store } from "@replay/core";
 import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
 import {
@@ -77,6 +79,38 @@ interface Options<I> {
   isTouchScreen?: boolean;
 }
 
+interface TestSpriteUtils<I> {
+  nextFrame: () => void;
+  jumpToFrame: (condition: () => boolean | Texture) => Promise<void>;
+  setRandomNumbers: (numbers: number[]) => void;
+  updateInputs: (newInputs: I) => void;
+  getTextures: () => Texture[];
+  getTexture: (testId: string) => Texture;
+  textureExists: (testId: string) => boolean;
+  getByText: (text: string) => TextTexture[];
+  log: jest.Mock<any, any>;
+  audio: {
+    getPosition: jest.Mock<number>;
+    play: jest.Mock<any, any>;
+    pause: jest.Mock<any, any>;
+  };
+  network: {
+    get: jest.Mock<any, [string, (data: unknown) => void]>;
+    post: jest.Mock<any, [string, object, (data: unknown) => void]>;
+    put: jest.Mock<any, [string, object, (data: unknown) => void]>;
+    delete: jest.Mock<any, [string, (data: unknown) => void]>;
+  };
+  store: Store;
+  alert: {
+    ok: jest.Mock<any, [string, (() => void) | undefined]>;
+    okCancel: jest.Mock<any, [string, (wasOk: boolean) => void]>;
+  };
+  updateAlertResponse: (isOk: boolean) => void;
+  clipboard: {
+    copy: jest.Mock<any, [string, (error?: Error | undefined) => void]>;
+  };
+}
+
 /**
  * `testSprite` provides a way of testing your gameplay with helper functions to
  * play and record the game.
@@ -85,7 +119,7 @@ export function testSprite<P, S, I>(
   sprite: CustomSprite<P, S, I>,
   gameProps: GameProps,
   options: Options<I> = {}
-) {
+): TestSpriteUtils<I> {
   const {
     initInputs = {} as I,
     initRandom = [0.5],
@@ -130,7 +164,7 @@ export function testSprite<P, S, I>(
    * Mock functions for network calls. Pass in the responses as a parameter to
    * testSprite.
    */
-  const network: Device<I>["network"] = {
+  const network: TestSpriteUtils<I>["network"] = {
     get: jest.fn((url, cb) => {
       if (!networkResponses.get || !networkResponses.get[url]) {
         throw Error(`No GET response defined for url: ${url}`);
@@ -162,7 +196,7 @@ export function testSprite<P, S, I>(
   /**
    * Mock functions for alerts.
    */
-  const alert: Device<I>["alert"] = {
+  const alert: TestSpriteUtils<I>["alert"] = {
     ok: jest.fn((_, onResponse) => {
       onResponse?.();
     }),
@@ -180,7 +214,7 @@ export function testSprite<P, S, I>(
   /**
    * Mock functions for clipboard.
    */
-  const clipboard: Device<I>["clipboard"] = {
+  const clipboard: TestSpriteUtils<I>["clipboard"] = {
     copy: jest.fn((_, onComplete) => {
       onComplete();
     }),
@@ -425,33 +459,57 @@ export function testSprite<P, S, I>(
   }
 
   /**
-   * Synchronously progress frames of the game until condition is met and no
-   * errors thrown. Condition can also return a Texture (useful for throwing
-   * methods like getByText). Throws if 1000 gameplay seconds (60,000 loops)
+   * Asynchronously progress frames of the game until condition is met and no
+   * errors are thrown. Condition can also return a Texture (useful for throwing
+   * methods like `getTexture`). Rejects if 1000 gameplay seconds (60,000 loops)
    * pass and condition not met / still errors.
+   *
+   * Note that this will run at almost synchronous speed, but doesn't block the
+   * event loop.
    */
-  function jumpToFrame(condition: () => boolean | Texture) {
+  async function jumpToFrame(condition: () => boolean | Texture) {
     let lastErrorMsg: string | null = null;
 
-    for (let i = 0; i < 60000; i++) {
-      nextFrame();
-      try {
-        if (condition()) {
+    // Keep this for improved error stack reporting
+    const stackObj: Error = {} as Error;
+    Error.captureStackTrace(stackObj);
+
+    await new Promise((res, rej) => {
+      let i = 0;
+
+      function loop() {
+        nextFrame();
+        try {
+          if (condition()) {
+            res();
+            return;
+          }
+        } catch (e) {
+          lastErrorMsg = (e as Error)?.message;
+          // continue trying
+        }
+        i++;
+        if (i < 60000) {
+          setImmediate(loop);
           return;
         }
-      } catch (e) {
-        lastErrorMsg = (e as Error)?.message;
-        // continue trying
-      }
-    }
+        let errMessage =
+          "Timeout of 1000 gameplay seconds reached on jumpToFrame";
+        if (lastErrorMsg) {
+          errMessage += ` with error:\n\n${lastErrorMsg}`;
+        }
+        const error = new Error(errMessage);
 
-    if (lastErrorMsg) {
-      throw Error(
-        `Timeout of 1000 gameplay seconds reached on jumpToFrame with error:\n\n${lastErrorMsg}`
-      );
-    } else {
-      throw Error("Timeout of 1000 gameplay seconds reached on jumpToFrame");
-    }
+        // Only keep stack trace relevant to user's test code
+        error.stack = removeStackLines(
+          stackObj.stack || "",
+          "at jumpToFrame ("
+        );
+        rej(error);
+      }
+
+      loop();
+    });
   }
 
   function getTextures() {
@@ -489,18 +547,14 @@ export function testSprite<P, S, I>(
 
   /**
    * Get an array of text textures which include text content. Case insensitive.
-   * Throws if no matches found.
+   * Returns empty array if no matches found.
    */
   function getByText(text: string) {
-    const matches = textures
+    return textures
       .filter(isTextTexture)
       .filter((texture) =>
         texture.props.text.toLowerCase().includes(text.toLowerCase())
       );
-    if (matches.length === 0) {
-      throw Error(`No text textures found with content "${text}"`);
-    }
-    return matches;
   }
 
   // Init render
@@ -523,4 +577,27 @@ export function testSprite<P, S, I>(
     updateAlertResponse,
     clipboard,
   };
+}
+
+/**
+ * Stack is of format:
+ * ```
+  Error:
+        at jumpToFrame (.../replay/packages/replay-test/src/index.ts:475:11)
+        at Object.<anonymous> (.../replay/packages/replay-test/src/__tests__/replay-test.test.ts:506:11)
+        ...
+   ```
+
+   We only want lines after `at jumpToFrame`
+ */
+function removeStackLines(stack: string, removeLineContaining: string) {
+  const stackLines = stack.split("\n");
+  if (!stackLines) return stack;
+
+  const jumpToFrameLine = stackLines.findIndex((line) =>
+    line.includes(removeLineContaining)
+  );
+  if (jumpToFrameLine === -1) return stack;
+
+  return [stackLines[0], ...stackLines.slice(jumpToFrameLine + 1)].join("\n");
 }

@@ -6,7 +6,7 @@ import { iOSInputs } from "../../../packages/replay-swift/src";
 import { testSprite } from "../../../packages/replay-test/src";
 import { Game, gameProps } from "..";
 
-test("gameplay", () => {
+test("gameplay", async () => {
   const inputs: WebInputs | iOSInputs = {
     pointer: {
       pressed: false,
@@ -47,9 +47,9 @@ test("gameplay", () => {
     nativeSpriteNames: ["TextInput"],
   });
 
-  getByText("Loading");
+  expect(getByText("Loading").length).toBe(1);
 
-  jumpToFrame(() => textureExists("player"));
+  await jumpToFrame(() => textureExists("player"));
   expect(getTexture("player").props.x).toBe(0);
   expect(getTexture("player").props.y).toBe(-150);
 
@@ -62,7 +62,7 @@ test("gameplay", () => {
 
   // enemy spawns in middle
 
-  jumpToFrame(() => textureExists("enemy1"));
+  await jumpToFrame(() => textureExists("enemy1"));
   expect(getTexture("enemy1").props.x).toBe(0);
   expect(getTexture("enemy1").props.y).toBe(158);
   expect(getTexture("enemy1").props.rotation).toBe(0);
@@ -106,7 +106,7 @@ test("gameplay", () => {
 
   // enemy gets hit!
 
-  jumpToFrame(() => !textureExists("enemy1"));
+  await jumpToFrame(() => !textureExists("enemy1"));
 
   expect(getTexture("bullet1").props.x).toBe(0);
   expect(getTexture("bullet1").props.y).toBe(100);
@@ -115,7 +115,7 @@ test("gameplay", () => {
 
   // enemy spawns to left
 
-  jumpToFrame(() => textureExists("enemy1"));
+  await jumpToFrame(() => textureExists("enemy1"));
   expect(getTexture("enemy1").props.x).toBe(-150);
 
   // fire in the middle again
@@ -151,7 +151,7 @@ test("gameplay", () => {
 
   // bullet misses enemy and game over!
 
-  jumpToFrame(() => getByText("Game Over")[0]);
+  await jumpToFrame(() => getByText("Game Over").length > 0);
 
   expect(store).toEqual({ highScore: "1" });
 

@@ -26,7 +26,7 @@ test("Can start game", () => {
     }
   );
 
-  expect(getByText(mainMenuText)).toBeDefined();
+  expect(getByText(mainMenuText).length).toBe(1);
 
   updateInputs({
     pointer: {
@@ -46,5 +46,5 @@ test("Can start game", () => {
   nextFrame();
 
   // Main menu gone, game has started
-  expect(() => getByText(mainMenuText)).toThrowError();
+  expect(getByText(mainMenuText).length).toBe(0);
 });
