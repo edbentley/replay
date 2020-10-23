@@ -4,9 +4,9 @@ public class ReplayViewController: UIViewController {
     var hideStatusBar: Bool
     public var webView: ReplayWebView
     
-    public init(hideStatusBar: Bool = true, useLocalHost: Bool = false) {
+    public init(hideStatusBar: Bool = true) {
         self.hideStatusBar = hideStatusBar
-        self.webView = ReplayWebViewManager(useLocalHost: useLocalHost).webView
+        self.webView = ReplayWebViewManager().webView
         super.init(nibName: nil, bundle: nil)
     }
     

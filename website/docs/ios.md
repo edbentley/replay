@@ -26,12 +26,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 Your image and audio assets also need to be added to your Xcode project. See [Replay Starter](starter.md) for an example setup.
 
-### `ReplayViewController(hideStatusBar, useLocalHost)`
+### `ReplayViewController(hideStatusBar)`
 
 #### Parameters
 
 - `hideStatusBar`: (Optional) A boolean to set if the status bar is hidden or not. Default `true`.
-- `useLocalHost`: (Optional) Set to `true` to debug JavaScript errors, but note that assets can't be loaded in this mode. Default `false`.
 
 ## Inputs
 

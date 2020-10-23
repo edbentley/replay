@@ -18,8 +18,6 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate {
     let onLogCallback: (String) -> Void // for testing
     
     init(
-        // See full JS errors, but won't load image / audio assets (for debugging)
-        useLocalHost: Bool = false,
         customGameJsString: String? = nil,
         onLoadCallback: @escaping () -> Void = {},
         onLogCallback: @escaping (String) -> Void = {_ in }
@@ -70,14 +68,10 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate {
         
         let htmlString = getReplayRenderCanvasHtmlString(
             renderCanvasJsString: renderCanvasJsString,
-            gameJsString: gameJsString,
-            useLocalHost: useLocalHost
+            gameJsString: gameJsString
         )
         
-        self.webView.loadHTMLString(
-            htmlString,
-            baseURL: useLocalHost ? URL(string: "http://localhost/")! : Bundle.main.bundleURL
-        )
+        self.webView.loadHTMLString(htmlString, baseURL: Bundle.main.bundleURL)
     }
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {

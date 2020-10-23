@@ -21,7 +21,6 @@ final class ReplayTests: XCTestCase {
         let onLoadCallback = { expectationLoadGame.fulfill() }
         let onLogCallback = { logs.append($0) }
         let webView = ReplayWebViewManager(
-            useLocalHost: true,
             customGameJsString: gameJsString,
             onLoadCallback: onLoadCallback,
             onLogCallback: onLogCallback

@@ -20,15 +20,32 @@
 
 <body>
   <script>
-    window.onerror = e => {
-      const hasFullError = e.line !== undefined && e.col !== undefined;
+    window.onerror = (e, _, line, col) => {
+      const hasFullError = line !== undefined && col !== undefined;
+      const errorMessage = e.message || String(e);
+
+      if (!hasFullError) {
+        window.webkit.messageHandlers.error.postMessage(errorMessage);
+        return;
+      }
+
+      let fileName, actualLine;
+      if (line - __linesInHtmlBeforeGameJs__ > __linesInGameJs__) {
+        fileName = "renderCanvas.js";
+        actualLine = line - __linesInHtmlBeforeGameJs__ - __linesInGameJs__;
+      } else {
+        fileName = "game.js";
+        actualLine = line - __linesInHtmlBeforeGameJs__;
+      }
+
       window.webkit.messageHandlers.error.postMessage(
-        hasFullError ? `At line ${e.line - __linesInHtmlBeforeGameJs__} col ${e.column}: ${e.message}` : (e.message || e)
+        `In ${fileName} at line ${actualLine} col ${col}: ${errorMessage}`
       );
-      if (!hasFullError && !__useLocalHostStr__) {
-        window.webkit.messageHandlers.consoleLog.postMessage(
-          "To see the above error with line numbers, you can temporarily set useLocalHost in ReplayViewController to true - but your game will not be able to load any audio or image assets."
-        )
+    };
+    window.onunhandledrejection = event => {
+      if (event.reason instanceof Error) {
+        const error = event.reason;
+        window.onerror(error, undefined, error.line, error.column);
       }
     };
 
