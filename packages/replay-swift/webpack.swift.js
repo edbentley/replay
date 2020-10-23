@@ -17,7 +17,7 @@ module.exports = {
   },
   output: {
     filename: "renderCanvas.js",
-    path: path.resolve(__dirname, "./Replay"),
+    path: path.resolve(__dirname, "./Replay/Sources/Replay/Resources"),
     library: "renderCanvas",
   },
 };

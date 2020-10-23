@@ -56,26 +56,26 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate {
             guard let gameJsPathString = try? String(
                 contentsOfFile: gameJsPath,
                 encoding: String.Encoding.utf8
-                ) else {
-                    fatalError("Couldn't read JS file at path \(gameJsPath)")
+            ) else {
+                fatalError("Couldn't read JS file at path \(gameJsPath)")
             }
             gameJsString = gameJsPathString
         }
         
-        // don't try to load assets and wrap in try/catch
-        if useLocalHost {
-            gameJsString = """
-            try {
-                \(gameJsString)
-                game.options.assets = {};
-            } catch (e) {
-                window.webkit.messageHandlers.error.postMessage(`At line ${e.line - \(linesInHtmlBeforeGameJs - 1)} col ${e.column}: ${e.message}`);
-            }
-            """
-        }
+        let renderCanvasJsPath = Bundle.module.path(forResource: "renderCanvas", ofType: ".js")!
+        let renderCanvasJsString = try! String(
+            contentsOfFile: renderCanvasJsPath,
+            encoding: String.Encoding.utf8
+        )
+        
+        let htmlString = getReplayRenderCanvasHtmlString(
+            renderCanvasJsString: renderCanvasJsString,
+            gameJsString: gameJsString,
+            useLocalHost: useLocalHost
+        )
         
         self.webView.loadHTMLString(
-            getReplayRenderCanvasHtmlString(gameJsString: gameJsString, useLocalHost: useLocalHost),
+            htmlString,
             baseURL: useLocalHost ? URL(string: "http://localhost/")! : Bundle.main.bundleURL
         )
     }

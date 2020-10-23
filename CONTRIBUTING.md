@@ -87,7 +87,3 @@ git push origin v0.x.0
 cd ../replay/website
 GIT_USER=<Your GitHub username> USE_SSH=true npm run deploy
 ```
-
-#### Note
-
-- The file [Html.swift](./packages/replay-swift/Replay/Sources/Replay/Html.swift) needs to be manually updated for now.

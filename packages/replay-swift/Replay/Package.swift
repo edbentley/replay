@@ -1,4 +1,4 @@
-// swift-tools-version:5.2
+// swift-tools-version:5.3
 
 import PackageDescription
 
@@ -18,9 +18,17 @@ let package = Package(
     targets: [
         .target(
             name: "Replay",
-            dependencies: []),
+            dependencies: [],
+            resources: [
+                .process("Resources")
+            ]),
         .testTarget(
             name: "ReplayTests",
-            dependencies: ["Replay", "SnapshotTesting"]),
+            dependencies: ["Replay", "SnapshotTesting"],
+            exclude: ["__Snapshots__"],
+            resources: [
+                .process("game.js")
+            ]
+        ),
     ]
 )

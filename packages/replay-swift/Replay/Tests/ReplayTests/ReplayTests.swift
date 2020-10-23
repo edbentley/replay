@@ -12,6 +12,12 @@ final class ReplayTests: XCTestCase {
         
         var logs: [String] = []
         
+        let gameJsPath = Bundle.module.path(forResource: "game", ofType: "js")!
+        let gameJsString = try! String(
+            contentsOfFile: gameJsPath,
+            encoding: String.Encoding.utf8
+        )
+        
         let onLoadCallback = { expectationLoadGame.fulfill() }
         let onLogCallback = { logs.append($0) }
         let webView = ReplayWebViewManager(

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>Replay</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    window.onerror = e => {
+      const hasFullError = e.line !== undefined && e.col !== undefined;
+      window.webkit.messageHandlers.error.postMessage(
+        hasFullError ? `At line ${e.line - __linesInHtmlBeforeGameJs__} col ${e.column}: ${e.message}` : (e.message || e)
+      );
+      if (!hasFullError && !__useLocalHostStr__) {
+        window.webkit.messageHandlers.consoleLog.postMessage(
+          "To see the above error with line numbers, you can temporarily set useLocalHost in ReplayViewController to true - but your game will not be able to load any audio or image assets."
+        )
+      }
+    };
+
+    __gameJsString__
+    __replayRenderCanvasJsString__
+    renderCanvas.run();
+  </script>
+</body>
+
+</html>
