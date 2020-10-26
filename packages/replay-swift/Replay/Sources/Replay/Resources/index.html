@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>Replay</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      -webkit-user-select: none;
+    }
+    canvas {
+      -webkit-user-select: none;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    window.onerror = (e, _, line, col) => {
+      const hasFullError = line !== undefined && col !== undefined;
+      const errorMessage = e.message || String(e);
+
+      if (!hasFullError) {
+        window.webkit.messageHandlers.error.postMessage(errorMessage);
+        return;
+      }
+
+      let fileName, actualLine;
+      if (line - __linesInHtmlBeforeGameJs__ > __linesInGameJs__) {
+        fileName = "renderCanvas.js";
+        actualLine = line - __linesInHtmlBeforeGameJs__ - __linesInGameJs__;
+      } else {
+        fileName = "game.js";
+        actualLine = line - __linesInHtmlBeforeGameJs__;
+      }
+
+      window.webkit.messageHandlers.error.postMessage(
+        `In ${fileName} at line ${actualLine} col ${col}: ${errorMessage}`
+      );
+    };
+    window.onunhandledrejection = event => {
+      if (event.reason instanceof Error) {
+        const error = event.reason;
+        window.onerror(error, undefined, error.line, error.column);
+      }
+    };
+
+    __gameJsString__
+    __replayRenderCanvasJsString__
+    renderCanvas.run();
+  </script>
+</body>
+
+</html>

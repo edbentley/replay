@@ -66,7 +66,6 @@ npm run serve
 ## Run on iOS
 
 ```bash
-npm run build-swift
 open swift/replay-starter-ts.xcodeproj/
 # run in Xcode
 ```

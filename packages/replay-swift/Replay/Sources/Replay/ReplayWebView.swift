@@ -18,8 +18,6 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate {
     let onLogCallback: (String) -> Void // for testing
     
     init(
-        // See full JS errors, but won't load image / audio assets (for debugging)
-        useLocalHost: Bool = false,
         customGameJsString: String? = nil,
         onLoadCallback: @escaping () -> Void = {},
         onLogCallback: @escaping (String) -> Void = {_ in }
@@ -56,34 +54,30 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate {
             guard let gameJsPathString = try? String(
                 contentsOfFile: gameJsPath,
                 encoding: String.Encoding.utf8
-                ) else {
-                    fatalError("Couldn't read JS file at path \(gameJsPath)")
+            ) else {
+                fatalError("Couldn't read JS file at path \(gameJsPath)")
             }
             gameJsString = gameJsPathString
         }
         
-        // don't try to load assets and wrap in try/catch
-        if useLocalHost {
-            gameJsString = """
-            try {
-                \(gameJsString)
-                game.options.assets = {};
-            } catch (e) {
-                window.webkit.messageHandlers.error.postMessage(`At line ${e.line - \(linesInHtmlBeforeGameJs - 1)} col ${e.column}: ${e.message}`);
-            }
-            """
-        }
-        
-        self.webView.loadHTMLString(
-            getReplayRenderCanvasHtmlString(gameJsString: gameJsString, useLocalHost: useLocalHost),
-            baseURL: useLocalHost ? URL(string: "http://localhost/")! : Bundle.main.bundleURL
+        let renderCanvasJsPath = Bundle.module.path(forResource: "renderCanvas", ofType: ".js")!
+        let renderCanvasJsString = try! String(
+            contentsOfFile: renderCanvasJsPath,
+            encoding: String.Encoding.utf8
         )
+        
+        let htmlString = getReplayRenderCanvasHtmlString(
+            renderCanvasJsString: renderCanvasJsString,
+            gameJsString: gameJsString
+        )
+        
+        self.webView.loadHTMLString(htmlString, baseURL: Bundle.main.bundleURL)
     }
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         switch message.name {
         case ERROR:
-            print("JS Error: \(message.body)")
+            fatalError("\(message.body)")
         case CONSOLE_LOG:
             onLogCallback("\(message.body)")
             print(message.body)

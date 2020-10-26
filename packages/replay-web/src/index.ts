@@ -370,9 +370,16 @@ export function renderCanvas<S>(
 
     (assets.audioFileNames || []).forEach((fileName) => {
       loadPromises.push(
-        getFileBuffer(audioContext, fileName).then((buffer) => {
-          audioElements[fileName] = { data: buffer };
-        })
+        getFileBuffer(audioContext, fileName)
+          .then((buffer) => {
+            audioElements[fileName] = { data: buffer };
+          })
+          .catch(() => {
+            // Show in console
+            setTimeout(() => {
+              throw Error(`Failed to load audio file "${fileName}"`);
+            });
+          })
       );
     });
 
@@ -383,6 +390,10 @@ export function renderCanvas<S>(
           imageElements[fileName].addEventListener("load", resolve);
           imageElements[fileName].addEventListener("error", reject);
           imageElements[fileName].src = fileName;
+        }).catch(() => {
+          setTimeout(() => {
+            throw Error(`Failed to load image file "${fileName}"`);
+          });
         })
       );
     });

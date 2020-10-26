@@ -33,7 +33,11 @@ export function getAudio(
   audioElements: AudioMap
 ): Device<{}>["audio"] {
   return (fileName) => {
-    const { data, mutPlayState } = audioElements[fileName];
+    const audioElement = audioElements[fileName];
+    if (!audioElement) {
+      throw Error(`Cannot find audio file "${fileName}"`);
+    }
+    const { data, mutPlayState } = audioElement;
 
     return {
       getPosition: () => {
