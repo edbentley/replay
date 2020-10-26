@@ -46,9 +46,14 @@ Increment game by one frame.
 nextFrame();
 ```
 
-### `jumpToFrame(() => condition)`
+### `jumpToFrame(condition, maxFrames)`
 
-Asynchronously progress frames of the game until condition is met and no errors are thrown. Condition can also return a Texture (useful for throwing methods like `getTexture`). Rejects if 1000 gameplay seconds (60,000 loops) pass and condition not met / still errors.
+#### Parameters
+
+- `condition`: A function that can return a boolean or throw an error.
+- `maxFrames`: (Optional) Set the maximum number of frames that will run. Default `1800`.
+
+Asynchronously progress frames of the game until condition is met and no errors are thrown. Condition can also return a Texture (useful for throwing methods like `getTexture`). Rejects if 30 gameplay seconds (1800 frames) pass and condition not met / still errors.
 
 Note that this will run at almost synchronous speed, but doesn't block the event loop.
 
