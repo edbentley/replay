@@ -77,7 +77,7 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         switch message.name {
         case ERROR:
-            print("JS Error: \(message.body)")
+            fatalError("\(message.body)")
         case CONSOLE_LOG:
             onLogCallback("\(message.body)")
             print(message.body)
