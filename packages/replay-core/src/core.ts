@@ -395,16 +395,23 @@ function createCustomSpriteContainer<P, S, I>(
     updateStateQueue.push(update);
   };
 
+  let spriteContainer: null | CustomSpriteContainer<P, S, I> = null;
   let initState;
   if (spriteObj.init) {
     initState = spriteObj.init({
       props: initProps,
+      getState: () => {
+        if (!spriteContainer) {
+          throw Error("Cannot call getState synchronously in init");
+        }
+        return spriteContainer.state;
+      },
       device: initDevice,
       updateState,
     });
   }
 
-  return {
+  spriteContainer = {
     type: "custom",
     // WARNING: types are a bit tricky here, need to cast.
     // If a sprite does not set an init state, this will simply pass undefined
@@ -460,6 +467,7 @@ function createCustomSpriteContainer<P, S, I>(
       return sprites;
     },
   };
+  return spriteContainer;
 }
 
 type RenderMethod = "render" | "renderP" | "renderXL" | "renderPXL";

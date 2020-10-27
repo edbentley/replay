@@ -66,6 +66,11 @@ interface SpriteObjInit<P, S, I> {
    */
   init: (params: {
     props: Readonly<P>;
+    /**
+     * Access state for asynchronous callbacks. If you call this before `init`
+     * returns it will throw an error.
+     */
+    getState: () => S;
     device: Device<I>;
     updateState: (update: (state: S) => S) => void;
   }) => S;

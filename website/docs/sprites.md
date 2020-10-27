@@ -226,10 +226,14 @@ All Sprite methods have the following parameters:
 Called on initial load of Sprite. Use this to run anything you need on setup. Returns the initial state.
 
 ```js
-  init({ props, device, updateState }) {
+  init({ props, device, updateState, getState }) {
     return { ... };
   },
 ```
+
+#### Additional Parameters
+
+- `getState`: A function which returns the current state of the Sprite for asynchronous callbacks. If you call this before `init` returns it will throw an error.
 
 ### `loop`
 

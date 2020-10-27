@@ -20,6 +20,8 @@ import {
   pureSpriteAlwaysRendersFn,
   pureSpriteNeverRendersFn,
   pureSpriteConditionalRendersFn,
+  waitFrame,
+  GetStateGame,
 } from "./utils";
 import { SpriteTextures, NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture, RectangleTexture } from "../t";
@@ -352,7 +354,7 @@ test("can provide a random number", () => {
   expect(randomSpy).toBeCalledTimes(1);
 });
 
-test("supports timer", () => {
+test("supports timer", async () => {
   const { platform, mutableTestDevice } = getTestPlatform();
   const startSpy = jest.spyOn(mutableTestDevice.timer, "start");
   const cancelSpy = jest.spyOn(mutableTestDevice.timer, "cancel");
@@ -374,6 +376,8 @@ test("supports timer", () => {
 
   mutableTestDevice.inputs.buttonPressed.timer.start = true;
   getNextFrameTexturesOverTime();
+
+  await waitFrame();
 
   expect(logSpy).toBeCalledWith("timeout complete");
   expect(startSpy).toBeCalledTimes(2); // once in init
@@ -415,7 +419,7 @@ test("supports getting date now", () => {
   expect(setDateSpy).toBeCalledTimes(1);
 });
 
-test("supports updateState", () => {
+test("supports updateState", async () => {
   const { platform, mutableTestDevice } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
@@ -431,11 +435,14 @@ test("supports updateState", () => {
     return getNextFrameTextures(time, jest.fn());
   };
 
+  await waitFrame();
+
   getNextFrameTexturesOverTime();
   expect(logSpy).toBeCalledWith("initialised");
 
   mutableTestDevice.inputs.buttonPressed.action = true;
   getNextFrameTexturesOverTime();
+  await waitFrame();
   getNextFrameTexturesOverTime(); // log called on state change in next loop
 
   expect(logSpy).toBeCalledWith("render time: 1996-01-17T03:24:00.000Z");
@@ -467,6 +474,38 @@ test("updateState in loop will update state in next render", () => {
 
   // An extra 5 was added in sync
   expect((spriteTextures.textures[0] as CircleTexture).props.x).toEqual(11);
+});
+
+test("supports getState", async () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+  const logSpy = jest.spyOn(mutableTestDevice, "log");
+
+  const { getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    FullTestGame(gameProps)
+  );
+
+  mutableTestDevice.inputs.buttonPressed.move = true;
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time, jest.fn());
+  };
+
+  getNextFrameTexturesOverTime();
+  await waitFrame();
+
+  expect(logSpy).toBeCalledWith("getState position: 6");
+});
+
+test("getState will throw error if called synchronously", () => {
+  const { platform } = getTestPlatform();
+
+  expect(() =>
+    replayCore(platform, nativeSpriteSettings, GetStateGame(gameProps))
+  ).toThrowError("Cannot call getState synchronously in init");
 });
 
 test("supports playing audio", () => {

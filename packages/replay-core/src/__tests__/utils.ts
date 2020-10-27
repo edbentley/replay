@@ -145,7 +145,7 @@ export function getTestPlatform(customSize?: DeviceSize) {
     random: jest.fn(() => 0.5),
     timer: {
       start(callback) {
-        callback();
+        setImmediate(callback);
         return "id";
       },
       cancel: jest.fn(),
@@ -204,6 +204,10 @@ export const nativeSpriteSettings: NativeSpriteSettings = {
     gameYToPlatformY: (y) => y,
   },
 };
+
+export function waitFrame() {
+  return new Promise((res) => setImmediate(res));
+}
 
 interface TestGameState {
   position: number;
@@ -358,12 +362,13 @@ export const FullTestGame = makeSprite<
   FullTestGameState,
   TestPlatformInputs
 >({
-  init({ updateState, device }) {
+  init({ updateState, getState, device }) {
     device.timer.start(() => {
       updateState((state) => ({
         ...state,
         testInitUpdateState: "initialised",
       }));
+      device.log(`getState position: ${getState().position}`);
     }, 100);
 
     return {
@@ -754,6 +759,19 @@ const CallbackPropSprite = makeSprite<{
 
   render() {
     return [null];
+  },
+});
+
+/// -- Test getState
+
+export const GetStateGame = makeSprite<GameProps, undefined>({
+  init({ getState }) {
+    getState();
+    return undefined;
+  },
+
+  render() {
+    return [];
   },
 });
 
