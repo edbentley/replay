@@ -81,7 +81,10 @@ interface Options<I> {
 
 interface TestSpriteUtils<I> {
   nextFrame: () => void;
-  jumpToFrame: (condition: () => boolean | Texture) => Promise<void>;
+  jumpToFrame: (
+    condition: () => boolean | Texture,
+    maxFrames?: number
+  ) => Promise<void>;
   setRandomNumbers: (numbers: number[]) => void;
   updateInputs: (newInputs: I) => void;
   getTextures: () => Texture[];
@@ -461,13 +464,16 @@ export function testSprite<P, S, I>(
   /**
    * Asynchronously progress frames of the game until condition is met and no
    * errors are thrown. Condition can also return a Texture (useful for throwing
-   * methods like `getTexture`). Rejects if 1000 gameplay seconds (60,000 loops)
+   * methods like `getTexture`). Rejects if 30 gameplay seconds (1800 frames)
    * pass and condition not met / still errors.
    *
    * Note that this will run at almost synchronous speed, but doesn't block the
    * event loop.
    */
-  async function jumpToFrame(condition: () => boolean | Texture) {
+  async function jumpToFrame(
+    condition: () => boolean | Texture,
+    maxFrames = 1800
+  ) {
     let lastErrorMsg: string | null = null;
 
     // Keep this for improved error stack reporting
@@ -489,12 +495,13 @@ export function testSprite<P, S, I>(
           // continue trying
         }
         i++;
-        if (i < 60000) {
+        if (i < maxFrames) {
           setImmediate(loop);
           return;
         }
-        let errMessage =
-          "Timeout of 1000 gameplay seconds reached on jumpToFrame";
+        let errMessage = `Timeout of ${Math.round(
+          maxFrames / 60
+        )} gameplay seconds reached on jumpToFrame`;
         if (lastErrorMsg) {
           errMessage += ` with error:\n\n${lastErrorMsg}`;
         }
