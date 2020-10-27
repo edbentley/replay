@@ -93,32 +93,36 @@ export function keyUpHandler(e: KeyboardEvent) {
  */
 export const clientXToGameX = ({
   canvasOffsetLeft,
+  scrollX,
   widthMargin,
   scale,
   width,
 }: {
   canvasOffsetLeft: number;
+  scrollX: number;
   widthMargin: number;
   scale: number;
   width: number;
 }) => (e: { clientX: number }) =>
-  (e.clientX - canvasOffsetLeft) / scale - widthMargin - width / 2;
+  (e.clientX - canvasOffsetLeft + scrollX) / scale - widthMargin - width / 2;
 
 /**
  * Convert browser `clientY` to game's `y` coordinate
  */
 export const clientYToGameY = ({
   canvasOffsetTop,
+  scrollY,
   heightMargin,
   scale,
   height,
 }: {
   canvasOffsetTop: number;
+  scrollY: number;
   heightMargin: number;
   scale: number;
   height: number;
 }) => (e: { clientY: number }) =>
-  -(e.clientY - canvasOffsetTop) / scale + heightMargin + height / 2;
+  -(e.clientY - canvasOffsetTop + scrollY) / scale + heightMargin + height / 2;
 
 export function pointerDownHandler(x: number, y: number, pointerId: number) {
   if (!pointerIds.includes(pointerId)) {
