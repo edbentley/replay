@@ -1,6 +1,6 @@
 {
   "name": "@replay/swift",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A cross-platform JS game engine inspired by React (Swift package)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,12 +24,12 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "@replay/core": "~0.6.0",
-    "@replay/web": "~0.6.0"
+    "@replay/core": "~0.7.0",
+    "@replay/web": "~0.7.0"
   },
   "devDependencies": {
-    "@replay/core": "0.6.0",
-    "@replay/web": "0.6.0",
+    "@replay/core": "0.7.0",
+    "@replay/web": "0.7.0",
     "typescript": "^3.8.3",
     "webpack": "^4.44.0",
     "webpack-cli": "^3.3.12"
