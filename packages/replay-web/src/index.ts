@@ -164,7 +164,10 @@ export function renderCanvas<S>(
 
   document.addEventListener("visibilitychange", handlePageVisible, false);
 
-  window.addEventListener("resize", updateDeviceSize as () => void, false);
+  window.addEventListener("resize", updateDeviceSize, false);
+
+  const updateScroll = () => updateDeviceSize({ didScroll: true });
+  window.addEventListener("scroll", updateScroll, false);
 
   // Disable right click
   document.addEventListener("contextmenu", (e) => {
@@ -185,24 +188,33 @@ export function renderCanvas<S>(
     gameYToPlatformY: (y) => y,
   };
 
-  function updateDeviceSize(cleanup?: boolean) {
+  function updateDeviceSize(
+    opts?: { cleanup?: boolean; didScroll?: boolean } | Event
+  ) {
+    const cleanup = Boolean(opts && "cleanup" in opts && opts.cleanup);
+    const didScroll = Boolean(opts && "didScroll" in opts && opts.didScroll);
+
     if (prevDeviceSize) {
       ctx.restore();
       document.removeEventListener(pointerDownEv, pointerDown);
       document.removeEventListener(pointerMoveEv, pointerMove);
       document.removeEventListener(pointerUpEv, pointerUp);
       document.removeEventListener(pointerCancelEv, pointerCancel);
-      if (cleanup === true) {
+      if (cleanup) {
         return;
       }
     }
 
-    const deviceSize = setDeviceSize(
-      windowSize?.width || window.innerWidth,
-      windowSize?.height || window.innerHeight,
-      dimensions,
-      gameSprite.props.size
-    );
+    // Don't update device size on scroll as window gets smaller
+    const deviceSize =
+      didScroll && prevDeviceSize
+        ? prevDeviceSize
+        : setDeviceSize(
+            windowSize?.width || window.innerWidth,
+            windowSize?.height || window.innerHeight,
+            dimensions,
+            gameSprite.props.size
+          );
     canvas.width = deviceSize.deviceWidth;
     canvas.height = deviceSize.deviceHeight;
 
@@ -237,12 +249,14 @@ export function renderCanvas<S>(
 
     const getX = clientXToGameX({
       canvasOffsetLeft: canvas.offsetLeft,
+      scrollX: window.scrollX,
       width: deviceSize.width,
       widthMargin: deviceSize.widthMargin,
       scale,
     });
     const getY = clientYToGameY({
       canvasOffsetTop: canvas.offsetTop,
+      scrollY: window.scrollY,
       height: deviceSize.height,
       heightMargin: deviceSize.heightMargin,
       scale,
@@ -475,8 +489,9 @@ export function renderCanvas<S>(
     document.removeEventListener("keydown", inputKeyDownHandler, false);
     document.removeEventListener("keyup", inputKeyUpHandler, false);
     document.removeEventListener("visibilitychange", handlePageVisible, false);
-    window.removeEventListener("resize", updateDeviceSize as () => void, false);
-    updateDeviceSize(true);
+    window.removeEventListener("resize", updateDeviceSize, false);
+    window.removeEventListener("scroll", updateScroll, false);
+    updateDeviceSize({ cleanup: true });
   }
 
   return {

@@ -148,7 +148,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
       },
       width: 100,
       x: -device.size.width / 2 + 100,
-      y: device.size.height / 2 - 20,
+      y: -device.size.height / 2 + 20,
       numberOfLines: 3,
       align: "left",
       color: "red",
