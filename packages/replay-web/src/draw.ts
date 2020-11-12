@@ -3,6 +3,16 @@ import { SpriteTextures } from "@replay/core/dist/sprite";
 import { SpriteBaseProps } from "@replay/core/dist/props";
 import { MaskShape } from "@replay/core/dist/mask";
 
+export type ImageMap = {
+  [fileName: string]: {
+    /**
+     * Which Sprites are using this asset
+     */
+    globalSpriteIds: Set<string>;
+    image: HTMLImageElement;
+  };
+};
+
 export function drawCanvas(
   ctx: CanvasRenderingContext2D,
   {
@@ -13,7 +23,7 @@ export function drawCanvas(
     deviceWidth,
     deviceHeight,
   }: DeviceSize,
-  imageElements: { [fileName: string]: HTMLImageElement },
+  imageElements: ImageMap,
   defaultFont: TextureFont
 ) {
   ctx.save();
@@ -44,7 +54,7 @@ export function drawCanvas(
 function drawSpriteTextures(
   spriteTextures: SpriteTextures,
   ctx: CanvasRenderingContext2D,
-  imageElements: { [fileName: string]: HTMLImageElement },
+  imageElements: ImageMap,
   defaultFont: TextureFont
 ) {
   const { baseProps, textures } = spriteTextures;
@@ -76,7 +86,7 @@ function drawSpriteTextures(
 function drawTexture(
   texture: Texture,
   drawUtilsCtx: ReturnType<typeof drawUtils>,
-  imageElements: { [fileName: string]: HTMLImageElement },
+  imageElements: ImageMap,
   defaultFont: TextureFont
 ): 0 {
   switch (texture.type) {
@@ -108,19 +118,15 @@ function drawTexture(
       );
       return 0;
     case "image":
-      const imageElement = imageElements[texture.props.fileName];
-      if (!imageElement) {
-        throw Error(`Cannot find image file "${texture.props.fileName}"`);
-      }
       drawUtilsCtx.image(
-        imageElement,
+        getImage(imageElements, texture.props.fileName),
         texture.props.width,
         texture.props.height
       );
       return 0;
     case "spriteSheet":
       drawUtilsCtx.spriteSheet(
-        imageElements[texture.props.fileName],
+        getImage(imageElements, texture.props.fileName),
         texture.props.columns,
         texture.props.rows,
         texture.props.index,
@@ -130,6 +136,14 @@ function drawTexture(
       return 0;
   }
 }
+
+const getImage = (imageElements: ImageMap, fileName: string) => {
+  const imageElement = imageElements[fileName];
+  if (!imageElement) {
+    throw Error(`Image file "${fileName}" was not preloaded`);
+  }
+  return imageElement.image;
+};
 
 const toRad = Math.PI / 180;
 

@@ -1,4 +1,11 @@
-import { makeSprite, t, GameProps, makeNativeSprite, mask } from "@replay/core";
+import {
+  makeSprite,
+  t,
+  GameProps,
+  makeNativeSprite,
+  mask,
+  Texture,
+} from "@replay/core";
 import { testSprite } from "../index";
 
 test("getTextures, nextFrame", () => {
@@ -55,6 +62,25 @@ test("getTextures, nextFrame", () => {
         },
         "type": "text",
       },
+      Object {
+        "props": Object {
+          "align": "center",
+          "anchorX": 0,
+          "anchorY": 0,
+          "color": "red",
+          "font": undefined,
+          "mask": null,
+          "opacity": 1,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "testId": undefined,
+          "text": "Loading",
+          "x": 0,
+          "y": 0,
+        },
+        "type": "text",
+      },
     ]
   `);
 
@@ -103,6 +129,25 @@ test("getTextures, nextFrame", () => {
           "testId": undefined,
           "text": "x: 1",
           "x": 100,
+          "y": 0,
+        },
+        "type": "text",
+      },
+      Object {
+        "props": Object {
+          "align": "center",
+          "anchorX": 0,
+          "anchorY": 0,
+          "color": "red",
+          "font": undefined,
+          "mask": null,
+          "opacity": 1,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "testId": undefined,
+          "text": "Loading",
+          "x": 0,
           "y": 0,
         },
         "type": "text",
@@ -539,11 +584,45 @@ test("can mock Native Sprites", () => {
   expect(textures.length).toBe(0);
 });
 
+test("can load files specified in preloadFiles", () => {
+  const { getTextures, nextFrame, loadFiles } = testSprite(
+    Game(gameProps),
+    gameProps
+  );
+
+  const isLoading = (textures: Texture[]) =>
+    textures.some(
+      (texture) => texture.type === "text" && texture.props.text === "Loading"
+    );
+
+  expect(isLoading(getTextures())).toBe(true);
+
+  loadFiles();
+  nextFrame();
+
+  expect(isLoading(getTextures())).toBe(false);
+});
+
+test("cleans up unused onLoad callbacks on unmounted sprites", () => {
+  const { nextFrame, loadFiles, log } = testSprite(
+    AssetsGame(gameProps),
+    gameProps
+  );
+
+  nextFrame();
+  // Sprite removed
+
+  loadFiles();
+
+  expect(log).not.toHaveBeenCalled();
+});
+
 // --- Mock Game
 
 interface State {
   x: number;
   showEnemy: boolean;
+  loading: boolean;
   timerId?: string;
 }
 interface Inputs {
@@ -561,10 +640,14 @@ const gameProps: GameProps = {
 };
 
 const Game = makeSprite<GameProps, State, Inputs>({
-  init() {
+  init({ preloadFiles, updateState }) {
+    preloadFiles({ audioFileNames: ["sound.wav"] }, () => {
+      updateState((s) => ({ ...s, loading: false }));
+    });
     return {
       x: 0,
       showEnemy: false,
+      loading: true,
     };
   },
 
@@ -699,6 +782,12 @@ const Game = makeSprite<GameProps, State, Inputs>({
             color: "red",
           })
         : null,
+      state.loading
+        ? t.text({
+            text: "Loading",
+            color: "red",
+          })
+        : null,
     ];
   },
 });
@@ -772,3 +861,38 @@ export const NativeSpriteGame = makeSprite<GameProps>({
   },
 });
 const MyNativeSprite = makeNativeSprite("MyNativeSprite");
+
+/// -- Loading files Sprite test
+
+export const AssetsGame = makeSprite<GameProps, { show: boolean }>({
+  init() {
+    return { show: true };
+  },
+
+  loop() {
+    return { show: false };
+  },
+
+  render({ state }) {
+    return [
+      state.show
+        ? AssetsNestedSprite({
+            id: "Nested",
+          })
+        : null,
+    ];
+  },
+});
+
+const AssetsNestedSprite = makeSprite<{}>({
+  init({ device, preloadFiles }) {
+    preloadFiles({ audioFileNames: ["sound.wav"] }, () => {
+      device.log("Loaded!");
+    });
+    return undefined;
+  },
+
+  render() {
+    return [];
+  },
+});

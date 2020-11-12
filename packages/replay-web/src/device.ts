@@ -2,6 +2,8 @@ import { Device, Store } from "@replay/core";
 
 /**
  * Load a file into memory using Web Audio API. Allows for immediate playback.
+ *
+ * Warning: has a high memory usage
  */
 export async function getFileBuffer(
   audioContext: AudioContext,
@@ -18,6 +20,10 @@ export async function getFileBuffer(
 export type AudioMap = Record<
   string,
   {
+    /**
+     * Which Sprites are using this asset
+     */
+    globalSpriteIds: Set<string>;
     data: AudioBuffer;
     mutPlayState?: {
       isPaused: boolean;
@@ -35,7 +41,7 @@ export function getAudio(
   return (fileName) => {
     const audioElement = audioElements[fileName];
     if (!audioElement) {
-      throw Error(`Cannot find audio file "${fileName}"`);
+      throw Error(`Audio file "${fileName}" was not preloaded`);
     }
     const { data, mutPlayState } = audioElement;
 
@@ -60,7 +66,7 @@ export function getAudio(
         sampleSource.start(undefined, alreadyPlayedTime);
         sampleSource.loop = loop;
         sampleSource.onended = () => {
-          if (audioElements[fileName].mutPlayState?.isPaused === false) {
+          if (audioElements[fileName]?.mutPlayState?.isPaused === false) {
             delete audioElements[fileName].mutPlayState;
           }
         };

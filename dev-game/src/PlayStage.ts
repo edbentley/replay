@@ -8,6 +8,7 @@ import { PosLogger } from "./PosLogger";
 import { Clickable } from "./Clickable";
 
 interface State {
+  loading: boolean;
   playerRotation: number;
   bullets: Bullet[];
   enemies: Enemy[];
@@ -38,38 +39,52 @@ interface Props {
 }
 
 export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
-  init({ device, updateState }) {
-    const spawnEnemy = () => {
-      device.log("Spawn");
-      const timerId = device.timer.start(() => {
-        const newId = spawnEnemy();
-        updateState((state) => ({
-          ...state,
-          enemies: state.enemies.concat({
-            x: device.random() * device.size.width - device.size.width / 2,
-            y: device.size.height / 2 + device.size.heightMargin + 10,
-            speed: 2,
-          }),
-          spawnEnemyTimerId: newId,
+  init({ device, updateState, preloadFiles }) {
+    preloadFiles(
+      {
+        imageFileNames: ["enemy.png"],
+        audioFileNames: ["shoot.wav"],
+      },
+      () => {
+        const spawnEnemy = () => {
+          device.log("Spawn");
+          const timerId = device.timer.start(() => {
+            const newId = spawnEnemy();
+            updateState((state) => ({
+              ...state,
+              enemies: state.enemies.concat({
+                x: device.random() * device.size.width - device.size.width / 2,
+                y: device.size.height / 2 + device.size.heightMargin + 10,
+                speed: 2,
+              }),
+              spawnEnemyTimerId: newId,
+            }));
+          }, device.random() * 2000 + 1000);
+          return timerId;
+        };
+        const timerId = spawnEnemy();
+        updateState((s) => ({
+          ...s,
+          spawnEnemyTimerId: timerId,
+          loading: false,
         }));
-      }, device.random() * 2000 + 1000);
-      return timerId;
-    };
-    const timerId = spawnEnemy();
+      }
+    );
 
     return {
+      loading: true,
       playerRotation: 90,
       bullets: [],
       enemies: [],
       pointer: { x: 0, y: 0 },
       score: 0,
-      spawnEnemyTimerId: timerId,
+      spawnEnemyTimerId: "",
       paused: false,
     };
   },
 
   loop({ state, device, props: { bulletSpeed, gameOver } }) {
-    if (state.paused) return state;
+    if (state.paused || state.loading) return state;
 
     const {
       inputs,
@@ -129,6 +144,7 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
     });
 
     return {
+      ...state,
       playerRotation,
       bullets,
       enemies,
@@ -152,6 +168,9 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
     extrapolateFactor,
     updateState,
   }) {
+    if (state.loading) {
+      return [t.text({ text: "Loading level", color: "black" })];
+    }
     const fullHeight = height + heightMargin * 2;
     const fullWidth = width + widthMargin * 2;
     const bullets = state.bullets.map((b, i) =>

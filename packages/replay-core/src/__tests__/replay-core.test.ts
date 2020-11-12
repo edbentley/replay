@@ -22,6 +22,7 @@ import {
   pureSpriteConditionalRendersFn,
   waitFrame,
   GetStateGame,
+  AssetsGame,
 } from "./utils";
 import { SpriteTextures, NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture, RectangleTexture } from "../t";
@@ -911,6 +912,77 @@ test("loop and render order for callback prop change on low render FPS", () => {
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(8, 8);
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(9, 9);
   expect(resetInputs).toBeCalledTimes(9);
+});
+
+test("can preload and clear file assets", async () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+  const resetInputs = jest.fn();
+
+  const { initTextures, getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    AssetsGame(gameProps)
+  );
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time, resetInputs);
+  };
+
+  expect(initTextures.textures.length).toBe(1);
+  expect((initTextures.textures[0] as TextTexture).props.text).toBe("Loading");
+
+  expect(mutableTestDevice.preloadFiles).toHaveBeenCalledTimes(1);
+  expect(mutableTestDevice.preloadFiles).toHaveBeenCalledWith(
+    "Game",
+    {
+      imageFileNames: ["game.png"],
+      audioFileNames: ["game.mp3"],
+    },
+    expect.any(Function)
+  );
+
+  // Wait for callback on next frame
+  await waitFrame();
+
+  const textures = getNextFrameTexturesOverTime();
+
+  // No longer loading
+  expect((textures.textures[0] as any).type).not.toBe("text");
+
+  expect(mutableTestDevice.preloadFiles).toHaveBeenCalledTimes(3);
+  expect(mutableTestDevice.preloadFiles).toHaveBeenNthCalledWith(
+    2,
+    "Game--Sprite1",
+    {
+      imageFileNames: ["a.png"],
+    },
+    expect.any(Function)
+  );
+  expect(mutableTestDevice.preloadFiles).toHaveBeenNthCalledWith(
+    3,
+    "Game--Sprite1--NestedSprite",
+    {
+      imageFileNames: ["a.png"],
+    },
+    expect.any(Function)
+  );
+
+  // Unmount Sprites
+  mutableTestDevice.inputs.buttonPressed.show = false;
+  getNextFrameTexturesOverTime();
+
+  expect(mutableTestDevice.cleanupFiles).toHaveBeenCalledTimes(2);
+  expect(mutableTestDevice.cleanupFiles).toHaveBeenNthCalledWith(
+    1,
+    "Game--Sprite1--NestedSprite"
+  );
+  expect(mutableTestDevice.cleanupFiles).toHaveBeenNthCalledWith(
+    2,
+    "Game--Sprite1"
+  );
+  // Note: cleanupFiles not called for NestedFirstSprite
 });
 
 test("supports Pure Sprites", () => {

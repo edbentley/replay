@@ -109,7 +109,8 @@ export function replayCore<S, I>(
   const gameContainer = createCustomSpriteContainer(
     gameSprite,
     getInitDevice(globalToGameCoords),
-    0
+    0,
+    gameSprite.props.id
   );
   const gameSize = gameSizeArg || gameSprite.props.size;
 
@@ -303,6 +304,8 @@ function traverseCustomSpriteContainer<P, I>(
         let lookupCustomSpriteContainer =
           customSpriteContainer.childContainers[sprite.props.id];
 
+        const globalId = `${parentGlobalId}--${sprite.props.id}`;
+
         if (
           !lookupCustomSpriteContainer ||
           lookupCustomSpriteContainer.type !== "custom"
@@ -311,7 +314,8 @@ function traverseCustomSpriteContainer<P, I>(
           lookupCustomSpriteContainer = createCustomSpriteContainer(
             sprite,
             device,
-            customSpriteContainer.prevTime
+            customSpriteContainer.prevTime,
+            globalId
           );
           customSpriteContainer.childContainers[
             sprite.props.id
@@ -327,7 +331,7 @@ function traverseCustomSpriteContainer<P, I>(
           renderMethod,
           extrapolateFactor,
           baseProps.opacity,
-          `${parentGlobalId}--${sprite.props.id}`,
+          globalId,
           nativeSpriteSettings
         );
       }
@@ -339,15 +343,18 @@ function traverseCustomSpriteContainer<P, I>(
   nativeSpriteUtils.didResize = false;
 
   unusedChildIds.forEach((id) => {
-    // Run cleanup of Native Sprites on all the removed child containers
-    const recursiveNativeSpriteCleanup = (
-      containers: SpriteContainer<unknown, unknown, I>[]
+    // Run cleanup of Sprites on all the removed child containers
+    const recursiveSpriteCleanup = (
+      containers: { [id: string]: SpriteContainer<unknown, unknown, I> },
+      containerParentGlobalId: string
     ) => {
-      Object.values(containers).forEach((container) => {
+      Object.entries(containers).forEach(([containerId, container]) => {
         if (container.type === "custom") {
-          recursiveNativeSpriteCleanup(
-            Object.values(container.childContainers)
-          );
+          const containerGlobalId = `${containerParentGlobalId}--${containerId}`;
+          recursiveSpriteCleanup(container.childContainers, containerGlobalId);
+          if (container.didLoadFiles) {
+            device.cleanupFiles(containerGlobalId);
+          }
         } else if (container.type === "native") {
           container.cleanup({
             state: container.state,
@@ -358,7 +365,7 @@ function traverseCustomSpriteContainer<P, I>(
     };
 
     const spriteContainer = customSpriteContainer.childContainers[id];
-    recursiveNativeSpriteCleanup([spriteContainer]);
+    recursiveSpriteCleanup({ [id]: spriteContainer }, parentGlobalId);
 
     delete customSpriteContainer.childContainers[id];
   });
@@ -384,7 +391,8 @@ const REPLAY_TIME_PER_UPDATE_MS = 1000 * (1 / 60);
 function createCustomSpriteContainer<P, S, I>(
   sprite: CustomSprite<P, S, I>,
   initDevice: Device<I>,
-  currentTime: number
+  currentTime: number,
+  globalId: string
 ): CustomSpriteContainer<P, S, I> {
   const { spriteObj, props: initProps } = sprite;
 
@@ -397,6 +405,7 @@ function createCustomSpriteContainer<P, S, I>(
 
   let spriteContainer: null | CustomSpriteContainer<P, S, I> = null;
   let initState;
+  let didLoadFiles = false;
   if (spriteObj.init) {
     initState = spriteObj.init({
       props: initProps,
@@ -408,6 +417,15 @@ function createCustomSpriteContainer<P, S, I>(
       },
       device: initDevice,
       updateState,
+      preloadFiles: (assets, onLoad) => {
+        if (spriteContainer) {
+          spriteContainer.didLoadFiles = true;
+        } else {
+          // Was called synchronously
+          didLoadFiles = true;
+        }
+        initDevice.preloadFiles(globalId, assets, onLoad);
+      },
     });
   }
 
@@ -420,6 +438,7 @@ function createCustomSpriteContainer<P, S, I>(
     prevChildIds: [],
     prevTime: currentTime,
     currentLag: 0,
+    didLoadFiles,
     getSprites(props, device, initCreation, renderMethod, extrapolateFactor) {
       const runUpdateStateCallbacks = () => {
         this.state = updateStateQueue.reduce(
@@ -521,6 +540,7 @@ type CustomSpriteContainer<P, S, I> = {
   prevChildIds: string[];
   prevTime: number;
   currentLag: number;
+  didLoadFiles: boolean;
   getSprites: (
     props: CustomSpriteProps<P>,
     device: Device<I>,

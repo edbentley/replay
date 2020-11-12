@@ -1,16 +1,22 @@
 import { t, makeSprite } from "../../packages/replay-core/src";
 
 interface State {
+  loading: boolean;
   frame: number;
   timeElapsed: number;
 }
 
 export const WalkingGreenCapChar = makeSprite<{}, State>({
-  init() {
-    return { frame: 0, timeElapsed: 0 };
+  init({ preloadFiles, updateState }) {
+    preloadFiles({ imageFileNames: ["spritesheet.png"] }, () =>
+      updateState((s) => ({ ...s, loading: false }))
+    );
+    return { loading: true, frame: 0, timeElapsed: 0 };
   },
 
   loop({ state }) {
+    if (state.loading) return state;
+
     let { frame, timeElapsed } = state;
 
     timeElapsed++;
@@ -23,10 +29,13 @@ export const WalkingGreenCapChar = makeSprite<{}, State>({
       frame = 0;
     }
 
-    return { frame, timeElapsed };
+    return { ...state, frame, timeElapsed };
   },
 
   render({ state }) {
+    if (state.loading) {
+      return [];
+    }
     return [
       t.spriteSheet({
         fileName: "spritesheet.png",

@@ -77,12 +77,6 @@ export const nativeSpriteMap = {
 // -- Options
 
 export const options: RenderCanvasOptions = {
-  loadingTextures: [
-    t.text({
-      color: "black",
-      text: "Loading",
-    }),
-  ],
   nativeSpriteMap: {
     MyNativeSprite: MyNativeSpriteWebView,
   },

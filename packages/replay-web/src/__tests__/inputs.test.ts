@@ -24,15 +24,14 @@ beforeEach(() => {
   updateMockTime(mockTime);
 });
 
-test("Key events press and release keys", async () => {
+test("Key events press and release keys", () => {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { alpha: false })!;
   (canvas as any).getContext = () => ctx;
   const textSpy = jest.spyOn(ctx, "fillText");
 
-  const { loadPromise } = renderCanvas(KeyboardGame(testGameProps), { canvas });
+  renderCanvas(KeyboardGame(testGameProps), { canvas });
 
-  await loadPromise;
   mockTime.nextFrame();
 
   expect(textSpy).lastCalledWith(
@@ -97,15 +96,14 @@ const KeyboardGame = makeSprite<GameProps, KeyboardState, Inputs>({
   },
 });
 
-test("Pointer clicks and move", async () => {
+test("Pointer clicks and move", () => {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { alpha: false })!;
   (canvas as any).getContext = () => ctx;
   const textSpy = jest.spyOn(ctx, "fillText");
 
-  const { loadPromise } = renderCanvas(PointerGame(testGameProps), { canvas });
+  renderCanvas(PointerGame(testGameProps), { canvas });
 
-  await loadPromise;
   mockTime.nextFrame();
 
   expect(textSpy).lastCalledWith(
@@ -196,16 +194,15 @@ test("Pointer clicks and move", async () => {
   );
 });
 
-test("Pointer position within sprite", async () => {
+test("Pointer position within sprite", () => {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { alpha: false })!;
   (canvas as any).getContext = () => ctx;
 
-  const { loadPromise } = renderCanvas(PointerGameWithSprite(testGameProps), {
+  renderCanvas(PointerGameWithSprite(testGameProps), {
     canvas,
   });
 
-  await loadPromise;
   mockTime.nextFrame();
 
   // (50, 50) in game coordinates
@@ -229,7 +226,7 @@ test("Pointer position within sprite", async () => {
   }
 });
 
-test("Pointer clicks in scaled canvas with margins and canvas offset", async () => {
+test("Pointer clicks in scaled canvas with margins and canvas offset", () => {
   const canvas = document.createElement("canvas");
   (window as any).innerWidth = 600;
   (window as any).innerHeight = 400;
@@ -248,12 +245,11 @@ test("Pointer clicks in scaled canvas with margins and canvas offset", async () 
     size: { width: 200, height: 200, maxWidthMargin: 10, maxHeightMargin: 20 },
   };
 
-  const { loadPromise } = renderCanvas(PointerGame(props), {
+  renderCanvas(PointerGame(props), {
     dimensions: "scale-up",
     canvas,
   });
 
-  await loadPromise;
   mockTime.nextFrame();
 
   clickPointer(200, 200);

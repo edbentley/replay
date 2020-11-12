@@ -95,16 +95,8 @@ const Game = makeSprite({
   },
 });
 
-// Some Textures to show while loading
-const loadingTextures = [
-  t.text({
-    color: "black",
-    text: "Loading...",
-  }),
-];
-
 // Render in the browser using canvas
-renderCanvas(Game(gameProps), { loadingTextures, dimensions: "scale-up" });
+renderCanvas(Game(gameProps), { dimensions: "scale-up" });
 
 </script>
 </body>

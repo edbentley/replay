@@ -7,7 +7,6 @@ import {
   canvasToImage,
   MockTime,
   updateMockTime,
-  getTestAssets,
   testGameProps,
   TestGameWithSprites,
   TestGame,
@@ -16,30 +15,25 @@ import {
   TestNativeSpriteWeb,
   TestGameWithNativeSprite,
   clickPointer,
+  TestGameThrowUnloadedImageError,
+  TestGameLayeredSprites,
+  TestAssetsGame,
+  releasePointer,
+  loadAssets,
 } from "./utils";
-import { t, GameProps } from "@replay/core";
+import { GameProps } from "@replay/core";
 
 const mockTime: MockTime = { nextFrame: () => undefined };
 
 beforeEach(() => {
+  releasePointer(0, 0);
   updateMockTime(mockTime);
   fetchMock.getOnce("shoot.wav", { arrayBuffer: jest.fn() });
 });
 
 test("Can render image moving across screen", async () => {
   const canvas = document.createElement("canvas");
-  const { loadPromise } = renderCanvas(TestGameWithAssets(testGameProps), {
-    loadingTextures: [
-      t.text({
-        x: 0,
-        y: 0,
-        rotation: 0,
-        font: { name: "serif", size: 22 },
-        text: "Loading...",
-        color: "black",
-      }),
-    ],
-    assets: getTestAssets(),
+  renderCanvas(TestGameWithAssets(testGameProps), {
     dimensions: "game-coords",
     canvas,
   });
@@ -47,7 +41,9 @@ test("Can render image moving across screen", async () => {
   // 1: loading scene
   expect(canvasToImage(canvas)).toMatchImageSnapshot();
 
-  await loadPromise;
+  await loadAssets();
+
+  mockTime.nextFrame();
   mockTime.nextFrame();
 
   // 2: renders enemy in start position
@@ -73,24 +69,7 @@ test("Can render image moving across screen", async () => {
 
 test("Canvas elements are drawn in order of sprites passed in", () => {
   const canvas = document.createElement("canvas");
-  renderCanvas(TestGameWithAssets(testGameProps), {
-    loadingTextures: [
-      t.circle({
-        x: 0,
-        y: 0,
-        rotation: 0,
-        radius: 100,
-        color: "red",
-      }),
-      t.circle({
-        x: 0,
-        y: 0,
-        rotation: 0,
-        radius: 50,
-        color: "blue",
-      }),
-    ],
-    assets: getTestAssets(),
+  renderCanvas(TestGameLayeredSprites(testGameProps), {
     dimensions: "game-coords",
     canvas,
   });
@@ -99,13 +78,12 @@ test("Canvas elements are drawn in order of sprites passed in", () => {
   expect(canvasToImage(canvas)).toMatchImageSnapshot();
 });
 
-test("Can render game with Sprites", async () => {
+test("Can render game with Sprites", () => {
   const canvas = document.createElement("canvas");
-  const { loadPromise } = renderCanvas(TestGameWithSprites(testGameProps), {
+  renderCanvas(TestGameWithSprites(testGameProps), {
     canvas,
   });
 
-  await loadPromise;
   mockTime.nextFrame();
 
   // 1: renders player in start position
@@ -164,32 +142,55 @@ test("Dimension 'scale-up' renders up to browser size and resizes", () => {
   expect(canvas.height).toBe(360);
 });
 
-test("Unknown image name throws readable error", async () => {
-  const canvas = document.createElement("canvas");
+test("Missing image file throws error", async () => {
+  let error = new Error();
 
+  const consoleErrorOriginal = console.error;
+  const setTimeoutOriginal = setTimeout;
+
+  // Ignore error thrown by jsdom
+  console.error = () => null;
+
+  // Add try catch to setTimeout
+  (globalThis as any).setTimeout = (callback: any, ms: number) => {
+    setTimeoutOriginal(() => {
+      try {
+        callback();
+      } catch (e) {
+        error = e;
+      }
+    }, ms);
+  };
+
+  renderCanvas(TestGameThrowImageError(testGameProps));
+  await loadAssets();
+
+  expect(error.message).toBe(`Failed to load image file "unknown.png"`);
+
+  // Cleanup
+  console.error = consoleErrorOriginal;
+  (globalThis as any).setTimeout = setTimeoutOriginal;
+});
+
+test("Unloaded image file throws error", () => {
   let error = "";
   try {
-    const { loadPromise } = renderCanvas(
-      TestGameThrowImageError(testGameProps),
-      { dimensions: "scale-up", canvas }
-    );
-    await loadPromise;
+    renderCanvas(TestGameThrowUnloadedImageError(testGameProps));
   } catch (e) {
     error = (e as Error).message;
   }
 
-  expect(error).toBe(`Cannot find image file "unknown.png"`);
+  expect(error).toBe(`Image file "player.png" was not preloaded`);
 });
 
-test("Supports Native Sprites", async () => {
+test("Supports Native Sprites", () => {
   console.log = jest.fn();
 
   const canvas = document.createElement("canvas");
-  const { loadPromise } = renderCanvas(
-    TestGameWithNativeSprite(testGameProps),
-    { nativeSpriteMap: { TestNativeSprite: TestNativeSpriteWeb }, canvas }
-  );
-  await loadPromise;
+  renderCanvas(TestGameWithNativeSprite(testGameProps), {
+    nativeSpriteMap: { TestNativeSprite: TestNativeSpriteWeb },
+    canvas,
+  });
 
   expect(console.log).toBeCalledWith("Create");
 
@@ -199,4 +200,48 @@ test("Supports Native Sprites", async () => {
   clickPointer(0, 0);
   mockTime.nextFrame();
   expect(console.log).toBeCalledWith("Cleanup");
+});
+
+test("Can preload and unload image and audio assets", async () => {
+  const { audioElements, imageElements } = renderCanvas(
+    TestAssetsGame(testGameProps)
+  );
+
+  await loadAssets();
+
+  // Initially only shoot.wav loaded by Game
+
+  expect(Object.keys(imageElements)).toEqual([]);
+  expect(Object.keys(audioElements)).toEqual(["shoot.wav"]);
+  expect([...audioElements["shoot.wav"].globalSpriteIds]).toEqual(["Game"]);
+
+  fetchMock.getOnce("shoot.wav", { arrayBuffer: jest.fn() });
+
+  mockTime.nextFrame();
+  mockTime.nextFrame();
+  await loadAssets();
+
+  // Then AssetsSprite also loads shoot.wav and enemy.png
+
+  expect(Object.keys(imageElements)).toEqual(["enemy.png"]);
+  expect([...imageElements["enemy.png"].globalSpriteIds]).toEqual([
+    "Game--AssetsSprite",
+  ]);
+
+  expect(Object.keys(audioElements)).toEqual(["shoot.wav"]);
+  expect([...audioElements["shoot.wav"].globalSpriteIds]).toEqual([
+    "Game",
+    "Game--AssetsSprite",
+  ]);
+
+  // Unmount AssetsSprite
+  clickPointer(100, 0);
+  mockTime.nextFrame();
+
+  // enemy.png is cleaned up, shoot.wav remains since Game is using it
+
+  expect(Object.keys(imageElements)).toEqual([]);
+
+  expect(Object.keys(audioElements)).toEqual(["shoot.wav"]);
+  expect([...audioElements["shoot.wav"].globalSpriteIds]).toEqual(["Game"]);
 });

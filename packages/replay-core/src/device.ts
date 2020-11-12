@@ -50,6 +50,14 @@ export interface Device<I> {
    */
   now: () => Date;
 
+  preloadFiles: (
+    globalSpriteId: string,
+    assets: Assets,
+    onLoad: () => void
+  ) => void;
+
+  cleanupFiles: (globalSpriteId: string) => void;
+
   /**
    * Play sound effects / background music
    */
@@ -139,3 +147,8 @@ export interface DeviceSize {
  * The type of the store used in local storage
  */
 export type Store = Record<string, string | undefined>;
+
+export type Assets = {
+  imageFileNames?: string[];
+  audioFileNames?: string[];
+};

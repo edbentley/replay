@@ -61,6 +61,14 @@ Note that this will run at almost synchronous speed, but doesn't block the event
 await jumpToFrame(() => props.x > 10);
 ```
 
+### `loadFiles()`
+
+Synchronously load all files specified by Sprites using [`preloadFiles`](sprites.md#init).
+
+```js
+loadFiles();
+```
+
 ### `setRandomNumbers(array)`
 
 Reset the array of random numbers.
@@ -203,13 +211,18 @@ test("Can shoot bullet", () => {
     },
   };
 
-  const { nextFrame, updateInputs, getTexture, textureExists } = testSprite(
-    Game(gameProps),
-    gameProps,
-    {
-      initInputs,
-    }
-  );
+  const {
+    nextFrame,
+    updateInputs,
+    getTexture,
+    textureExists,
+    loadFiles,
+  } = testSprite(Game(gameProps), gameProps, {
+    initInputs,
+  });
+
+  loadFiles();
+  nextFrame();
 
   expect(textureExists("bullet")).toBe(false);
 
@@ -252,12 +265,18 @@ test("Can shoot bullet", () => {
     },
   };
 
-  const { nextFrame, updateInputs, getTexture, textureExists } = testSprite(
-    Game(gameProps),
-    {
-      initInputs,
-    }
-  );
+  const {
+    nextFrame,
+    updateInputs,
+    getTexture,
+    textureExists,
+    loadFiles,
+  } = testSprite(Game(gameProps), gameProps, {
+    initInputs,
+  });
+
+  loadFiles();
+  nextFrame();
 
   expect(textureExists("bullet")).toBe(false);
 

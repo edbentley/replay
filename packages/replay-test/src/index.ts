@@ -92,6 +92,7 @@ interface TestSpriteUtils<I> {
   textureExists: (testId: string) => boolean;
   getByText: (text: string) => TextTexture[];
   log: jest.Mock<any, any>;
+  loadFiles: () => void;
   audio: {
     getPosition: jest.Mock<number>;
     play: jest.Mock<any, any>;
@@ -344,6 +345,18 @@ export function testSprite<P, S, I>(
 
   const timers: Timer[] = [];
 
+  let loadFilesQueue: { globalSpriteId: string; onLoad: () => void }[] = [];
+
+  /**
+   * Synchronously load all files specified in `preloadFiles`.
+   */
+  const loadFiles = () => {
+    loadFilesQueue.forEach(({ onLoad }) => {
+      onLoad();
+    });
+    loadFilesQueue = [];
+  };
+
   const testPlatform: ReplayPlatform<I> = {
     getGetDevice: () => {
       const now = () => {
@@ -359,6 +372,15 @@ export function testSprite<P, S, I>(
         timer,
         now,
         audio: audioFn,
+        preloadFiles: (globalSpriteId, _, onLoad) => {
+          loadFilesQueue.push({ globalSpriteId, onLoad });
+        },
+        cleanupFiles: (cleanupSpriteId) => {
+          // Remove any onLoads that were never called
+          loadFilesQueue = loadFilesQueue.filter(
+            ({ globalSpriteId }) => globalSpriteId !== cleanupSpriteId
+          );
+        },
         network,
         storage,
         alert,
@@ -576,6 +598,7 @@ export function testSprite<P, S, I>(
     getTexture,
     textureExists,
     getByText,
+    loadFiles,
     log,
     audio,
     network,

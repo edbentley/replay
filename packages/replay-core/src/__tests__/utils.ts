@@ -6,6 +6,7 @@ import {
   makePureSprite,
 } from "../sprite";
 import { mask } from "../mask";
+import { Assets } from "../device";
 
 export const gameProps: GameProps = {
   id: "Game" as const,
@@ -154,6 +155,10 @@ export function getTestPlatform(customSize?: DeviceSize) {
     },
     now: () => new Date(Date.UTC(1995, 12, 17, 3, 24, 0)),
     audio: () => audio,
+    preloadFiles: jest.fn((_1, _2, onLoad) => {
+      setImmediate(onLoad);
+    }),
+    cleanupFiles: jest.fn(),
     network,
     storage: {
       getStore: jest.fn(() => ({ text1: "storage" })),
@@ -759,6 +764,80 @@ const CallbackPropSprite = makeSprite<{
 
   render() {
     return [null];
+  },
+});
+
+/// -- Assets test
+
+export const AssetsGame = makeSprite<
+  GameProps,
+  { loading: boolean; show: boolean },
+  TestPlatformInputs
+>({
+  init({ preloadFiles, updateState }) {
+    preloadFiles(
+      {
+        imageFileNames: ["game.png"],
+        audioFileNames: ["game.mp3"],
+      },
+      () => {
+        updateState((s) => ({ ...s, loading: false }));
+      }
+    );
+    return { loading: true, show: true };
+  },
+
+  loop({ state, device }) {
+    return { ...state, show: device.inputs.buttonPressed.show };
+  },
+
+  render({ state }) {
+    if (!state.show) {
+      return [];
+    }
+    if (state.loading) {
+      return [t.text({ text: "Loading", color: "black" })];
+    }
+    return [
+      AssetsSprite({
+        id: "Sprite1",
+        assets: { imageFileNames: ["a.png"] },
+      }),
+    ];
+  },
+});
+
+const AssetsSprite = makeSprite<{
+  assets: Assets;
+}>({
+  init({ props, preloadFiles }) {
+    preloadFiles(props.assets, () => null);
+    return undefined;
+  },
+
+  render({ props }) {
+    return [
+      NestedAssetsSprite({
+        id: "NestedSprite",
+        assets: props.assets,
+      }),
+      NestedFirstSprite({
+        id: "NoAssetsNestedSprite",
+      }),
+    ];
+  },
+});
+
+const NestedAssetsSprite = makeSprite<{
+  assets: Assets;
+}>({
+  init({ props, preloadFiles }) {
+    preloadFiles(props.assets, () => null);
+    return undefined;
+  },
+
+  render() {
+    return [];
   },
 });
 
