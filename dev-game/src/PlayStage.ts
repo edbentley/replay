@@ -40,36 +40,33 @@ interface Props {
 
 export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
   init({ device, updateState, preloadFiles }) {
-    preloadFiles(
-      {
-        imageFileNames: ["enemy.png"],
-        audioFileNames: ["shoot.wav"],
-      },
-      () => {
-        const spawnEnemy = () => {
-          device.log("Spawn");
-          const timerId = device.timer.start(() => {
-            const newId = spawnEnemy();
-            updateState((state) => ({
-              ...state,
-              enemies: state.enemies.concat({
-                x: device.random() * device.size.width - device.size.width / 2,
-                y: device.size.height / 2 + device.size.heightMargin + 10,
-                speed: 2,
-              }),
-              spawnEnemyTimerId: newId,
-            }));
-          }, device.random() * 2000 + 1000);
-          return timerId;
-        };
-        const timerId = spawnEnemy();
-        updateState((s) => ({
-          ...s,
-          spawnEnemyTimerId: timerId,
-          loading: false,
-        }));
-      }
-    );
+    preloadFiles({
+      imageFileNames: ["enemy.png"],
+      audioFileNames: ["shoot.wav"],
+    }).then(() => {
+      const spawnEnemy = () => {
+        device.log("Spawn");
+        const timerId = device.timer.start(() => {
+          const newId = spawnEnemy();
+          updateState((state) => ({
+            ...state,
+            enemies: state.enemies.concat({
+              x: device.random() * device.size.width - device.size.width / 2,
+              y: device.size.height / 2 + device.size.heightMargin + 10,
+              speed: 2,
+            }),
+            spawnEnemyTimerId: newId,
+          }));
+        }, device.random() * 2000 + 1000);
+        return timerId;
+      };
+      const timerId = spawnEnemy();
+      updateState((s) => ({
+        ...s,
+        spawnEnemyTimerId: timerId,
+        loading: false,
+      }));
+    });
 
     return {
       loading: true,

@@ -2,16 +2,8 @@ import { Texture, DeviceSize, TextureFont } from "@replay/core";
 import { SpriteTextures } from "@replay/core/dist/sprite";
 import { SpriteBaseProps } from "@replay/core/dist/props";
 import { MaskShape } from "@replay/core/dist/mask";
-
-export type ImageMap = {
-  [fileName: string]: {
-    /**
-     * Which Sprites are using this asset
-     */
-    globalSpriteIds: Set<string>;
-    image: HTMLImageElement;
-  };
-};
+import { AssetMap } from "@replay/core/dist/device";
+import { ImageFileData } from "./device";
 
 export function drawCanvas(
   ctx: CanvasRenderingContext2D,
@@ -23,7 +15,7 @@ export function drawCanvas(
     deviceWidth,
     deviceHeight,
   }: DeviceSize,
-  imageElements: ImageMap,
+  imageElements: AssetMap<ImageFileData>,
   defaultFont: TextureFont
 ) {
   ctx.save();
@@ -54,7 +46,7 @@ export function drawCanvas(
 function drawSpriteTextures(
   spriteTextures: SpriteTextures,
   ctx: CanvasRenderingContext2D,
-  imageElements: ImageMap,
+  imageElements: AssetMap<ImageFileData>,
   defaultFont: TextureFont
 ) {
   const { baseProps, textures } = spriteTextures;
@@ -86,7 +78,7 @@ function drawSpriteTextures(
 function drawTexture(
   texture: Texture,
   drawUtilsCtx: ReturnType<typeof drawUtils>,
-  imageElements: ImageMap,
+  imageElements: AssetMap<ImageFileData>,
   defaultFont: TextureFont
 ): 0 {
   switch (texture.type) {
@@ -137,12 +129,17 @@ function drawTexture(
   }
 }
 
-const getImage = (imageElements: ImageMap, fileName: string) => {
+const getImage = (imageElements: AssetMap<ImageFileData>, fileName: string) => {
   const imageElement = imageElements[fileName];
   if (!imageElement) {
     throw Error(`Image file "${fileName}" was not preloaded`);
   }
-  return imageElement.image;
+  if ("then" in imageElement.data) {
+    throw Error(
+      `Image file "${fileName}" did not finish loading before it was used`
+    );
+  }
+  return imageElement.data;
 };
 
 const toRad = Math.PI / 180;

@@ -26,15 +26,12 @@ export const gameProps = {
 
 export const Game = makeSprite({
   init({ updateState, preloadFiles }) {
-    preloadFiles(
-      {
-        audioFileNames: ["boop.wav"],
-        imageFileNames: ["icon.png"],
-      },
-      () => {
-        updateState((state) => ({ ...state, loaded: true }));
-      }
-    );
+    preloadFiles({
+      audioFileNames: ["boop.wav"],
+      imageFileNames: ["icon.png"],
+    }).then(() => {
+      updateState((state) => ({ ...state, loaded: true }));
+    });
 
     return {
       loaded: false,

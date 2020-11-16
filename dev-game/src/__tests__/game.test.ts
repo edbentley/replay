@@ -59,7 +59,7 @@ test("gameplay", async () => {
   expect(getByText("Loading level").length).toBe(1);
 
   // Load PlayStage files
-  loadFiles();
+  await loadFiles();
   nextFrame();
 
   expect(getByText("Loading level").length).toBe(0);

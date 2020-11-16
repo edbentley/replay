@@ -1,4 +1,5 @@
 import { Device, Store } from "@replay/core";
+import { AssetMap } from "@replay/core/dist/device";
 
 /**
  * Load a file into memory using Web Audio API. Allows for immediate playback.
@@ -17,66 +18,70 @@ export async function getFileBuffer(
   return audioBuffer;
 }
 
-export type AudioMap = Record<
-  string,
-  {
-    /**
-     * Which Sprites are using this asset
-     */
-    globalSpriteIds: Set<string>;
-    data: AudioBuffer;
-    mutPlayState?: {
-      isPaused: boolean;
-      startTime: number; // seconds
-      alreadyPlayedTime: number;
-      sample: AudioBufferSourceNode;
-    };
-  }
->;
+export type AudioData = {
+  buffer: AudioBuffer;
+  playState?: {
+    isPaused: boolean;
+    startTime: number; // seconds
+    alreadyPlayedTime: number;
+    sample: AudioBufferSourceNode;
+  };
+};
+
+export type ImageFileData = HTMLImageElement;
 
 export function getAudio(
   audioContext: AudioContext,
-  audioElements: AudioMap
+  audioElements: AssetMap<AudioData>
 ): Device<{}>["audio"] {
   return (fileName) => {
     const audioElement = audioElements[fileName];
     if (!audioElement) {
       throw Error(`Audio file "${fileName}" was not preloaded`);
     }
-    const { data, mutPlayState } = audioElement;
+    const { data } = audioElements[fileName];
+    if ("then" in data) {
+      throw Error(
+        `Audio file "${fileName}" did not finish loading before it was used`
+      );
+    }
+    const { buffer, playState } = data;
 
     return {
       getPosition: () => {
-        if (mutPlayState) {
-          if (mutPlayState.isPaused) {
-            return mutPlayState.alreadyPlayedTime;
+        if (playState) {
+          if (playState.isPaused) {
+            return playState.alreadyPlayedTime;
           }
-          return audioContext.currentTime - mutPlayState.startTime;
+          return audioContext.currentTime - playState.startTime;
         }
         return 0;
       },
       play: (fromPosition, loop = false) => {
         const sampleSource = audioContext.createBufferSource();
-        sampleSource.buffer = data;
+        sampleSource.buffer = buffer;
         sampleSource.connect(audioContext.destination);
 
         const alreadyPlayedTime =
-          fromPosition ?? mutPlayState?.alreadyPlayedTime ?? 0;
+          fromPosition ?? playState?.alreadyPlayedTime ?? 0;
 
         sampleSource.start(undefined, alreadyPlayedTime);
         sampleSource.loop = loop;
         sampleSource.onended = () => {
-          if (audioElements[fileName]?.mutPlayState?.isPaused === false) {
-            delete audioElements[fileName].mutPlayState;
+          if (!audioElements[fileName]) return;
+          const { data } = audioElements[fileName];
+
+          if (!("then" in data) && data.playState?.isPaused === false) {
+            delete data.playState;
           }
         };
 
-        const soundIsAlreadyPlaying = mutPlayState && !mutPlayState.isPaused;
+        const soundIsAlreadyPlaying = playState && !playState.isPaused;
 
         // If the sound is already playing, we fire and forget a new one.
         // Otherwise, we save its info here for pausing etc.
         if (!soundIsAlreadyPlaying) {
-          audioElements[fileName].mutPlayState = {
+          data.playState = {
             startTime: audioContext.currentTime - alreadyPlayedTime,
             sample: sampleSource,
             alreadyPlayedTime,
@@ -85,12 +90,11 @@ export function getAudio(
         }
       },
       pause: () => {
-        if (mutPlayState && !mutPlayState.isPaused) {
-          mutPlayState.sample.stop();
-          audioElements[fileName].mutPlayState = {
-            ...mutPlayState,
-            alreadyPlayedTime:
-              audioContext.currentTime - mutPlayState.startTime,
+        if (playState && !playState.isPaused) {
+          playState.sample.stop();
+          data.playState = {
+            ...playState,
+            alreadyPlayedTime: audioContext.currentTime - playState.startTime,
             isPaused: true,
           };
         }

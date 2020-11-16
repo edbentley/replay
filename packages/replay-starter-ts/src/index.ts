@@ -36,15 +36,12 @@ type GameState = {
 
 export const Game = makeSprite<GameProps, GameState, WebInputs | iOSInputs>({
   init({ updateState, preloadFiles }) {
-    preloadFiles(
-      {
-        audioFileNames: ["boop.wav"],
-        imageFileNames: ["icon.png"],
-      },
-      () => {
-        updateState((state) => ({ ...state, loaded: true }));
-      }
-    );
+    preloadFiles({
+      audioFileNames: ["boop.wav"],
+      imageFileNames: ["icon.png"],
+    }).then(() => {
+      updateState((state) => ({ ...state, loaded: true }));
+    });
 
     return {
       loaded: false,

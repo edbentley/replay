@@ -77,7 +77,7 @@ interface SpriteObjInit<P, S, I> {
      * Asset file names to preload for this Sprite. They'll be cleared from
      * memory when the Sprite is unmounted.
      */
-    preloadFiles: (assets: Assets, onLoad: () => void) => void;
+    preloadFiles: (assets: Assets) => Promise<void>;
   }) => S;
 }
 

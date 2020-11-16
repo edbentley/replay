@@ -155,10 +155,14 @@ export function getTestPlatform(customSize?: DeviceSize) {
     },
     now: () => new Date(Date.UTC(1995, 12, 17, 3, 24, 0)),
     audio: () => audio,
-    preloadFiles: jest.fn((_1, _2, onLoad) => {
-      setImmediate(onLoad);
-    }),
-    cleanupFiles: jest.fn(),
+    assetUtils: {
+      imageElements: {},
+      audioElements: {},
+      loadImageFile: jest.fn().mockResolvedValue("imageData"),
+      loadAudioFile: jest.fn().mockResolvedValue("audioData"),
+      cleanupImageFile: jest.fn(),
+      cleanupAudioFile: jest.fn(),
+    },
     network,
     storage: {
       getStore: jest.fn(() => ({ text1: "storage" })),
@@ -775,15 +779,12 @@ export const AssetsGame = makeSprite<
   TestPlatformInputs
 >({
   init({ preloadFiles, updateState }) {
-    preloadFiles(
-      {
-        imageFileNames: ["game.png"],
-        audioFileNames: ["game.mp3"],
-      },
-      () => {
-        updateState((s) => ({ ...s, loading: false }));
-      }
-    );
+    preloadFiles({
+      imageFileNames: ["game.png"],
+      audioFileNames: ["game.mp3"],
+    }).then(() => {
+      updateState((s) => ({ ...s, loading: false }));
+    });
     return { loading: true, show: true };
   },
 
@@ -811,7 +812,7 @@ const AssetsSprite = makeSprite<{
   assets: Assets;
 }>({
   init({ props, preloadFiles }) {
-    preloadFiles(props.assets, () => null);
+    preloadFiles(props.assets);
     return undefined;
   },
 
@@ -832,7 +833,7 @@ const NestedAssetsSprite = makeSprite<{
   assets: Assets;
 }>({
   init({ props, preloadFiles }) {
-    preloadFiles(props.assets, () => null);
+    preloadFiles(props.assets);
     return undefined;
   },
 

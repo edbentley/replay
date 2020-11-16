@@ -9,7 +9,7 @@ declare const webkit: {
 declare const game: {
   Game: (props: GameProps) => CustomSprite<GameProps, unknown, iOSInputs>;
   gameProps: GameProps;
-  options: RenderCanvasOptions;
+  options?: RenderCanvasOptions;
 };
 
 type Messages = WebkitMessage | ErrorMessage;

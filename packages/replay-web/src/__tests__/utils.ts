@@ -168,7 +168,7 @@ export const TestGameWithAssets = makeSprite<
   Inputs
 >({
   init({ preloadFiles, updateState }) {
-    preloadFiles(getTestAssets(), () => {
+    preloadFiles(getTestAssets()).then(() => {
       updateState((s) => ({ ...s, loading: false }));
     });
     return { position: 0, rotation: 0, loading: true };
@@ -246,14 +246,34 @@ export const TestGameLayeredSprites = makeSprite<GameProps>({
   },
 });
 
-export const TestGameThrowImageError = makeSprite<GameProps>({
+export const TestGameThrowUnloadedAudioError = makeSprite<GameProps>({
+  init({ device }) {
+    device.audio("unknown.mp3").play();
+    return undefined;
+  },
+
+  render() {
+    return [];
+  },
+});
+
+export const TestGameThrowNotYetLoadedAudioError = makeSprite<GameProps>({
+  init({ device, preloadFiles }) {
+    preloadFiles({ audioFileNames: ["shoot.wav"] });
+    device.audio("shoot.wav").play();
+    return undefined;
+  },
+
+  render() {
+    return [];
+  },
+});
+
+export const TestGameThrowUnknownImageError = makeSprite<GameProps>({
   init({ preloadFiles }) {
-    preloadFiles(
-      {
-        imageFileNames: ["unknown.png"],
-      },
-      () => null
-    );
+    preloadFiles({
+      imageFileNames: ["unknown.png"],
+    });
     return undefined;
   },
 
@@ -274,6 +294,24 @@ export const TestGameThrowUnloadedImageError = makeSprite<GameProps>({
   },
 });
 
+export const TestGameThrowNotYetLoadedImageError = makeSprite<GameProps>({
+  init({ preloadFiles }) {
+    // Loading file, but not waiting in render
+    preloadFiles({ imageFileNames: ["enemy.png"] });
+    return undefined;
+  },
+
+  render() {
+    return [
+      t.image({
+        fileName: "enemy.png",
+        width: 30,
+        height: 30,
+      }),
+    ];
+  },
+});
+
 /// -- Assets preloading test
 
 export const TestAssetsGame = makeSprite<
@@ -282,14 +320,11 @@ export const TestAssetsGame = makeSprite<
   Inputs
 >({
   init({ preloadFiles, updateState }) {
-    preloadFiles(
-      {
-        audioFileNames: ["shoot.wav"],
-      },
-      () => {
-        updateState((s) => ({ ...s, loading: false }));
-      }
-    );
+    preloadFiles({
+      audioFileNames: ["shoot.wav"],
+    }).then(() => {
+      updateState((s) => ({ ...s, loading: false }));
+    });
     return { loading: true, show: true };
   },
 
@@ -314,13 +349,10 @@ export const TestAssetsGame = makeSprite<
 
 const AssetsSprite = makeSprite<{}>({
   init({ preloadFiles }) {
-    preloadFiles(
-      {
-        imageFileNames: ["enemy.png"],
-        audioFileNames: ["shoot.wav"],
-      },
-      () => null
-    );
+    preloadFiles({
+      imageFileNames: ["enemy.png"],
+      audioFileNames: ["shoot.wav"],
+    });
     return undefined;
   },
 

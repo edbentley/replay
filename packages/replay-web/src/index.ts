@@ -1,4 +1,4 @@
-import { GameProps, DeviceSize, Device, Assets } from "@replay/core";
+import { GameProps, DeviceSize, Device } from "@replay/core";
 import {
   replayCore,
   ReplayPlatform,
@@ -9,6 +9,7 @@ import {
   SpriteTextures,
   NativeSpriteUtils,
 } from "@replay/core/dist/sprite";
+import { AssetUtils, AssetMap } from "@replay/core/dist/device";
 import {
   getInputs,
   keyUpHandler as inputKeyUpHandler,
@@ -22,7 +23,7 @@ import {
   clientYToGameY,
   pointerCancelHandler,
 } from "./input";
-import { drawCanvas, ImageMap } from "./draw";
+import { drawCanvas } from "./draw";
 import { getDeviceSize, setDeviceSize, calculateDeviceSize } from "./size";
 import { Dimensions } from "./dimensions";
 import { getGameXToWebX, getGameYToWebY } from "./coordinates";
@@ -32,7 +33,8 @@ import {
   getNetwork,
   getStorage,
   getFileBuffer,
-  AudioMap,
+  AudioData,
+  ImageFileData,
 } from "./device";
 import { isTouchDevice } from "./isTouchDevice";
 
@@ -338,112 +340,53 @@ export function renderCanvas<S>(
     prevDeviceSize = deviceSize;
   }
 
-  const audioElements: AudioMap = {};
-  const imageElements: ImageMap = {};
+  const audioElements: AssetMap<AudioData> = {};
+  const imageElements: AssetMap<ImageFileData> = {};
 
-  const preloadFiles = (
-    spriteGlobalId: string,
-    assets: Assets,
-    onLoad: () => void
-  ) => {
-    // Get every file load as a promise and wait for all before returning
-    const loadPromises: Promise<unknown>[] = [];
-
-    (assets.audioFileNames || []).forEach((fileName) => {
-      loadPromises.push(
-        getFileBuffer(audioContext, fileName)
-          .then((buffer) => {
-            if (audioElements[fileName]) {
-              // Already preloaded
-              audioElements[fileName].globalSpriteIds.add(spriteGlobalId);
-              return;
-            }
-            audioElements[fileName] = {
-              globalSpriteIds: new Set([spriteGlobalId]),
-              data: buffer,
-            };
-          })
-          .catch(() => {
-            // Show in console
-            setTimeout(() => {
-              throw Error(`Failed to load audio file "${fileName}"`);
-            });
-          })
-      );
-    });
-
-    (assets.imageFileNames || []).forEach((fileName) => {
-      if (imageElements[fileName]) {
-        // Already preloaded
-        imageElements[fileName].globalSpriteIds.add(spriteGlobalId);
-        return;
-      }
-      const image = new Image();
-
-      imageElements[fileName] = {
-        globalSpriteIds: new Set([spriteGlobalId]),
-        image,
-      };
-
-      loadPromises.push(
-        new Promise((resolve, reject) => {
-          image.addEventListener("load", resolve);
-          image.addEventListener("error", reject);
-          image.src = fileName;
-        }).catch(() => {
-          setTimeout(() => {
-            throw Error(`Failed to load image file "${fileName}"`);
-          });
-        })
-      );
-    });
-
-    Promise.all(loadPromises).then(onLoad);
+  const noFileError = (fileType: "audio" | "image", fileName: string) => () => {
+    throw Error(`Failed to load ${fileType} file "${fileName}"`);
   };
 
-  const cleanupFiles = (globalSpriteId: string) => {
-    for (const fileName in imageElements) {
-      const { globalSpriteIds } = imageElements[fileName];
-      if (globalSpriteIds.has(globalSpriteId)) {
-        if (globalSpriteIds.size === 1) {
-          // We're the only Sprite that loaded this file, so clean up from memory
-          delete imageElements[fileName];
-        } else {
-          imageElements[fileName].globalSpriteIds.delete(globalSpriteId);
-        }
-      }
-    }
-    for (const fileName in audioElements) {
-      const { globalSpriteIds, mutPlayState } = audioElements[fileName];
-      if (globalSpriteIds.has(globalSpriteId)) {
-        if (globalSpriteIds.size === 1) {
-          // Clean up from memory
-          if (mutPlayState) {
-            // Additional steps required to free up memory: https://stackoverflow.com/a/32568948/2637899
-            mutPlayState.sample.onended = null;
-            mutPlayState.sample.disconnect();
-            mutPlayState.sample.buffer = null;
-          }
-          delete audioElements[fileName];
-        } else {
-          audioElements[fileName].globalSpriteIds.delete(globalSpriteId);
-        }
-      }
-    }
+  const assetUtils: AssetUtils<AudioData, ImageFileData> = {
+    audioElements,
+    imageElements,
+    loadAudioFile: (fileName) => {
+      return getFileBuffer(audioContext, fileName)
+        .then((buffer) => ({ buffer }))
+        .catch(noFileError("audio", fileName));
+    },
+    loadImageFile: (fileName) => {
+      return new Promise<ImageFileData>((resolve, reject) => {
+        const image = new Image();
+
+        image.addEventListener("load", () => {
+          resolve(image);
+        });
+        image.addEventListener("error", reject);
+        image.src = fileName;
+      }).catch(noFileError("image", fileName));
+    },
+    cleanupAudioFile: (fileName) => {
+      const { data } = audioElements[fileName];
+      if ("then" in data || !data.playState) return;
+      // Additional steps required to free up memory: https://stackoverflow.com/a/32568948/2637899
+      data.playState.sample.onended = null;
+      data.playState.sample.disconnect();
+      data.playState.sample.buffer = null;
+    },
+    cleanupImageFile: () => null,
   };
 
   const domPlatform: ReplayPlatform<Inputs> = {
     getGetDevice: deviceCreator(
       audioContext,
-      audioElements,
       calculateDeviceSize(
         windowSize?.width || window.innerWidth,
         windowSize?.height || window.innerHeight,
         dimensions,
         gameSprite.props.size
       ),
-      preloadFiles,
-      cleanupFiles
+      assetUtils
     ),
   };
 
@@ -536,10 +479,8 @@ export function renderCanvas<S>(
 
 function deviceCreator(
   audioContext: AudioContext,
-  audioElements: AudioMap,
   defaultSize: DeviceSize,
-  preloadFiles: Device<Inputs>["preloadFiles"],
-  cleanupFiles: Device<Inputs>["cleanupFiles"]
+  assetUtils: AssetUtils<AudioData, ImageFileData>
 ): ReplayPlatform<Inputs>["getGetDevice"] {
   // called once
   const initDevice: Omit<Device<Inputs>, "inputs" | "size" | "now"> = {
@@ -547,9 +488,8 @@ function deviceCreator(
     log: console.log,
     random: Math.random,
     timer: getTimer(),
-    audio: getAudio(audioContext, audioElements),
-    preloadFiles,
-    cleanupFiles,
+    audio: getAudio(audioContext, assetUtils.audioElements),
+    assetUtils: assetUtils as AssetUtils<unknown, unknown>,
     network: getNetwork(),
     storage: getStorage(),
     alert: {

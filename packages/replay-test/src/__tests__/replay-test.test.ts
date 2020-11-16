@@ -349,8 +349,8 @@ describe("timer", () => {
   });
 });
 
-test("audio", () => {
-  const { nextFrame, audio, log, updateInputs } = testSprite(
+test("audio", async () => {
+  const { nextFrame, audio, log, updateInputs, loadFiles } = testSprite(
     Game(gameProps),
     gameProps,
     {
@@ -359,6 +359,8 @@ test("audio", () => {
       },
     }
   );
+
+  await loadFiles();
 
   nextFrame();
   expect(audio.play).toBeCalledWith("sound.wav");
@@ -584,7 +586,7 @@ test("can mock Native Sprites", () => {
   expect(textures.length).toBe(0);
 });
 
-test("can load files specified in preloadFiles", () => {
+test("can load files specified in preloadFiles", async () => {
   const { getTextures, nextFrame, loadFiles } = testSprite(
     Game(gameProps),
     gameProps
@@ -597,24 +599,38 @@ test("can load files specified in preloadFiles", () => {
 
   expect(isLoading(getTextures())).toBe(true);
 
-  loadFiles();
+  await loadFiles();
   nextFrame();
 
   expect(isLoading(getTextures())).toBe(false);
 });
 
-test("cleans up unused onLoad callbacks on unmounted sprites", () => {
-  const { nextFrame, loadFiles, log } = testSprite(
-    AssetsGame(gameProps),
-    gameProps
+test("shows error if file asset not loaded", async () => {
+  expect(() => testSprite(ImageErrorGame(gameProps), gameProps)).toThrowError(
+    `Image file "unknown.png" was not preloaded`
+  );
+  expect(() => testSprite(ImageErrorGame2(gameProps), gameProps)).toThrowError(
+    `Image file "player.png" did not finish loading before it was used`
   );
 
-  nextFrame();
-  // Sprite removed
+  expect(() => testSprite(AudioErrorGame(gameProps), gameProps)).toThrowError(
+    `Audio file "unknown.mp3" was not preloaded`
+  );
+  expect(() => testSprite(AudioErrorGame2(gameProps), gameProps)).toThrowError(
+    `Audio file "shoot.wav" did not finish loading before it was used`
+  );
 
-  loadFiles();
-
-  expect(log).not.toHaveBeenCalled();
+  // Doesn't throw error if option is set
+  expect(() =>
+    testSprite(AudioErrorGame(gameProps), gameProps, {
+      throwAssetErrors: false,
+    })
+  ).not.toThrowError();
+  expect(() =>
+    testSprite(ImageErrorGame(gameProps), gameProps, {
+      throwAssetErrors: false,
+    })
+  ).not.toThrowError();
 });
 
 // --- Mock Game
@@ -641,7 +657,7 @@ const gameProps: GameProps = {
 
 const Game = makeSprite<GameProps, State, Inputs>({
   init({ preloadFiles, updateState }) {
-    preloadFiles({ audioFileNames: ["sound.wav"] }, () => {
+    preloadFiles({ audioFileNames: ["sound.wav"] }).then(() => {
       updateState((s) => ({ ...s, loading: false }));
     });
     return {
@@ -862,33 +878,53 @@ export const NativeSpriteGame = makeSprite<GameProps>({
 });
 const MyNativeSprite = makeNativeSprite("MyNativeSprite");
 
-/// -- Loading files Sprite test
+/// -- Loading files error Sprite test
 
-export const AssetsGame = makeSprite<GameProps, { show: boolean }>({
-  init() {
-    return { show: true };
-  },
-
-  loop() {
-    return { show: false };
-  },
-
-  render({ state }) {
+export const ImageErrorGame = makeSprite<GameProps>({
+  render() {
     return [
-      state.show
-        ? AssetsNestedSprite({
-            id: "Nested",
-          })
-        : null,
+      t.image({
+        fileName: "unknown.png",
+        width: 30,
+        height: 30,
+      }),
     ];
   },
 });
 
-const AssetsNestedSprite = makeSprite<{}>({
+export const ImageErrorGame2 = makeSprite<GameProps>({
+  init({ preloadFiles }) {
+    // Loading file, but not waiting in render
+    preloadFiles({ imageFileNames: ["player.png"] });
+    return undefined;
+  },
+
+  render() {
+    return [
+      t.image({
+        fileName: "player.png",
+        width: 30,
+        height: 30,
+      }),
+    ];
+  },
+});
+
+export const AudioErrorGame = makeSprite<GameProps>({
+  init({ device }) {
+    device.audio("unknown.mp3").play();
+    return undefined;
+  },
+
+  render() {
+    return [];
+  },
+});
+
+export const AudioErrorGame2 = makeSprite<GameProps>({
   init({ device, preloadFiles }) {
-    preloadFiles({ audioFileNames: ["sound.wav"] }, () => {
-      device.log("Loaded!");
-    });
+    preloadFiles({ audioFileNames: ["shoot.wav"] });
+    device.audio("shoot.wav").play();
     return undefined;
   },
 

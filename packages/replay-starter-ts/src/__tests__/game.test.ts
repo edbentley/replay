@@ -29,7 +29,7 @@ test("gameplay", async () => {
     mapInputCoordinates,
   });
 
-  loadFiles();
+  await loadFiles();
   nextFrame();
 
   expect(getTexture("icon").props.x).toBe(0);

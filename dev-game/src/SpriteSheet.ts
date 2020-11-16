@@ -8,7 +8,7 @@ interface State {
 
 export const WalkingGreenCapChar = makeSprite<{}, State>({
   init({ preloadFiles, updateState }) {
-    preloadFiles({ imageFileNames: ["spritesheet.png"] }, () =>
+    preloadFiles({ imageFileNames: ["spritesheet.png"] }).then(() =>
       updateState((s) => ({ ...s, loading: false }))
     );
     return { loading: true, frame: 0, timeElapsed: 0 };

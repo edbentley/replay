@@ -9,7 +9,7 @@ import {
   PureSprite,
   PureCustomSprite,
 } from "./sprite";
-import { Device, DeviceSize } from "./device";
+import { Device, DeviceSize, preloadFiles, cleanupFiles } from "./device";
 import { SpriteBaseProps, getDefaultProps } from "./props";
 
 /**
@@ -351,9 +351,14 @@ function traverseCustomSpriteContainer<P, I>(
       Object.entries(containers).forEach(([containerId, container]) => {
         if (container.type === "custom") {
           const containerGlobalId = `${containerParentGlobalId}--${containerId}`;
+
           recursiveSpriteCleanup(container.childContainers, containerGlobalId);
-          if (container.didLoadFiles) {
-            device.cleanupFiles(containerGlobalId);
+
+          if (container.loadFilesPromise) {
+            container.loadFilesPromise.then(() => {
+              // Only cleanup once the initial load is complete
+              cleanupFiles(containerGlobalId, device.assetUtils);
+            });
           }
         } else if (container.type === "native") {
           container.cleanup({
@@ -405,7 +410,7 @@ function createCustomSpriteContainer<P, S, I>(
 
   let spriteContainer: null | CustomSpriteContainer<P, S, I> = null;
   let initState;
-  let didLoadFiles = false;
+  let loadFilesPromise: null | Promise<void> = null;
   if (spriteObj.init) {
     initState = spriteObj.init({
       props: initProps,
@@ -417,14 +422,15 @@ function createCustomSpriteContainer<P, S, I>(
       },
       device: initDevice,
       updateState,
-      preloadFiles: (assets, onLoad) => {
+      preloadFiles: async (assets) => {
+        const loadFiles = preloadFiles(globalId, assets, initDevice.assetUtils);
         if (spriteContainer) {
-          spriteContainer.didLoadFiles = true;
+          spriteContainer.loadFilesPromise = loadFiles;
         } else {
           // Was called synchronously
-          didLoadFiles = true;
+          loadFilesPromise = loadFiles;
         }
-        initDevice.preloadFiles(globalId, assets, onLoad);
+        await loadFiles;
       },
     });
   }
@@ -438,7 +444,7 @@ function createCustomSpriteContainer<P, S, I>(
     prevChildIds: [],
     prevTime: currentTime,
     currentLag: 0,
-    didLoadFiles,
+    loadFilesPromise,
     getSprites(props, device, initCreation, renderMethod, extrapolateFactor) {
       const runUpdateStateCallbacks = () => {
         this.state = updateStateQueue.reduce(
@@ -540,7 +546,7 @@ type CustomSpriteContainer<P, S, I> = {
   prevChildIds: string[];
   prevTime: number;
   currentLag: number;
-  didLoadFiles: boolean;
+  loadFilesPromise: null | Promise<void>;
   getSprites: (
     props: CustomSpriteProps<P>,
     device: Device<I>,

@@ -11,7 +11,7 @@ import {
   TestGameWithSprites,
   TestGame,
   resizeWindow,
-  TestGameThrowImageError,
+  TestGameThrowUnknownImageError,
   TestNativeSpriteWeb,
   TestGameWithNativeSprite,
   clickPointer,
@@ -20,6 +20,9 @@ import {
   TestAssetsGame,
   releasePointer,
   loadAssets,
+  TestGameThrowUnloadedAudioError,
+  TestGameThrowNotYetLoadedImageError,
+  TestGameThrowNotYetLoadedAudioError,
 } from "./utils";
 import { GameProps } from "@replay/core";
 
@@ -143,44 +146,50 @@ test("Dimension 'scale-up' renders up to browser size and resizes", () => {
 });
 
 test("Missing image file throws error", async () => {
-  let error = new Error();
+  let error = "";
 
   const consoleErrorOriginal = console.error;
-  const setTimeoutOriginal = setTimeout;
+  const promiseAllOriginal = Promise.all.bind(Promise);
 
   // Ignore error thrown by jsdom
   console.error = () => null;
 
-  // Add try catch to setTimeout
-  (globalThis as any).setTimeout = (callback: any, ms: number) => {
-    setTimeoutOriginal(() => {
-      try {
-        callback();
-      } catch (e) {
-        error = e;
-      }
-    }, ms);
+  // Catch error from Promise.all in replay-core
+  (Promise.all as any) = (values: any[]) => {
+    promiseAllOriginal(values).catch((e: Error) => {
+      error = e.message;
+    });
+    return Promise.resolve();
   };
 
-  renderCanvas(TestGameThrowImageError(testGameProps));
+  renderCanvas(TestGameThrowUnknownImageError(testGameProps));
   await loadAssets();
 
-  expect(error.message).toBe(`Failed to load image file "unknown.png"`);
+  expect(error).toBe(`Failed to load image file "unknown.png"`);
 
   // Cleanup
   console.error = consoleErrorOriginal;
-  (globalThis as any).setTimeout = setTimeoutOriginal;
+  (Promise.all as any) = promiseAllOriginal;
 });
 
-test("Unloaded image file throws error", () => {
-  let error = "";
-  try {
-    renderCanvas(TestGameThrowUnloadedImageError(testGameProps));
-  } catch (e) {
-    error = (e as Error).message;
-  }
+test("Unloaded files throw error", () => {
+  expect(() =>
+    renderCanvas(TestGameThrowUnloadedImageError(testGameProps))
+  ).toThrowError(`Image file "player.png" was not preloaded`);
+  expect(() =>
+    renderCanvas(TestGameThrowNotYetLoadedImageError(testGameProps))
+  ).toThrowError(
+    `Image file "enemy.png" did not finish loading before it was used`
+  );
 
-  expect(error).toBe(`Image file "player.png" was not preloaded`);
+  expect(() =>
+    renderCanvas(TestGameThrowUnloadedAudioError(testGameProps))
+  ).toThrowError(`Audio file "unknown.mp3" was not preloaded`);
+  expect(() =>
+    renderCanvas(TestGameThrowNotYetLoadedAudioError(testGameProps))
+  ).toThrowError(
+    `Audio file "shoot.wav" did not finish loading before it was used`
+  );
 });
 
 test("Supports Native Sprites", () => {
@@ -237,6 +246,9 @@ test("Can preload and unload image and audio assets", async () => {
   // Unmount AssetsSprite
   clickPointer(100, 0);
   mockTime.nextFrame();
+
+  // Wait until promise `.then` is called
+  await new Promise(setImmediate);
 
   // enemy.png is cleaned up, shoot.wav remains since Game is using it
 

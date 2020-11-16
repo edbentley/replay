@@ -11,6 +11,7 @@ import {
   loadAssets,
 } from "./utils";
 import { resetInputs } from "../input";
+import { AudioData } from "../device";
 
 const mockTime: MockTime = { nextFrame: () => undefined };
 
@@ -218,10 +219,12 @@ test("Can play audio, pause and get position", async () => {
 
   expect("shoot.wav" in audioElements).toBe(true);
 
+  const data = audioElements["shoot.wav"].data as AudioData;
+
   const nextFrame = () => {
     mockTime.nextFrame();
-    if (audioElements["shoot.wav"]?.mutPlayState?.isPaused === false) {
-      audioElements["shoot.wav"].mutPlayState.alreadyPlayedTime += 0.016; // advance a frame
+    if (data.playState?.isPaused === false) {
+      data.playState.alreadyPlayedTime += 0.016; // advance a frame
     }
     const { currentTime } = audioContext;
     Object.defineProperty(audioContext, "currentTime", {
@@ -237,7 +240,7 @@ test("Can play audio, pause and get position", async () => {
   nextFrame();
 
   // Sound plays
-  expect(audioElements["shoot.wav"].mutPlayState).toEqual({
+  expect(data.playState).toEqual({
     alreadyPlayedTime: 0.032,
     isPaused: false,
     sample: expect.any(Object),
@@ -250,10 +253,8 @@ test("Can play audio, pause and get position", async () => {
   nextFrame();
 
   // Sound paused
-  expect(audioElements["shoot.wav"].mutPlayState?.isPaused).toBe(true);
-  expect(
-    audioElements["shoot.wav"].mutPlayState?.alreadyPlayedTime
-  ).toBeCloseTo(0.032);
+  expect(data.playState?.isPaused).toBe(true);
+  expect(data.playState?.alreadyPlayedTime).toBeCloseTo(0.032);
 
   clickPointer(103, 0);
   nextFrame();
