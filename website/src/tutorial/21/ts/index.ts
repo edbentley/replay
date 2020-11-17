@@ -1,24 +1,42 @@
-import { makeSprite, GameProps } from "@replay/core";
+import { makeSprite, GameProps, t } from "@replay/core";
 import { Level } from "./level";
 import { Menu } from "./menu";
 
 type GameState = {
-  view: "menu" | "level";
+  view: "loading" | "menu" | "level";
   attempt: number;
   highScore: number;
 };
 
 export const Game = makeSprite<GameProps, GameState>({
-  init({ device }) {
+  init({ device, preloadFiles, updateState }) {
+    preloadFiles({
+      imageFileNames: ["bird.png"],
+      audioFileNames: ["boop.wav"],
+    }).then(() => {
+      updateState((state) => {
+        return { ...state, view: "menu" };
+      });
+    });
+
     const store = device.storage.getStore();
     return {
-      view: "menu",
+      view: "loading",
       attempt: 0,
       highScore: Number(store.highScore || "0"),
     };
   },
 
   render({ state, updateState, device }) {
+    if (state.view === "loading") {
+      return [
+        t.text({
+          color: "black",
+          text: "Loading...",
+        }),
+      ];
+    }
+
     const inMenuScreen = state.view === "menu";
 
     return [

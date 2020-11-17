@@ -1,7 +1,7 @@
 import { testSprite } from "@replay/test";
 import { Game, gameProps } from "..";
 
-test("Can start game", () => {
+test("Can start game", async () => {
   const initInputs = {
     pointer: {
       pressed: false,
@@ -16,13 +16,16 @@ test("Can start game", () => {
   };
   const mainMenuText = "Start";
 
-  const { nextFrame, updateInputs, getByText } = testSprite(
+  const { nextFrame, updateInputs, getByText, loadFiles } = testSprite(
     Game(gameProps),
     gameProps,
     {
       initInputs,
     }
   );
+
+  await loadFiles();
+  nextFrame();
 
   expect(getByText(mainMenuText).length).toBe(1);
 
