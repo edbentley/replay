@@ -58,13 +58,12 @@ afterEach(() => {
 test("can update single-line text input", async () => {
   expect(document.body.childNodes.length).toBe(0);
 
-  const { loadPromise } = renderCanvas(Game(gameProps), {
+  renderCanvas(Game(gameProps), {
     nativeSpriteMap: {
       TextInput: TextInputWeb,
     },
   });
 
-  await loadPromise;
   mockTime.nextFrame();
 
   // 1 canvas + 1 input
@@ -84,13 +83,11 @@ test("can update single-line text input", async () => {
 test("can destroy text input", async () => {
   expect(document.body.childNodes.length).toBe(0);
 
-  const { loadPromise } = renderCanvas(Game(gameProps), {
+  renderCanvas(Game(gameProps), {
     nativeSpriteMap: {
       TextInput: TextInputWeb,
     },
   });
-
-  await loadPromise;
 
   expect(document.body.childNodes.length).toBe(2);
 
@@ -108,13 +105,11 @@ test("can destroy text input", async () => {
 test("can update multi-line text input", async () => {
   expect(document.body.childNodes.length).toBe(0);
 
-  const { loadPromise } = renderCanvas(Game(gameProps), {
+  renderCanvas(Game(gameProps), {
     nativeSpriteMap: {
       TextInput: TextInputWeb,
     },
   });
-
-  await loadPromise;
 
   mockTime.nextFrame();
 
@@ -137,13 +132,11 @@ test("can update multi-line text input", async () => {
 });
 
 test("can handle five inputs", async () => {
-  const { loadPromise } = renderCanvas(Game(gameProps), {
+  renderCanvas(Game(gameProps), {
     nativeSpriteMap: {
       TextInput: TextInputWeb,
     },
   });
-
-  await loadPromise;
 
   mockTime.nextFrame();
 
@@ -165,13 +158,11 @@ test("can handle five inputs", async () => {
 });
 
 test("can handle fixed value input", async () => {
-  const { loadPromise } = renderCanvas(Game(gameProps), {
+  renderCanvas(Game(gameProps), {
     nativeSpriteMap: {
       TextInput: TextInputWeb,
     },
   });
-
-  await loadPromise;
 
   mockTime.nextFrame();
 
