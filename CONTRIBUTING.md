@@ -57,6 +57,7 @@ git push origin v0.x.0
 cd ../replay-swift
 git rm -r .
 cp -a ../replay/packages/replay-swift/Replay/. .
+git checkout HEAD .gitignore # keep JS build files
 git add .
 git commit -m "v0.x.0"
 git tag 0.x.0 # note: no v
@@ -87,3 +88,7 @@ git push origin v0.x.0
 cd ../replay/website
 GIT_USER=<Your GitHub username> USE_SSH=true npm run deploy
 ```
+
+Don't forget to update [replay-bird](https://github.com/edbentley/replay-bird)
+too!
+
