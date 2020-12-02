@@ -1,4 +1,4 @@
-import { Device, DeviceSize } from "./device";
+import { Device, DeviceSize, Assets } from "./device";
 import { Texture } from "./t";
 import { SpriteBaseProps, ExcludeSpriteBaseProps } from "./props";
 
@@ -73,6 +73,11 @@ interface SpriteObjInit<P, S, I> {
     getState: () => S;
     device: Device<I>;
     updateState: (update: (state: S) => S) => void;
+    /**
+     * Asset file names to preload for this Sprite. They'll be cleared from
+     * memory when the Sprite is unmounted.
+     */
+    preloadFiles: (assets: Assets) => Promise<void>;
   }) => S;
 }
 

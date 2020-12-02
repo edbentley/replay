@@ -164,14 +164,19 @@ interface TestGameProps {
  */
 export const TestGameWithAssets = makeSprite<
   GameProps,
-  TestGameState & { rotation: number },
+  TestGameState & { rotation: number; loading: boolean },
   Inputs
 >({
-  init() {
-    return { position: 0, rotation: 0 };
+  init({ preloadFiles, updateState }) {
+    preloadFiles(getTestAssets()).then(() => {
+      updateState((s) => ({ ...s, loading: false }));
+    });
+    return { position: 0, rotation: 0, loading: true };
   },
 
   loop({ state, device }) {
+    if (state.loading) return state;
+
     const posInc = device.inputs.keysDown.ArrowRight ? 10 : 0;
     const rotInc = device.inputs.keysDown.ArrowRight ? 45 : 0;
 
@@ -191,12 +196,22 @@ export const TestGameWithAssets = makeSprite<
     }
 
     return {
+      loading: false,
       position: state.position + posInc,
       rotation: state.rotation + rotInc,
     };
   },
 
   render({ state }) {
+    if (state.loading) {
+      return [
+        t.text({
+          font: { name: "serif", size: 22 },
+          text: "Loading...",
+          color: "black",
+        }),
+      ];
+    }
     return [
       t.image({
         x: state.position,
@@ -210,15 +225,139 @@ export const TestGameWithAssets = makeSprite<
   },
 });
 
-export const TestGameThrowImageError = makeSprite<GameProps>({
+export const TestGameLayeredSprites = makeSprite<GameProps>({
+  render() {
+    return [
+      t.circle({
+        x: 0,
+        y: 0,
+        rotation: 0,
+        radius: 100,
+        color: "red",
+      }),
+      t.circle({
+        x: 0,
+        y: 0,
+        rotation: 0,
+        radius: 50,
+        color: "blue",
+      }),
+    ];
+  },
+});
+
+export const TestGameThrowUnloadedAudioError = makeSprite<GameProps>({
+  init({ device }) {
+    device.audio("unknown.mp3").play();
+    return undefined;
+  },
+
+  render() {
+    return [];
+  },
+});
+
+export const TestGameThrowNotYetLoadedAudioError = makeSprite<GameProps>({
+  init({ device, preloadFiles }) {
+    preloadFiles({ audioFileNames: ["shoot.wav"] });
+    device.audio("shoot.wav").play();
+    return undefined;
+  },
+
+  render() {
+    return [];
+  },
+});
+
+export const TestGameThrowUnknownImageError = makeSprite<GameProps>({
+  init({ preloadFiles }) {
+    preloadFiles({
+      imageFileNames: ["unknown.png"],
+    });
+    return undefined;
+  },
+
+  render() {
+    return [];
+  },
+});
+
+export const TestGameThrowUnloadedImageError = makeSprite<GameProps>({
   render() {
     return [
       t.image({
-        fileName: "unknown.png",
+        fileName: "player.png",
         width: 50,
         height: 50,
       }),
     ];
+  },
+});
+
+export const TestGameThrowNotYetLoadedImageError = makeSprite<GameProps>({
+  init({ preloadFiles }) {
+    // Loading file, but not waiting in render
+    preloadFiles({ imageFileNames: ["enemy.png"] });
+    return undefined;
+  },
+
+  render() {
+    return [
+      t.image({
+        fileName: "enemy.png",
+        width: 30,
+        height: 30,
+      }),
+    ];
+  },
+});
+
+/// -- Assets preloading test
+
+export const TestAssetsGame = makeSprite<
+  GameProps,
+  { loading: boolean; show: boolean },
+  Inputs
+>({
+  init({ preloadFiles, updateState }) {
+    preloadFiles({
+      audioFileNames: ["shoot.wav"],
+    }).then(() => {
+      updateState((s) => ({ ...s, loading: false }));
+    });
+    return { loading: true, show: true };
+  },
+
+  loop({ state, device }) {
+    return { ...state, show: !device.inputs.pointer.pressed };
+  },
+
+  render({ state }) {
+    if (!state.show) {
+      return [];
+    }
+    if (state.loading) {
+      return [t.text({ text: "Loading", color: "black" })];
+    }
+    return [
+      AssetsSprite({
+        id: "AssetsSprite",
+      }),
+    ];
+  },
+});
+
+const AssetsSprite = makeSprite<{}>({
+  init({ preloadFiles }) {
+    preloadFiles({
+      imageFileNames: ["enemy.png"],
+      audioFileNames: ["shoot.wav"],
+    });
+    return undefined;
+  },
+
+  render() {
+    return [];
   },
 });
 
@@ -259,7 +398,7 @@ export const TestNativeSpriteWeb: NativeSpriteImplementation<
 /**
  * Assets used for test game
  */
-export function getTestAssets() {
+function getTestAssets() {
   return {
     imageFileNames: ["enemy.png"],
     audioFileNames: ["shoot.wav"],
@@ -322,4 +461,10 @@ export function updateMockTime(mockTime: MockTime) {
     };
     return 0;
   };
+}
+
+export async function loadAssets() {
+  // No reliable way of knowing when the load promises resolve so just leave a
+  // delay
+  await new Promise((res) => setTimeout(res, 50));
 }

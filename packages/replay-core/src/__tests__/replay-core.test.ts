@@ -22,6 +22,7 @@ import {
   pureSpriteConditionalRendersFn,
   waitFrame,
   GetStateGame,
+  AssetsGame,
 } from "./utils";
 import { SpriteTextures, NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture, RectangleTexture } from "../t";
@@ -911,6 +912,139 @@ test("loop and render order for callback prop change on low render FPS", () => {
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(8, 8);
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(9, 9);
   expect(resetInputs).toBeCalledTimes(9);
+});
+
+test("can preload and clear file assets", async () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+  const resetInputs = jest.fn();
+
+  const { initTextures, getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    AssetsGame(gameProps)
+  );
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time, resetInputs);
+  };
+
+  expect(initTextures.textures.length).toBe(1);
+  expect((initTextures.textures[0] as TextTexture).props.text).toBe("Loading");
+
+  expect(mutableTestDevice.assetUtils.loadAudioFile).toHaveBeenCalledTimes(1);
+  expect(mutableTestDevice.assetUtils.loadAudioFile).toHaveBeenCalledWith(
+    "game.mp3"
+  );
+  expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(1);
+  expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledWith(
+    "game.png"
+  );
+
+  expect(mutableTestDevice.assetUtils.audioElements).toEqual({
+    "game.mp3": {
+      globalSpriteIds: new Set(["Game"]),
+      // Loading Promise
+      data: expect.not.stringMatching("audioData"),
+    },
+  });
+  expect(mutableTestDevice.assetUtils.imageElements).toEqual({
+    "game.png": {
+      globalSpriteIds: new Set(["Game"]),
+      // Loading Promise
+      data: expect.not.stringMatching("imageData"),
+    },
+  });
+
+  // Wait for callback on next frame
+  await waitFrame();
+
+  expect(mutableTestDevice.assetUtils.audioElements).toEqual({
+    "game.mp3": {
+      globalSpriteIds: new Set(["Game"]),
+      data: "audioData",
+    },
+  });
+  expect(mutableTestDevice.assetUtils.imageElements).toEqual({
+    "game.png": {
+      globalSpriteIds: new Set(["Game"]),
+      data: "imageData",
+    },
+  });
+
+  const textures = getNextFrameTexturesOverTime();
+
+  // No longer loading
+  expect((textures.textures[0] as any).type).not.toBe("text");
+
+  // Sprite & nested sprite start loading - but no duplicate parallel loads
+  // (called 2 not 3 times)
+  expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(2);
+
+  // Wait for sprites to load
+  await waitFrame();
+
+  expect(mutableTestDevice.assetUtils.imageElements).toEqual({
+    "game.png": {
+      globalSpriteIds: new Set(["Game"]),
+      data: "imageData",
+    },
+    "a.png": {
+      globalSpriteIds: new Set([
+        "Game--Sprite1",
+        "Game--Sprite1--NestedSprite",
+      ]),
+      data: "imageData",
+    },
+  });
+
+  // Unmount Sprites
+  mutableTestDevice.inputs.buttonPressed.show = false;
+  getNextFrameTexturesOverTime();
+
+  // Need resolved promise to be called
+  await waitFrame();
+
+  // a.png removed
+  expect("a.png" in mutableTestDevice.assetUtils.imageElements).toBe(false);
+  expect(mutableTestDevice.assetUtils.cleanupImageFile).toHaveBeenCalledTimes(
+    1
+  );
+});
+
+test("Sprite unmounted before it loads", async () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+  const resetInputs = jest.fn();
+
+  const { getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    AssetsGame(gameProps)
+  );
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time, resetInputs);
+  };
+
+  // Load initial assets
+  await waitFrame();
+  getNextFrameTexturesOverTime();
+
+  // Sprites have started loading
+  expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(2);
+
+  // Unmount Sprites before they finish loading
+  mutableTestDevice.inputs.buttonPressed.show = false;
+  getNextFrameTexturesOverTime();
+
+  // Wait for promises to load
+  await waitFrame();
+
+  // Image not in memory
+  expect("a.png" in mutableTestDevice.assetUtils.imageElements).toBe(false);
 });
 
 test("supports Pure Sprites", () => {

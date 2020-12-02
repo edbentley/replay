@@ -1,6 +1,4 @@
-const fs = require("fs");
 const path = require("path");
-const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
@@ -29,9 +27,6 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, "web/index.html"),
     }),
-    new webpack.DefinePlugin({
-      ASSET_NAMES: JSON.stringify(getAssetNames()),
-    }),
   ],
   output: {
     filename: "index.js",
@@ -52,17 +47,3 @@ module.exports = {
     extensions: [".wasm", ".mjs", ".js", ".json", ".ts"],
   },
 };
-
-function getAssetNames() {
-  const imageFileNames = fs.readdirSync(
-    path.resolve(__dirname, "assets/images")
-  );
-  const audioFileNames = fs.readdirSync(
-    path.resolve(__dirname, "assets/audio")
-  );
-
-  return {
-    imageFileNames,
-    audioFileNames,
-  };
-}

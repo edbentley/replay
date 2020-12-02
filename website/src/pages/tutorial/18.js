@@ -2,18 +2,18 @@ import React from "react";
 import { Page } from "../../tutorial/Page";
 
 // Game
-import { Game, gameProps } from "../../tutorial/18/js/src";
+import { Game, gameProps } from "../../tutorial/18/js";
 
 // MD
 import MDXContent from "../../../docs/tutorial/18.md";
 
 // TS
-import birdTs from "!raw-loader!../../tutorial/18/ts/src/bird.ts";
-import webIndexTs from "!raw-loader!../../tutorial/18/ts/web/index.ts";
+import birdTs from "!raw-loader!../../tutorial/18/ts/bird.ts";
+import indexTs from "!raw-loader!../../tutorial/18/ts/index.ts";
 
 // JS
-import birdJs from "!raw-loader!../../tutorial/18/js/src/bird.js";
-import webIndexJs from "!raw-loader!../../tutorial/18/js/web/index.js";
+import birdJs from "!raw-loader!../../tutorial/18/js/bird.js";
+import indexJs from "!raw-loader!../../tutorial/18/js/index.js";
 
 function Tutorial() {
   return (
@@ -26,7 +26,11 @@ function Tutorial() {
           code: birdTs,
           highlight: ["9-13"],
         },
-        { file: "web/index.ts", code: webIndexTs, highlight: [12, 13, 14] },
+        {
+          file: "index.ts",
+          code: indexTs,
+          highlight: [1, 6, "12-19", 23, "30-37"],
+        },
       ]}
       codesJs={[
         {
@@ -34,13 +38,14 @@ function Tutorial() {
           code: birdJs,
           highlight: ["9-13"],
         },
-        { file: "web/index.js", code: webIndexJs, highlight: [12, 13, 14] },
+        {
+          file: "index.js",
+          code: indexJs,
+          highlight: [1, "6-13", 17, "24-31"],
+        },
       ]}
       Game={Game}
       gameProps={gameProps}
-      assets={{
-        imageFileNames: ["/img/bird.png"],
-      }}
     />
   );
 }

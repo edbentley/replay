@@ -2,18 +2,18 @@ import React from "react";
 import { Page } from "../../tutorial/Page";
 
 // Game
-import { Game, gameProps } from "../../tutorial/19/js/src";
+import { Game, gameProps } from "../../tutorial/19/js";
 
 // MD
 import MDXContent from "../../../docs/tutorial/19.md";
 
 // TS
-import levelTs from "!raw-loader!../../tutorial/19/ts/src/level.ts";
-import webIndexTs from "!raw-loader!../../tutorial/19/ts/web/index.ts";
+import levelTs from "!raw-loader!../../tutorial/19/ts/level.ts";
+import indexTs from "!raw-loader!../../tutorial/19/ts/index.ts";
 
 // JS
-import levelJs from "!raw-loader!../../tutorial/19/js/src/level.js";
-import webIndexJs from "!raw-loader!../../tutorial/19/js/web/index.js";
+import levelJs from "!raw-loader!../../tutorial/19/js/level.js";
+import indexJs from "!raw-loader!../../tutorial/19/js/index.js";
 
 function Tutorial() {
   return (
@@ -26,7 +26,7 @@ function Tutorial() {
           code: levelTs,
           highlight: [59],
         },
-        { file: "web/index.ts", code: webIndexTs, highlight: [14] },
+        { file: "index.ts", code: indexTs, highlight: [15] },
       ]}
       codesJs={[
         {
@@ -34,14 +34,10 @@ function Tutorial() {
           code: levelJs,
           highlight: [45],
         },
-        { file: "web/index.js", code: webIndexJs, highlight: [14] },
+        { file: "index.js", code: indexJs, highlight: [9] },
       ]}
       Game={Game}
       gameProps={gameProps}
-      assets={{
-        imageFileNames: ["/img/bird.png"],
-        audioFileNames: ["/audio/boop.wav"],
-      }}
     />
   );
 }

@@ -9,20 +9,17 @@ declare const webkit: {
 declare const game: {
   Game: (props: GameProps) => CustomSprite<GameProps, unknown, iOSInputs>;
   gameProps: GameProps;
-  options: RenderCanvasOptions;
+  options?: RenderCanvasOptions;
 };
 
-type Messages = WebkitMessage | DidLoadMessage;
+type Messages = WebkitMessage | ErrorMessage;
 type WebkitMessage = "consoleLog";
-type DidLoadMessage = "didLoad";
+type ErrorMessage = "error";
 
 console.log = (message: string) => {
   webkit.messageHandlers.consoleLog.postMessage(message);
 };
 
 export function run() {
-  const { loadPromise } = renderCanvas(game.Game(game.gameProps), game.options);
-  loadPromise.then(() => {
-    webkit.messageHandlers.didLoad.postMessage("");
-  });
+  renderCanvas(game.Game(game.gameProps), game.options);
 }

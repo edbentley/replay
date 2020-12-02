@@ -226,13 +226,22 @@ All Sprite methods have the following parameters:
 Called on initial load of Sprite. Use this to run anything you need on setup. Returns the initial state.
 
 ```js
-  init({ props, device, updateState, getState }) {
+  init({ props, device, updateState, preloadFiles, getState }) {
     return { ... };
   },
 ```
 
 #### Additional Parameters
 
+- `preloadFiles(assets)`: An async function which loads assets (like images and audio files) for this Sprite. The files will be cleared from memory when the Sprite is unmounted. Since it returns a promise you can chain `.then` to know when the files have finished loading.
+   ```js
+  preloadFiles({
+    imageFileNames: ["enemy.png"],
+    audioFileNames: ["shoot.wav"],
+  }).then(() => {
+    updateState((state) => ({ ...state, loaded: true }));
+  });
+   ```
 - `getState`: A function which returns the current state of the Sprite for asynchronous callbacks. If you call this before `init` returns it will throw an error.
 
 ### `loop`

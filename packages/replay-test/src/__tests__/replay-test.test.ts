@@ -1,4 +1,11 @@
-import { makeSprite, t, GameProps, makeNativeSprite, mask } from "@replay/core";
+import {
+  makeSprite,
+  t,
+  GameProps,
+  makeNativeSprite,
+  mask,
+  Texture,
+} from "@replay/core";
 import { testSprite } from "../index";
 
 test("getTextures, nextFrame", () => {
@@ -55,6 +62,25 @@ test("getTextures, nextFrame", () => {
         },
         "type": "text",
       },
+      Object {
+        "props": Object {
+          "align": "center",
+          "anchorX": 0,
+          "anchorY": 0,
+          "color": "red",
+          "font": undefined,
+          "mask": null,
+          "opacity": 1,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "testId": undefined,
+          "text": "Loading",
+          "x": 0,
+          "y": 0,
+        },
+        "type": "text",
+      },
     ]
   `);
 
@@ -103,6 +129,25 @@ test("getTextures, nextFrame", () => {
           "testId": undefined,
           "text": "x: 1",
           "x": 100,
+          "y": 0,
+        },
+        "type": "text",
+      },
+      Object {
+        "props": Object {
+          "align": "center",
+          "anchorX": 0,
+          "anchorY": 0,
+          "color": "red",
+          "font": undefined,
+          "mask": null,
+          "opacity": 1,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "testId": undefined,
+          "text": "Loading",
+          "x": 0,
           "y": 0,
         },
         "type": "text",
@@ -304,8 +349,8 @@ describe("timer", () => {
   });
 });
 
-test("audio", () => {
-  const { nextFrame, audio, log, updateInputs } = testSprite(
+test("audio", async () => {
+  const { nextFrame, audio, log, updateInputs, loadFiles } = testSprite(
     Game(gameProps),
     gameProps,
     {
@@ -314,6 +359,8 @@ test("audio", () => {
       },
     }
   );
+
+  await loadFiles();
 
   nextFrame();
   expect(audio.play).toBeCalledWith("sound.wav");
@@ -539,11 +586,59 @@ test("can mock Native Sprites", () => {
   expect(textures.length).toBe(0);
 });
 
+test("can load files specified in preloadFiles", async () => {
+  const { getTextures, nextFrame, loadFiles } = testSprite(
+    Game(gameProps),
+    gameProps
+  );
+
+  const isLoading = (textures: Texture[]) =>
+    textures.some(
+      (texture) => texture.type === "text" && texture.props.text === "Loading"
+    );
+
+  expect(isLoading(getTextures())).toBe(true);
+
+  await loadFiles();
+  nextFrame();
+
+  expect(isLoading(getTextures())).toBe(false);
+});
+
+test("shows error if file asset not loaded", async () => {
+  expect(() => testSprite(ImageErrorGame(gameProps), gameProps)).toThrowError(
+    `Image file "unknown.png" was not preloaded`
+  );
+  expect(() => testSprite(ImageErrorGame2(gameProps), gameProps)).toThrowError(
+    `Image file "player.png" did not finish loading before it was used`
+  );
+
+  expect(() => testSprite(AudioErrorGame(gameProps), gameProps)).toThrowError(
+    `Audio file "unknown.mp3" was not preloaded`
+  );
+  expect(() => testSprite(AudioErrorGame2(gameProps), gameProps)).toThrowError(
+    `Audio file "shoot.wav" did not finish loading before it was used`
+  );
+
+  // Doesn't throw error if option is set
+  expect(() =>
+    testSprite(AudioErrorGame(gameProps), gameProps, {
+      throwAssetErrors: false,
+    })
+  ).not.toThrowError();
+  expect(() =>
+    testSprite(ImageErrorGame(gameProps), gameProps, {
+      throwAssetErrors: false,
+    })
+  ).not.toThrowError();
+});
+
 // --- Mock Game
 
 interface State {
   x: number;
   showEnemy: boolean;
+  loading: boolean;
   timerId?: string;
 }
 interface Inputs {
@@ -561,10 +656,14 @@ const gameProps: GameProps = {
 };
 
 const Game = makeSprite<GameProps, State, Inputs>({
-  init() {
+  init({ preloadFiles, updateState }) {
+    preloadFiles({ audioFileNames: ["sound.wav"] }).then(() => {
+      updateState((s) => ({ ...s, loading: false }));
+    });
     return {
       x: 0,
       showEnemy: false,
+      loading: true,
     };
   },
 
@@ -699,6 +798,12 @@ const Game = makeSprite<GameProps, State, Inputs>({
             color: "red",
           })
         : null,
+      state.loading
+        ? t.text({
+            text: "Loading",
+            color: "red",
+          })
+        : null,
     ];
   },
 });
@@ -772,3 +877,58 @@ export const NativeSpriteGame = makeSprite<GameProps>({
   },
 });
 const MyNativeSprite = makeNativeSprite("MyNativeSprite");
+
+/// -- Loading files error Sprite test
+
+export const ImageErrorGame = makeSprite<GameProps>({
+  render() {
+    return [
+      t.image({
+        fileName: "unknown.png",
+        width: 30,
+        height: 30,
+      }),
+    ];
+  },
+});
+
+export const ImageErrorGame2 = makeSprite<GameProps>({
+  init({ preloadFiles }) {
+    // Loading file, but not waiting in render
+    preloadFiles({ imageFileNames: ["player.png"] });
+    return undefined;
+  },
+
+  render() {
+    return [
+      t.image({
+        fileName: "player.png",
+        width: 30,
+        height: 30,
+      }),
+    ];
+  },
+});
+
+export const AudioErrorGame = makeSprite<GameProps>({
+  init({ device }) {
+    device.audio("unknown.mp3").play();
+    return undefined;
+  },
+
+  render() {
+    return [];
+  },
+});
+
+export const AudioErrorGame2 = makeSprite<GameProps>({
+  init({ device, preloadFiles }) {
+    preloadFiles({ audioFileNames: ["shoot.wav"] });
+    device.audio("shoot.wav").play();
+    return undefined;
+  },
+
+  render() {
+    return [];
+  },
+});

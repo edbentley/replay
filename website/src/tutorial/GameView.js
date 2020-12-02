@@ -1,9 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { renderCanvas } from "@replay/web";
-import { t } from "@replay/core";
 import styles from "./styles.module.css";
 
-export function GameView({ Game, gameProps, showReload, assets }) {
+export function GameView({ Game, gameProps, showReload }) {
   const [rect, ref] = useClientRect();
   const [refreshCount, setRefreshCount] = useState(0);
 
@@ -36,8 +35,6 @@ export function GameView({ Game, gameProps, showReload, assets }) {
     const canvas = document.getElementById("myCanvas");
 
     const { cleanup } = renderCanvas(Game(gameProps), {
-      loadingTextures: [t.text({ color: "black", text: "Loading..." })],
-      assets,
       dimensions: "scale-up",
       canvas,
       windowSize: { width, height },

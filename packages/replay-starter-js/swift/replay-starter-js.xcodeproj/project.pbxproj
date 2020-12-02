@@ -334,7 +334,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"replay-starter-js/Preview Content\"";
-				DEVELOPMENT_TEAM = V4C6C6LR83;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = "replay-starter-js/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.3;
@@ -355,7 +355,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"replay-starter-js/Preview Content\"";
-				DEVELOPMENT_TEAM = V4C6C6LR83;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = "replay-starter-js/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.3;

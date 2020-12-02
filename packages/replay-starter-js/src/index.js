@@ -1,16 +1,6 @@
-// defined in webpack
-/* global ASSET_NAMES */
-
 import { makeSprite, t } from "@replay/core";
 
 export const options = {
-  loadingTextures: [
-    t.text({
-      color: "black",
-      text: "Loading...",
-    }),
-  ],
-  assets: ASSET_NAMES,
   dimensions: "scale-up",
 };
 
@@ -35,8 +25,16 @@ export const gameProps = {
 };
 
 export const Game = makeSprite({
-  init() {
+  init({ updateState, preloadFiles }) {
+    preloadFiles({
+      audioFileNames: ["boop.wav"],
+      imageFileNames: ["icon.png"],
+    }).then(() => {
+      updateState((state) => ({ ...state, loaded: true }));
+    });
+
     return {
+      loaded: false,
       posX: 0,
       posY: 0,
       targetX: 0,
@@ -45,6 +43,8 @@ export const Game = makeSprite({
   },
 
   loop({ state, device }) {
+    if (!state.loaded) return state;
+
     const { pointer } = device.inputs;
     const { posX, posY } = state;
     let { targetX, targetY } = state;
@@ -56,6 +56,7 @@ export const Game = makeSprite({
     }
 
     return {
+      loaded: true,
       posX: posX + (targetX - posX) / 10,
       posY: posY + (targetY - posY) / 10,
       targetX,
@@ -64,6 +65,14 @@ export const Game = makeSprite({
   },
 
   render({ state }) {
+    if (!state.loaded) {
+      return [
+        t.text({
+          text: "Loading...",
+          color: "black",
+        }),
+      ];
+    }
     return [
       t.text({
         color: "red",

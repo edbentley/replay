@@ -230,13 +230,6 @@ const nativeSpriteMap = {
 };
 
 renderCanvas(Game(gameProps), {
-  loadingTextures: [
-    t.text({
-      color: "black",
-      text: "Loading...",
-    }),
-  ],
-  assets: ASSET_NAMES,
   dimensions: "scale-up",
   nativeSpriteMap,
 });

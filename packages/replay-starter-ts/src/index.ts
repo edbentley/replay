@@ -2,17 +2,7 @@ import { makeSprite, t, GameProps } from "@replay/core";
 import { WebInputs, RenderCanvasOptions } from "@replay/web";
 import { iOSInputs } from "@replay/swift";
 
-// defined in webpack
-declare const ASSET_NAMES: {};
-
 export const options: RenderCanvasOptions = {
-  loadingTextures: [
-    t.text({
-      color: "black",
-      text: "Loading...",
-    }),
-  ],
-  assets: ASSET_NAMES,
   dimensions: "scale-up",
 };
 
@@ -37,6 +27,7 @@ export const gameProps: GameProps = {
 };
 
 type GameState = {
+  loaded: boolean;
   posX: number;
   posY: number;
   targetX: number;
@@ -44,8 +35,16 @@ type GameState = {
 };
 
 export const Game = makeSprite<GameProps, GameState, WebInputs | iOSInputs>({
-  init() {
+  init({ updateState, preloadFiles }) {
+    preloadFiles({
+      audioFileNames: ["boop.wav"],
+      imageFileNames: ["icon.png"],
+    }).then(() => {
+      updateState((state) => ({ ...state, loaded: true }));
+    });
+
     return {
+      loaded: false,
       posX: 0,
       posY: 0,
       targetX: 0,
@@ -54,6 +53,8 @@ export const Game = makeSprite<GameProps, GameState, WebInputs | iOSInputs>({
   },
 
   loop({ state, device }) {
+    if (!state.loaded) return state;
+
     const { pointer } = device.inputs;
     const { posX, posY } = state;
     let { targetX, targetY } = state;
@@ -65,6 +66,7 @@ export const Game = makeSprite<GameProps, GameState, WebInputs | iOSInputs>({
     }
 
     return {
+      loaded: true,
       posX: posX + (targetX - posX) / 10,
       posY: posY + (targetY - posY) / 10,
       targetX,
@@ -73,6 +75,14 @@ export const Game = makeSprite<GameProps, GameState, WebInputs | iOSInputs>({
   },
 
   render({ state }) {
+    if (!state.loaded) {
+      return [
+        t.text({
+          text: "Loading...",
+          color: "black",
+        }),
+      ];
+    }
     return [
       t.text({
         color: "red",

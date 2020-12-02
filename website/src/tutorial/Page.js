@@ -14,7 +14,6 @@ export function Page({
   gameProps,
   image,
   isEnd,
-  assets,
 }) {
   const hasCode = codesTs && codesJs;
 
@@ -22,12 +21,7 @@ export function Page({
     Game && gameProps ? (
       <BrowserOnly fallback={<div>Preview</div>}>
         {() => (
-          <GameView
-            Game={Game}
-            gameProps={gameProps}
-            showReload={hasCode}
-            assets={assets}
-          />
+          <GameView Game={Game} gameProps={gameProps} showReload={hasCode} />
         )}
       </BrowserOnly>
     ) : (

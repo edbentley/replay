@@ -8,7 +8,6 @@ final class ReplayTests: XCTestCase {
     // We can't do much more testing inside a web view, most things should be covered in replay-web.
     func testGame() {
         let expectationLoadView = self.expectation(description: "Wait for web view to load")
-        let expectationLoadGame = self.expectation(description: "Wait for assets to load")
         
         var logs: [String] = []
         
@@ -18,11 +17,9 @@ final class ReplayTests: XCTestCase {
             encoding: String.Encoding.utf8
         )
         
-        let onLoadCallback = { expectationLoadGame.fulfill() }
         let onLogCallback = { logs.append($0) }
         let webView = ReplayWebViewManager(
             customGameJsString: gameJsString,
-            onLoadCallback: onLoadCallback,
             onLogCallback: onLogCallback
         ).webView!
         webView.frame = .init(x: 0, y: 0, width: 375, height: 812) // iPhone X
@@ -41,7 +38,7 @@ final class ReplayTests: XCTestCase {
             expectationGlobalField.fulfill()
         }
         
-        wait(for: [expectationGlobalField, expectationLoadView, expectationLoadGame], timeout: 5)
+        wait(for: [expectationGlobalField, expectationLoadView], timeout: 5)
         
         let expectationSnapshot = self.expectation(description: "Wait for snapshot")
         

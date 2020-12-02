@@ -1,38 +1,41 @@
 import { makeSprite, GameProps, t } from "@replay/core";
-import { RenderCanvasOptions } from "@replay/web";
 import { Level } from "./level";
 import { Menu } from "./menu";
 
-export const options: RenderCanvasOptions = {
-  loadingTextures: [
-    t.text({
-      color: "black",
-      text: "Loading...",
-    }),
-  ],
-  assets: {
-    imageFileNames: ["bird.png"],
-    audioFileNames: ["boop.wav"],
-  },
-};
-
 type GameState = {
-  view: "menu" | "level";
+  view: "loading" | "menu" | "level";
   attempt: number;
   highScore: number;
 };
 
 export const Game = makeSprite<GameProps, GameState>({
-  init({ device }) {
+  init({ device, preloadFiles, updateState }) {
+    preloadFiles({
+      imageFileNames: ["bird.png"],
+    }).then(() => {
+      updateState((state) => {
+        return { ...state, view: "menu" };
+      });
+    });
+
     const store = device.storage.getStore();
     return {
-      view: "menu",
+      view: "loading",
       attempt: 0,
       highScore: Number(store.highScore || "0"),
     };
   },
 
   render({ state, updateState, device }) {
+    if (state.view === "loading") {
+      return [
+        t.text({
+          color: "black",
+          text: "Loading...",
+        }),
+      ];
+    }
+
     const inMenuScreen = state.view === "menu";
 
     return [

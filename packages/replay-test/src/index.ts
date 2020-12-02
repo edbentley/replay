@@ -10,6 +10,7 @@ import {
 import { TextTexture } from "@replay/core/dist/t";
 import { getParentCoordsForSprite } from "./coords";
 import { NativeSpriteMock } from "./nativeSpriteMock";
+import { AssetMap } from "@replay/core/dist/device";
 
 interface Timer {
   id: string;
@@ -77,6 +78,12 @@ interface Options<I> {
    * @default false
    */
   isTouchScreen?: boolean;
+  /**
+   * Should errors be thrown if an asset isn't loaded?
+   *
+   * @default true
+   */
+  throwAssetErrors?: boolean;
 }
 
 interface TestSpriteUtils<I> {
@@ -92,6 +99,7 @@ interface TestSpriteUtils<I> {
   textureExists: (testId: string) => boolean;
   getByText: (text: string) => TextTexture[];
   log: jest.Mock<any, any>;
+  loadFiles: () => Promise<void>;
   audio: {
     getPosition: jest.Mock<number>;
     play: jest.Mock<any, any>;
@@ -146,6 +154,7 @@ export function testSprite<P, S, I>(
     initAlertResponse = true,
     nativeSpriteNames = [],
     isTouchScreen = false,
+    throwAssetErrors = true,
   } = options;
   /**
    * Mock function for device log.
@@ -272,6 +281,18 @@ export function testSprite<P, S, I>(
   };
 
   const audioFn: Device<I>["audio"] = (filename) => {
+    if (throwAssetErrors) {
+      const audioElement = audioElements[filename];
+      if (!audioElement) {
+        throw Error(`Audio file "${filename}" was not preloaded`);
+      }
+      const { data } = audioElements[filename];
+      if (typeof data === "object") {
+        throw Error(
+          `Audio file "${filename}" did not finish loading before it was used`
+        );
+      }
+    }
     return {
       getPosition: () => audio.getPosition(filename),
       play: (fromPosition, loop) => {
@@ -344,6 +365,14 @@ export function testSprite<P, S, I>(
 
   const timers: Timer[] = [];
 
+  /**
+   * Load files specified in `preloadFiles`.
+   */
+  const loadFiles = () => new Promise(setImmediate);
+
+  const audioElements: AssetMap<string> = {};
+  const imageElements: AssetMap<string> = {};
+
   const testPlatform: ReplayPlatform<I> = {
     getGetDevice: () => {
       const now = () => {
@@ -359,6 +388,22 @@ export function testSprite<P, S, I>(
         timer,
         now,
         audio: audioFn,
+        assetUtils: {
+          audioElements,
+          imageElements,
+          loadAudioFile: (fileName) => {
+            return Promise.resolve().then(() => {
+              return `audioData-${fileName}`;
+            });
+          },
+          loadImageFile: (fileName) => {
+            return Promise.resolve().then(() => {
+              return `imageData-${fileName}`;
+            });
+          },
+          cleanupAudioFile: () => null,
+          cleanupImageFile: () => null,
+        },
         network,
         storage,
         alert,
@@ -433,6 +478,23 @@ export function testSprite<P, S, I>(
             rotation: Math.round(rotation),
           },
         } as Texture);
+
+        if (
+          throwAssetErrors &&
+          (spriteTextures.type === "image" ||
+            spriteTextures.type === "spriteSheet")
+        ) {
+          const fileName = spriteTextures.props.fileName;
+          const imageElement = imageElements[fileName];
+          if (!imageElement) {
+            throw Error(`Image file "${fileName}" was not preloaded`);
+          }
+          if (typeof imageElement.data === "object") {
+            throw Error(
+              `Image file "${fileName}" did not finish loading before it was used`
+            );
+          }
+        }
 
         return;
       }
@@ -576,6 +638,7 @@ export function testSprite<P, S, I>(
     getTexture,
     textureExists,
     getByText,
+    loadFiles,
     log,
     audio,
     network,

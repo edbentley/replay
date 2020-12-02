@@ -107,7 +107,7 @@ t.image({
 
 #### Props
 
-- `fileName`: The name of the file to render.
+- `fileName`: The name of the file to render. Note that this file must be loaded using [`preloadFiles`](sprites.md#init) before you render the Texture.
 - `width`: Scale the image to this width in game coordinates.
 - `height`: Scale the image to this height in game coordinates.
 
@@ -130,7 +130,7 @@ t.spriteSheet({
 
 #### Props
 
-- `fileName`: The name of the sprite sheet file to render.
+- `fileName`: The name of the sprite sheet file to render. Note that this file must be loaded using [`preloadFiles`](sprites.md#init) before you render the Texture.
 - `columns`: The number of columns of tiles in the sprite sheet.
 - `rows`: The number of rows of tiles in the sprite sheet.
 - `index`: The tile to display. An index of `0` will be the top-left tile, moves left to right then top to bottom. An index greater than the number of tiles will loop back to an index of `0`.

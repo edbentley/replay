@@ -1,10 +1,12 @@
 import { testSprite } from "@replay/test";
+import { WebInputs } from "@replay/web";
+import { iOSInputs } from "@replay/swift";
 import { Game, gameProps } from "..";
 import { pipeGap } from "../pipe";
 import { birdHeight } from "../bird";
 
 test("Can reach a score of 2", async () => {
-  const initInputs = {
+  const initInputs: WebInputs | iOSInputs = {
     pointer: {
       pressed: false,
       numberPressed: 0,
@@ -25,11 +27,15 @@ test("Can reach a score of 2", async () => {
     getTexture,
     jumpToFrame,
     audio,
+    loadFiles,
   } = testSprite(Game(gameProps), gameProps, {
     initInputs,
     // First two pipes will have gap in middle, third pipe lower down
     initRandom: [0.5, 0.5, 0],
   });
+
+  await loadFiles();
+  nextFrame();
 
   expect(getByText(mainMenuText).length).toBe(1);
 

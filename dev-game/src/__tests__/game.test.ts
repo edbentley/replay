@@ -31,6 +31,7 @@ test("gameplay", async () => {
     audio,
     store,
     log,
+    loadFiles,
     // alert,
     // clipboard,
   } = testSprite(Game(gameProps), gameProps, {
@@ -47,7 +48,21 @@ test("gameplay", async () => {
     nativeSpriteNames: ["TextInput"],
   });
 
-  expect(getByText("Loading").length).toBe(1);
+  expect(getByText("Loading game").length).toBe(1);
+
+  // Wait for initial timeout of 1000 ms
+  for (let i = 0; i <= 60; i++) {
+    nextFrame();
+  }
+
+  expect(getByText("Loading game").length).toBe(0);
+  expect(getByText("Loading level").length).toBe(1);
+
+  // Load PlayStage files
+  await loadFiles();
+  nextFrame();
+
+  expect(getByText("Loading level").length).toBe(0);
 
   await jumpToFrame(() => textureExists("player"));
   expect(getTexture("player").props.x).toBe(0);

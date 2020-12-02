@@ -22,11 +22,15 @@ test("gameplay", async () => {
     jumpToFrame,
     updateInputs,
     getTexture,
+    loadFiles,
     audio,
   } = testSprite(Game(gameProps), gameProps, {
     initInputs,
     mapInputCoordinates,
   });
+
+  await loadFiles();
+  nextFrame();
 
   expect(getTexture("icon").props.x).toBe(0);
   expect(getTexture("icon").props.y).toBe(0);

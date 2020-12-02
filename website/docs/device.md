@@ -118,6 +118,8 @@ Play audio files in your game.
 const mySound = audio("sound.wav");
 ```
 
+Note that the file must be loaded using [`preloadFiles`](sprites.md#init) before you can play it.
+
 The returned object has the following methods:
 
 #### `play`

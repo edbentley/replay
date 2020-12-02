@@ -34,4 +34,8 @@ public class ReplayViewController: UIViewController {
             }
         }
     }
+    
+    public override func didReceiveMemoryWarning() {
+        print("Warning: Your game is using a high amount of memory")
+    }
 }

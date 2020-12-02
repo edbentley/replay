@@ -30,17 +30,7 @@ const initState: Omit<State, "highScore"> = {
   text: "Hello",
 };
 
-// defined in webpack
-declare const ASSET_NAMES: {};
-
 export const options: RenderCanvasOptions = {
-  loadingTextures: [
-    t.text({
-      color: "black",
-      text: "Loading...",
-    }),
-  ],
-  assets: ASSET_NAMES,
   dimensions: "scale-up",
   nativeSpriteMap: { TextInput: TextInputWeb },
 };
@@ -158,7 +148,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
         return [
           t.text({
             color: "red",
-            text: "Loading",
+            text: "Loading game",
           }),
         ];
       case GameStage.GameOver:

@@ -1,4 +1,4 @@
-import { GameProps, Texture, DeviceSize, Device } from "@replay/core";
+import { GameProps, DeviceSize, Device } from "@replay/core";
 import {
   replayCore,
   ReplayPlatform,
@@ -9,6 +9,7 @@ import {
   SpriteTextures,
   NativeSpriteUtils,
 } from "@replay/core/dist/sprite";
+import { AssetUtils, AssetMap } from "@replay/core/dist/device";
 import {
   getInputs,
   keyUpHandler as inputKeyUpHandler,
@@ -25,7 +26,6 @@ import {
 import { drawCanvas } from "./draw";
 import { getDeviceSize, setDeviceSize, calculateDeviceSize } from "./size";
 import { Dimensions } from "./dimensions";
-import { getDefaultProps } from "@replay/core/dist/props";
 import { getGameXToWebX, getGameYToWebY } from "./coordinates";
 import { getTimer } from "./timer";
 import {
@@ -33,7 +33,8 @@ import {
   getNetwork,
   getStorage,
   getFileBuffer,
-  AudioMap,
+  AudioData,
+  ImageFileData,
 } from "./device";
 import { isTouchDevice } from "./isTouchDevice";
 
@@ -51,21 +52,6 @@ interface AudioContextWindow extends Window {
 declare let window: AudioContextWindow & typeof globalThis;
 
 export type RenderCanvasOptions = {
-  /**
-   * What the user sees as the game is loading. Avoid using assets here.
-   *
-   * @default []
-   */
-  loadingTextures?: Texture[];
-  /**
-   * These assets will be preloaded before game starts.
-   *
-   * @default {}
-   */
-  assets?: {
-    imageFileNames?: string[];
-    audioFileNames?: string[];
-  };
   /**
    * Preferred method of placing the game in the browser window
    *
@@ -93,15 +79,15 @@ export type RenderCanvasOptions = {
  */
 export function renderCanvas<S>(
   gameSprite: CustomSprite<GameProps, S, Inputs>,
-  {
-    loadingTextures = [],
-    assets = {},
-    dimensions = "game-coords",
-    nativeSpriteMap = {},
-    canvas: userCanvas,
-    windowSize,
-  }: RenderCanvasOptions
+  options?: RenderCanvasOptions
 ) {
+  const {
+    dimensions = "game-coords",
+    canvas: userCanvas,
+    nativeSpriteMap = {},
+    windowSize,
+  } = options || {};
+
   const canvas = userCanvas || document.createElement("canvas");
   if (!userCanvas) {
     document.body.appendChild(canvas);
@@ -354,19 +340,53 @@ export function renderCanvas<S>(
     prevDeviceSize = deviceSize;
   }
 
-  const audioElements: AudioMap = {};
-  const imageElements: { [fileName: string]: HTMLImageElement } = {};
+  const audioElements: AssetMap<AudioData> = {};
+  const imageElements: AssetMap<ImageFileData> = {};
+
+  const noFileError = (fileType: "audio" | "image", fileName: string) => () => {
+    throw Error(`Failed to load ${fileType} file "${fileName}"`);
+  };
+
+  const assetUtils: AssetUtils<AudioData, ImageFileData> = {
+    audioElements,
+    imageElements,
+    loadAudioFile: (fileName) => {
+      return getFileBuffer(audioContext, fileName)
+        .then((buffer) => ({ buffer }))
+        .catch(noFileError("audio", fileName));
+    },
+    loadImageFile: (fileName) => {
+      return new Promise<ImageFileData>((resolve, reject) => {
+        const image = new Image();
+
+        image.addEventListener("load", () => {
+          resolve(image);
+        });
+        image.addEventListener("error", reject);
+        image.src = fileName;
+      }).catch(noFileError("image", fileName));
+    },
+    cleanupAudioFile: (fileName) => {
+      const { data } = audioElements[fileName];
+      if ("then" in data || !data.playState) return;
+      // Additional steps required to free up memory: https://stackoverflow.com/a/32568948/2637899
+      data.playState.sample.onended = null;
+      data.playState.sample.disconnect();
+      data.playState.sample.buffer = null;
+    },
+    cleanupImageFile: () => null,
+  };
 
   const domPlatform: ReplayPlatform<Inputs> = {
     getGetDevice: deviceCreator(
       audioContext,
-      audioElements,
       calculateDeviceSize(
         windowSize?.width || window.innerWidth,
         windowSize?.height || window.innerHeight,
         dimensions,
         gameSprite.props.size
-      )
+      ),
+      assetUtils
     ),
   };
 
@@ -378,100 +398,54 @@ export function renderCanvas<S>(
 
   let isCleanedUp = false;
 
-  const preloadFiles = async () => {
-    // Get every file load as a promise and wait for all before returning
-    const loadPromises: Promise<unknown>[] = [];
+  const onFirstInteraction = () => {
+    document.removeEventListener("keydown", onFirstInteraction, false);
+    document.removeEventListener(pointerDownEv, onFirstInteraction, false);
 
-    (assets.audioFileNames || []).forEach((fileName) => {
-      loadPromises.push(
-        getFileBuffer(audioContext, fileName)
-          .then((buffer) => {
-            audioElements[fileName] = { data: buffer };
-          })
-          .catch(() => {
-            // Show in console
-            setTimeout(() => {
-              throw Error(`Failed to load audio file "${fileName}"`);
-            });
-          })
-      );
-    });
-
-    (assets.imageFileNames || []).forEach((fileName) => {
-      imageElements[fileName] = new Image();
-      loadPromises.push(
-        new Promise((resolve, reject) => {
-          imageElements[fileName].addEventListener("load", resolve);
-          imageElements[fileName].addEventListener("error", reject);
-          imageElements[fileName].src = fileName;
-        }).catch(() => {
-          setTimeout(() => {
-            throw Error(`Failed to load image file "${fileName}"`);
-          });
-        })
-      );
-    });
-
-    await Promise.all(loadPromises);
+    // check if context is in suspended state (autoplay policy)
+    if (audioContext.state === "suspended") {
+      audioContext.resume();
+    }
   };
 
-  // Show initial loading scene
-  render.ref?.({
-    id: "Loading",
-    baseProps: getDefaultProps({}),
-    textures: loadingTextures,
-  });
+  document.addEventListener("keydown", onFirstInteraction, false);
+  document.addEventListener(pointerDownEv, onFirstInteraction, false);
 
-  const loadPromise = preloadFiles().then(() => {
-    const onFirstInteraction = () => {
-      document.removeEventListener("keydown", onFirstInteraction, false);
-      document.removeEventListener(pointerDownEv, onFirstInteraction, false);
+  const { initTextures, getNextFrameTextures } = replayCore<S, Inputs>(
+    domPlatform,
+    {
+      nativeSpriteMap,
+      nativeSpriteUtils,
+    },
+    gameSprite
+  );
 
-      // check if context is in suspended state (autoplay policy)
-      if (audioContext.state === "suspended") {
-        audioContext.resume();
+  let initTime: number | null = null;
+
+  function loop(textures: SpriteTextures) {
+    render.ref?.(textures);
+    window.requestAnimationFrame((time) => {
+      if (isCleanedUp) {
+        return;
       }
-    };
+      if (initTime === null) {
+        initTime = time - 1 / 60;
+      }
+      if (needsToUpdateNotVisibleTime) {
+        needsToUpdateNotVisibleTime = false;
+        totalPageNotVisibleTime += time - lastPageNotVisibleTime;
+      }
+      lastTimeValue = time;
+      loop(
+        getNextFrameTextures(
+          time - initTime - totalPageNotVisibleTime,
+          resetInputs
+        )
+      );
+    });
+  }
 
-    document.addEventListener("keydown", onFirstInteraction, false);
-    document.addEventListener(pointerDownEv, onFirstInteraction, false);
-
-    const { initTextures, getNextFrameTextures } = replayCore<S, Inputs>(
-      domPlatform,
-      {
-        nativeSpriteMap,
-        nativeSpriteUtils,
-      },
-      gameSprite
-    );
-
-    let initTime: number | null = null;
-
-    function loop(textures: SpriteTextures) {
-      render.ref?.(textures);
-      window.requestAnimationFrame((time) => {
-        if (isCleanedUp) {
-          return;
-        }
-        if (initTime === null) {
-          initTime = time - 1 / 60;
-        }
-        if (needsToUpdateNotVisibleTime) {
-          needsToUpdateNotVisibleTime = false;
-          totalPageNotVisibleTime += time - lastPageNotVisibleTime;
-        }
-        lastTimeValue = time;
-        loop(
-          getNextFrameTextures(
-            time - initTime - totalPageNotVisibleTime,
-            resetInputs
-          )
-        );
-      });
-    }
-
-    loop(initTextures);
-  });
+  loop(initTextures);
 
   /**
    * Unloads the game and removes all loops and event listeners
@@ -496,17 +470,17 @@ export function renderCanvas<S>(
 
   return {
     cleanup,
-    loadPromise,
-    // audio exported for testing
+    // elements exported for testing
     audioElements,
+    imageElements,
     audioContext,
   };
 }
 
 function deviceCreator(
   audioContext: AudioContext,
-  audioElements: AudioMap,
-  defaultSize: DeviceSize
+  defaultSize: DeviceSize,
+  assetUtils: AssetUtils<AudioData, ImageFileData>
 ): ReplayPlatform<Inputs>["getGetDevice"] {
   // called once
   const initDevice: Omit<Device<Inputs>, "inputs" | "size" | "now"> = {
@@ -514,7 +488,8 @@ function deviceCreator(
     log: console.log,
     random: Math.random,
     timer: getTimer(),
-    audio: getAudio(audioContext, audioElements),
+    audio: getAudio(audioContext, assetUtils.audioElements),
+    assetUtils: assetUtils as AssetUtils<unknown, unknown>,
     network: getNetwork(),
     storage: getStorage(),
     alert: {

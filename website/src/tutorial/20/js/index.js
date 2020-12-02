@@ -1,18 +1,36 @@
-import { makeSprite } from "@replay/core";
+import { makeSprite, t } from "@replay/core";
 import { Level } from "./level";
 import { Menu } from "./menu";
 
 export const Game = makeSprite({
-  init({ device }) {
+  init({ device, preloadFiles, updateState }) {
+    preloadFiles({
+      imageFileNames: ["/img/bird.png"],
+      audioFileNames: ["/audio/boop.wav"],
+    }).then(() => {
+      updateState((state) => {
+        return { ...state, view: "menu" };
+      });
+    });
+
     const store = device.storage.getStore();
     return {
-      view: "menu",
+      view: "loading",
       attempt: 0,
       highScore: Number(store.highScore || "0"),
     };
   },
 
   render({ state, updateState, device }) {
+    if (state.view === "loading") {
+      return [
+        t.text({
+          color: "black",
+          text: "Loading...",
+        }),
+      ];
+    }
+
     const inMenuScreen = state.view === "menu";
 
     return [

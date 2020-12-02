@@ -35,6 +35,7 @@ The `@replay/test` package is useful for writing tests in Jest for your Replay g
   - `initAlertResponse`: (Optional) Set which choice is chosen for OK / cancel alerts. Default `true`.
   - `nativeSpriteNames`: (Optional) A list of [Native Sprite](native-sprites.md) names to mock.
   - `isTouchScreen`: (Optional) Set the `isTouchScreen` parameter.
+  - `throwAssetErrors`: (Optional) Set if errors are thrown if an asset isn't loaded. Default `true`.
 
 `testSprite` returns an object with the following fields:
 
@@ -59,6 +60,14 @@ Note that this will run at almost synchronous speed, but doesn't block the event
 
 ```js
 await jumpToFrame(() => props.x > 10);
+```
+
+### `loadFiles()`
+
+An async function that loads all files specified by Sprites using [`preloadFiles`](sprites.md#init).
+
+```js
+await loadFiles();
 ```
 
 ### `setRandomNumbers(array)`
@@ -192,7 +201,7 @@ expect(clipboard.copy).toBeCalledWith("ABCDEFG", expect.any(Function));
 import { testSprite } from "@replay/test";
 import { Game, gameProps } from "..";
 
-test("Can shoot bullet", () => {
+test("Can shoot bullet", async () => {
   const initInputs = {
     pointer: {
       pressed: false,
@@ -203,13 +212,18 @@ test("Can shoot bullet", () => {
     },
   };
 
-  const { nextFrame, updateInputs, getTexture, textureExists } = testSprite(
-    Game(gameProps),
-    gameProps,
-    {
-      initInputs,
-    }
-  );
+  const {
+    nextFrame,
+    updateInputs,
+    getTexture,
+    textureExists,
+    loadFiles,
+  } = testSprite(Game(gameProps), gameProps, {
+    initInputs,
+  });
+
+  await loadFiles();
+  nextFrame();
 
   expect(textureExists("bullet")).toBe(false);
 
@@ -241,7 +255,7 @@ import { WebInputs } from "@replay/web";
 import { iOSInputs } from "@replay/swift";
 import { Game, gameProps } from "..";
 
-test("Can shoot bullet", () => {
+test("Can shoot bullet", async () => {
   const initInputs: WebInputs | iOSInputs = {
     pointer: {
       pressed: false,
@@ -252,12 +266,18 @@ test("Can shoot bullet", () => {
     },
   };
 
-  const { nextFrame, updateInputs, getTexture, textureExists } = testSprite(
-    Game(gameProps),
-    {
-      initInputs,
-    }
-  );
+  const {
+    nextFrame,
+    updateInputs,
+    getTexture,
+    textureExists,
+    loadFiles,
+  } = testSprite(Game(gameProps), gameProps, {
+    initInputs,
+  });
+
+  await loadFiles();
+  nextFrame();
 
   expect(textureExists("bullet")).toBe(false);
 

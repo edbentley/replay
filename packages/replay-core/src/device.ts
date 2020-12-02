@@ -1,7 +1,7 @@
 /**
  * The type of a device that supports Replay
  */
-export interface Device<I> {
+export interface Device<I = unknown> {
   inputs: I;
 
   /**
@@ -49,6 +49,8 @@ export interface Device<I> {
    * Get the current time & date now as a Date object
    */
   now: () => Date;
+
+  assetUtils: AssetUtils<unknown, unknown>;
 
   /**
    * Play sound effects / background music
@@ -139,3 +141,118 @@ export interface DeviceSize {
  * The type of the store used in local storage
  */
 export type Store = Record<string, string | undefined>;
+
+export type Assets = {
+  imageFileNames?: string[];
+  audioFileNames?: string[];
+};
+
+export type AssetMap<T> = Record<
+  string,
+  {
+    /**
+     * Which Sprites are using this asset
+     */
+    globalSpriteIds: Set<string>;
+    /**
+     * A promise indicates it's still loading
+     */
+    data: T | Promise<void>;
+  }
+>;
+
+export type AssetUtils<A, I> = {
+  audioElements: AssetMap<A>;
+  imageElements: AssetMap<I>;
+  loadAudioFile: (fileName: string) => Promise<A>;
+  loadImageFile: (fileName: string) => Promise<I>;
+  cleanupAudioFile: (fileName: string) => void;
+  cleanupImageFile: (fileName: string) => void;
+};
+
+export async function preloadFiles(
+  globalSpriteId: string,
+  assets: Assets,
+  assetUtils: AssetUtils<unknown, unknown>
+) {
+  // Get every file load as a promise and wait for all before returning
+  await Promise.all([
+    ...preloadFileType(
+      globalSpriteId,
+      assets.audioFileNames || [],
+      assetUtils.audioElements,
+      assetUtils.loadAudioFile
+    ),
+    ...preloadFileType(
+      globalSpriteId,
+      assets.imageFileNames || [],
+      assetUtils.imageElements,
+      assetUtils.loadImageFile
+    ),
+  ]);
+}
+
+function preloadFileType<T>(
+  globalSpriteId: string,
+  fileNames: string[],
+  elements: AssetMap<T>,
+  loadFile: (fileName: string) => Promise<T>
+): Promise<void>[] {
+  return fileNames.map((fileName) => {
+    if (elements[fileName]) {
+      // Already preloaded
+      elements[fileName].globalSpriteIds.add(globalSpriteId);
+
+      const { data } = elements[fileName];
+      if ("then" in data) {
+        // Still not loaded yet
+        return data;
+      }
+      return Promise.resolve();
+    }
+
+    const dataPromise = loadFile(fileName).then((data) => {
+      elements[fileName].data = data;
+    });
+    elements[fileName] = {
+      globalSpriteIds: new Set([globalSpriteId]),
+      data: dataPromise,
+    };
+    return dataPromise;
+  });
+}
+
+export function cleanupFiles(
+  globalSpriteId: string,
+  assetUtils: AssetUtils<unknown, unknown>
+) {
+  cleanupFileType(
+    globalSpriteId,
+    assetUtils.audioElements,
+    assetUtils.cleanupAudioFile
+  );
+  cleanupFileType(
+    globalSpriteId,
+    assetUtils.imageElements,
+    assetUtils.cleanupImageFile
+  );
+}
+
+function cleanupFileType<T>(
+  globalSpriteId: string,
+  elements: AssetMap<T>,
+  cleanupFile: (fileName: string) => void
+) {
+  for (const fileName in elements) {
+    const { globalSpriteIds } = elements[fileName];
+    if (globalSpriteIds.has(globalSpriteId)) {
+      if (globalSpriteIds.size === 1) {
+        // Clean up from memory
+        cleanupFile(fileName);
+        delete elements[fileName];
+      } else {
+        elements[fileName].globalSpriteIds.delete(globalSpriteId);
+      }
+    }
+  }
+}

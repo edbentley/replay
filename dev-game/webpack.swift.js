@@ -1,6 +1,4 @@
-const fs = require("fs");
 const path = require("path");
-const webpack = require("webpack");
 
 module.exports = {
   entry: "./src/index.ts",
@@ -17,11 +15,6 @@ module.exports = {
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
   },
-  plugins: [
-    new webpack.DefinePlugin({
-      ASSET_NAMES: JSON.stringify(getAssetNames()),
-    }),
-  ],
   output: {
     filename: "game.js",
     path: path.resolve(__dirname, "swift/dev-game"),
@@ -38,17 +31,3 @@ module.exports = {
     extensions: [".wasm", ".mjs", ".js", ".json", ".ts"],
   },
 };
-
-function getAssetNames() {
-  const imageFileNames = fs.readdirSync(
-    path.resolve(__dirname, "assets/images")
-  );
-  const audioFileNames = fs.readdirSync(
-    path.resolve(__dirname, "assets/audio")
-  );
-
-  return {
-    imageFileNames,
-    audioFileNames,
-  };
-}

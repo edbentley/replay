@@ -10,9 +10,7 @@ To render a game for the browser use the `@replay/web` package.
 #### Parameters
 
 - `game`: Your [Top-Level Game](top-level-game.md) Sprite called with its props passed in, e.g. `Game(gameProps)`.
-- `options`: An object with the following properties:
-  - `loadingTextures`: (Optional) An array of textures to show while the game is loading.
-  - `assets`: (Optional) An object containing image and audio file names to load.
+- `options`: (Optional) An object with the following properties:
   - `dimensions`: (Optional) A string that is either:
     - `"game-coords"`: (default) Use the game coordinates as pixels in the browser.
     - `"scale-up"`: Scales the game so that it fills up the browser window.
@@ -25,19 +23,7 @@ import { renderCanvas } from "@replay/web";
 import { t } from "@replay/core";
 import { Game, gameProps } from "../src";
 
-const loadingTextures = [
-  t.text({
-    color: "black",
-    text: "Loading...",
-  }),
-];
-
 renderCanvas(Game(gameProps), {
-  loadingTextures,
-  {
-    imageFileNames: ["player.png"],
-    audioFileNames: ["shoot.wav"],
-  },
   dimensions: "scale-up",
 });
 ```
