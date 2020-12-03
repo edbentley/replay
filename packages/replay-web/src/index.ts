@@ -406,6 +406,14 @@ export function renderCanvas<S>(
     if (audioContext.state === "suspended") {
       audioContext.resume();
     }
+
+    // Sometimes our audio context is suspended, e.g. removing headphones on
+    // iOS. So we need to resume it.
+    audioContext.onstatechange = () => {
+      if (audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+    };
   };
 
   document.addEventListener("keydown", onFirstInteraction, false);
