@@ -24,13 +24,18 @@ public class ReplayViewController: UIViewController {
         return hideStatusBar
     }
     
+    // Grey out home bar
+    public override var preferredScreenEdgesDeferringSystemGestures: UIRectEdge {
+        return [.bottom]
+    }
+    
     public override func viewDidAppear(_ animated: Bool) {
         // Allow touches at the edge of the screen
         // Unfortunately causes a warning
         let window = self.view.window!
-        if let grs = window.gestureRecognizers {
-            for gr in grs {
-                gr.delaysTouchesBegan = false
+        if let gestureRecognizers = window.gestureRecognizers {
+            for gestureRecognizer in gestureRecognizers {
+                gestureRecognizer.delaysTouchesBegan = false
             }
         }
     }

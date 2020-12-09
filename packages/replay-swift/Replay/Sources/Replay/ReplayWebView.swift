@@ -14,33 +14,38 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     var webView: ReplayWebView!
     let alerter = Alerter()
     let onLogCallback: (String) -> Void // for testing
-    
+
     init(
         customGameJsString: String? = nil,
         onLogCallback: @escaping (String) -> Void = {_ in }
     ) {
         self.onLogCallback = onLogCallback
         super.init()
-        
+
         let contentController = WKUserContentController()
         contentController.add(self, name: CONSOLE_LOG)
         contentController.add(self, name: ERROR)
         webConfiguration.userContentController = contentController
         webConfiguration.mediaTypesRequiringUserActionForPlayback = []
-        
+
         // Allow fetching local files in JS. This is not documented, but Stack Overflow says it's ok
         // https://stackoverflow.com/questions/36013645/setting-disable-web-security-and-allow-file-access-from-files-in-ios-wkwebvi
         webConfiguration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs");
-        
+
         webView = ReplayWebView(frame: .zero, configuration: webConfiguration)
         webView.scrollView.isScrollEnabled = false
         webView.isMultipleTouchEnabled = true
         webView.uiDelegate = self
         webView.navigationDelegate = self
-        
+
+        // Disable haptic feedback on long press
+        let longPress = UILongPressGestureRecognizer(target: nil, action: nil)
+        longPress.minimumPressDuration = 0
+        webView.addGestureRecognizer(longPress)
+
         // Load in game
         var gameJsString = ""
-        
+
         if let customGameJsString = customGameJsString {
             gameJsString = customGameJsString
         } else {
@@ -55,21 +60,21 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
             }
             gameJsString = gameJsPathString
         }
-        
+
         let renderCanvasJsPath = Bundle.module.path(forResource: "renderCanvas", ofType: ".js")!
         let renderCanvasJsString = try! String(
             contentsOfFile: renderCanvasJsPath,
             encoding: String.Encoding.utf8
         )
-        
+
         let htmlString = getReplayRenderCanvasHtmlString(
             renderCanvasJsString: renderCanvasJsString,
             gameJsString: gameJsString
         )
-        
+
         self.webView.loadHTMLString(htmlString, baseURL: Bundle.main.bundleURL)
     }
-    
+
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         switch message.name {
         case ERROR:
@@ -81,15 +86,15 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
             print("Unknown webKit message \(message.name)")
         }
     }
-    
+
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
         alerter.ok(message, onResponse: completionHandler)
     }
-    
+
     func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
         alerter.okCancel(message, onResponse: completionHandler)
     }
-    
+
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         fatalError("Web view terminated. This may be caused by your game using up too much memory.")
     }
