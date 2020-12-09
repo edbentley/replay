@@ -38,6 +38,11 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
         webView.uiDelegate = self
         webView.navigationDelegate = self
         
+        // Disable haptic feedback on long press
+        let longPress = UILongPressGestureRecognizer(target: nil, action: nil)
+        longPress.minimumPressDuration = 0
+        webView.addGestureRecognizer(longPress)
+        
         // Load in game
         var gameJsString = ""
         
