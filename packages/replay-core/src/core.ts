@@ -216,6 +216,14 @@ function traverseCustomSpriteContainer<P, I>(
   const unusedChildIds = new Set(customSpriteContainer.prevChildIds);
   const childIds: string[] = [];
 
+  if (unusedChildIds.size < customSpriteContainer.prevChildIds.length) {
+    const duplicate = customSpriteContainer.prevChildIds.find(
+      (item, index) =>
+        customSpriteContainer.prevChildIds.indexOf(item) !== index
+    );
+    throw Error(`Duplicate Sprite id ${duplicate}`);
+  }
+
   const textures = sprites
     .map(function mapTextures(sprite) {
       if (!sprite) return sprite;
