@@ -40,7 +40,7 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
         
         // Disable haptic feedback on long press
         let longPress = UILongPressGestureRecognizer(target: nil, action: nil)
-        longPress.minimumPressDuration = 0
+        longPress.minimumPressDuration = 0.1
         webView.addGestureRecognizer(longPress)
         
         // Load in game
