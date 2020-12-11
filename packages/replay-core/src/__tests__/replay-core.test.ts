@@ -23,6 +23,7 @@ import {
   waitFrame,
   GetStateGame,
   AssetsGame,
+  DuplicateSpriteIdsGame,
 } from "./utils";
 import { SpriteTextures, NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture, RectangleTexture } from "../t";
@@ -1045,6 +1046,20 @@ test("Sprite unmounted before it loads", async () => {
 
   // Image not in memory
   expect("a.png" in mutableTestDevice.assetUtils.imageElements).toBe(false);
+});
+
+test("throws error on duplicate Sprites", () => {
+  const { platform } = getTestPlatform();
+
+  const { getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    DuplicateSpriteIdsGame(gameProps)
+  );
+
+  expect(() => {
+    getNextFrameTextures(1000 / 60, jest.fn());
+  }).toThrowError("Duplicate Sprite id TestSprite");
 });
 
 test("supports Pure Sprites", () => {

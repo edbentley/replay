@@ -855,6 +855,23 @@ export const GetStateGame = makeSprite<GameProps, undefined>({
   },
 });
 
+/// -- Test Duplicate Sprite IDs
+
+export const DuplicateSpriteIdsGame = makeSprite<GameProps>({
+  render() {
+    return [
+      TestSprite({
+        id: "TestSprite",
+        initPos: 0,
+      }),
+      TestSprite({
+        id: "TestSprite",
+        initPos: 0,
+      }),
+    ];
+  },
+});
+
 /// -- Test Pure Sprites
 
 export const PureSpriteGame = makeSprite<
