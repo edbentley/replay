@@ -115,7 +115,7 @@ export function renderCanvas<S>(
   let totalPageNotVisibleTime = 0;
 
   const keyDownHandler = (e: KeyboardEvent) => {
-    if (!isInFocus) return;
+    if (!isInFocus || e.repeat) return;
     inputKeyDownHandler(e);
   };
   const keyUpHandler = (e: KeyboardEvent) => {
