@@ -462,6 +462,8 @@ function createCustomSpriteContainer<P, S, I>(
         updateStateQueue.length = 0;
       };
 
+      const getState = () => this.state;
+
       // Run any updateState from callbacks in other sprites last render
       runUpdateStateCallbacks();
 
@@ -472,6 +474,7 @@ function createCustomSpriteContainer<P, S, I>(
           state: this.state,
           device,
           updateState,
+          getState,
         });
       }
 
@@ -491,6 +494,7 @@ function createCustomSpriteContainer<P, S, I>(
         state: this.state,
         device,
         updateState,
+        getState,
         extrapolateFactor,
       });
 
