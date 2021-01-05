@@ -220,6 +220,7 @@ All Sprite methods have the following parameters:
    ```js
    updateState((prevState) => ({ ...prevState, playerX: 0 }));
    ```
+- `getState`: A function which returns the current state of the Sprite for asynchronous callbacks. If you call this before `init` returns it will throw an error.
 
 ### `init`
 
@@ -242,14 +243,13 @@ Called on initial load of Sprite. Use this to run anything you need on setup. Re
     updateState((state) => ({ ...state, loaded: true }));
   });
    ```
-- `getState`: A function which returns the current state of the Sprite for asynchronous callbacks. If you call this before `init` returns it will throw an error.
 
 ### `loop`
 
 Called every frame of the game. Put your game logic here. Returns the next frame's state.
 
 ```js
-  loop({ props, state, device, updateState }) {
+  loop({ props, state, device, updateState, getState }) {
     return { ...state, ... };
   },
 ```
@@ -263,7 +263,7 @@ Called every frame of the game. Put your game logic here. Returns the next frame
 Called when the device renders to screen. Returns an array of Sprites to render.
 
 ```js
-  render({ props, state, device, updateState, extrapolateFactor }) {
+  render({ props, state, device, updateState, getState, extrapolateFactor }) {
     return [ ... ];
   },
 ```

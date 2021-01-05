@@ -90,6 +90,7 @@ interface SpriteObjBase<P, S, I> {
     state: Readonly<S>;
     device: Device<I>;
     updateState: (update: (state: S) => S) => void;
+    getState: () => S;
   }) => S;
 
   // -- render methods
@@ -103,6 +104,7 @@ interface SpriteObjBase<P, S, I> {
     state: Readonly<S>;
     device: Device<I>;
     updateState: (update: (state: S) => S) => void;
+    getState: () => S;
     /**
      * A value between 0 and 1 representing how much time has passed before
      * the next frame is scheduled.
@@ -120,6 +122,7 @@ interface SpriteObjBase<P, S, I> {
     state: Readonly<S>;
     device: Device<I>;
     updateState: (update: (state: S) => S) => void;
+    getState: () => S;
   }) => Sprite[];
 
   /**
@@ -131,6 +134,7 @@ interface SpriteObjBase<P, S, I> {
     state: Readonly<S>;
     device: Device<I>;
     updateState: (update: (state: S) => S) => void;
+    getState: () => S;
   }) => Sprite[];
 
   /**
@@ -144,6 +148,7 @@ interface SpriteObjBase<P, S, I> {
     state: Readonly<S>;
     device: Device<I>;
     updateState: (update: (state: S) => S) => void;
+    getState: () => S;
   }) => Sprite[];
 }
 
