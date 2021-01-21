@@ -5,12 +5,36 @@ export type TextureFont = {
   /**
    * Font name
    */
-  name: string;
+  family?: string;
   /**
    * Size of font in relation to game size
    */
-  size: number;
+  size?: number;
+  /**
+   * Font weight, either a string like `"bold"` or a number like `500`
+   */
+  weight?: number | string;
+  /**
+   * Font style, typically either `"normal"` or `"italic"`
+   *
+   * @default "normal"
+   */
+  style?: "normal" | "italic" | "oblique" | "inherit";
+  /**
+   * Alignment of text around y position.
+   *
+   * @default "middle"
+   */
+  baseline?: "top" | "hanging" | "middle" | "alphabetic" | "ideographic" | "bottom";
+  /**
+   * Alignment of text around x position. `"left"` will put the left edge of
+   * the text at the x position.
+   *
+   * @default "center"
+   */
+  align?: "left" | "center" | "right" | "start" | "end";
 };
+
 
 /**
  * `t` is a util which contains functions to create every type of Texture.
@@ -22,13 +46,6 @@ export const t = {
 
     font?: TextureFont;
     text: string;
-    /**
-     * Alignment of text around x position. `"left"` will put the left edge of
-     * the text at the x position.
-     *
-     * @default "center"
-     */
-    align?: "left" | "center" | "right";
     /**
      * An RGB hex value (e.g. `#ff0000`) or CSS Level 1 keyword (e.g. `green`)
      */
@@ -51,7 +68,6 @@ export const t = {
         ...getDefaultProps(props),
         font: props.font,
         text: props.text,
-        align: props.align || "center",
         color: props.color,
       },
     };
@@ -249,7 +265,6 @@ export type Texture =
 // -- Text
 type TextProps = BaseProps & {
   font?: TextureFont;
-  align: "left" | "center" | "right";
   text: string;
   color: string;
 };

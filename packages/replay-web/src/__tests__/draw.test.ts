@@ -23,7 +23,7 @@ beforeAll(() => {
     canvas.height = 500;
     const ctx = canvas.getContext("2d", { alpha: false })!;
 
-    drawCanvas(ctx, deviceSize, {}, { name: "Courier", size: 12 }).render({
+    drawCanvas(ctx, deviceSize, {}, { family: "Courier", size: 12 }).render({
       id: "test",
       baseProps: getDefaultProps({}),
       textures,
@@ -37,7 +37,7 @@ test("Can draw text", () => {
       x: -100,
       y: 100,
       rotation: 45,
-      font: { name: "Arial", size: 10 },
+      font: { family: "Arial", size: 10 },
       color: "blue",
       text: "Hello Test",
     }),
@@ -46,7 +46,7 @@ test("Can draw text", () => {
       y: 0,
       rotation: 0,
       opacity: 0.5,
-      font: { name: "Arial", size: 40 },
+      font: { family: "Arial", size: 40 },
       color: "red",
       text: "Hello Test",
     }),
@@ -308,7 +308,9 @@ test("Can change anchor X and Y", () => {
   render([
     t.text({
       text: "Hello",
-      align: "left",
+      font: {
+        align: "left",
+      },
       color: "red",
       x: 0,
       y: 50,
@@ -345,7 +347,9 @@ test("Can change anchor X and Y", () => {
 
     t.text({
       text: "Hello",
-      align: "right",
+      font: {
+        align: "right",
+      },
       color: "red",
       x: 0,
       y: -50,
@@ -364,7 +368,7 @@ test("Can change anchor X and Y", () => {
 
     t.text({
       text: "Hello",
-      font: { name: "Calibri", size: 12 },
+      font: { family: "Calibri", size: 12 },
       color: "red",
       x: 0,
       y: 100,
@@ -372,7 +376,7 @@ test("Can change anchor X and Y", () => {
     }),
     t.text({
       text: "Hello",
-      font: { name: "Calibri", size: 12 },
+      font: { family: "Calibri", size: 12 },
       color: "blue",
       x: 0,
       y: 100,

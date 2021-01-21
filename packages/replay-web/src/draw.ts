@@ -83,10 +83,10 @@ function drawTexture(
 ): 0 {
   switch (texture.type) {
     case "text":
+      const fontDetails = { ...defaultFont, ...texture.props.font };
       drawUtilsCtx.text(
-        texture.props.font || defaultFont,
+        fontDetails,
         texture.props.text,
-        texture.props.align,
         texture.props.color
       );
       return 0;
@@ -257,13 +257,17 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
   text(
     font: TextureFont,
     text: string,
-    align: "left" | "center" | "right",
     fillStyle: string
   ) {
-    const fontString = `${font.size}px ${font.name}`;
+    const fontString =  `
+      ${font.style || 'normal'} 
+      ${font.weight || 'normal'} 
+      ${font.size ? `${font.size}px` : '' } 
+      ${font.family || ''}
+    `;
     ctx.font = fontString;
-    ctx.textBaseline = "middle";
-    ctx.textAlign = align;
+    ctx.textBaseline = font.baseline || 'middle';
+    ctx.textAlign = font.align || 'center';
     ctx.fillStyle = fillStyle;
     ctx.fillText(text, 0, 0);
   },
