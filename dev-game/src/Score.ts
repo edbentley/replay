@@ -10,7 +10,7 @@ export const Score = makeSprite<{ score: number; preText?: string }>({
         color: "black",
         font: {
           align: "left",
-        }
+        },
       }),
     ];
   },
@@ -23,7 +23,7 @@ export const Score = makeSprite<{ score: number; preText?: string }>({
         color: "black",
         font: {
           align: "left",
-        }
+        },
       }),
     ];
   },

@@ -25,7 +25,13 @@ export type TextureFont = {
    *
    * @default "middle"
    */
-  baseline?: "top" | "hanging" | "middle" | "alphabetic" | "ideographic" | "bottom";
+  baseline?:
+    | "top"
+    | "hanging"
+    | "middle"
+    | "alphabetic"
+    | "ideographic"
+    | "bottom";
   /**
    * Alignment of text around x position. `"left"` will put the left edge of
    * the text at the x position.
@@ -34,7 +40,6 @@ export type TextureFont = {
    */
   align?: "left" | "center" | "right" | "start" | "end";
 };
-
 
 /**
  * `t` is a util which contains functions to create every type of Texture.

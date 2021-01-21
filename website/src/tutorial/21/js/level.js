@@ -93,7 +93,7 @@ export const Level = makeSprite({
         y: device.size.height / 2 + device.size.heightMargin - 80,
         font: {
           align: "left",
-        }
+        },
       }),
     ];
   },

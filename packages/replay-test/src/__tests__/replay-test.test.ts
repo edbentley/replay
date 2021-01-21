@@ -42,12 +42,11 @@ test("getTextures, nextFrame", () => {
       },
       Object {
         "props": Object {
-          "align": "center",
           "anchorX": 0,
           "anchorY": 0,
           "color": "red",
           "font": Object {
-            "name": "Arial",
+            "family": "Arial",
             "size": 12,
           },
           "mask": null,
@@ -64,7 +63,6 @@ test("getTextures, nextFrame", () => {
       },
       Object {
         "props": Object {
-          "align": "center",
           "anchorX": 0,
           "anchorY": 0,
           "color": "red",
@@ -113,12 +111,11 @@ test("getTextures, nextFrame", () => {
       },
       Object {
         "props": Object {
-          "align": "center",
           "anchorX": 0,
           "anchorY": 0,
           "color": "red",
           "font": Object {
-            "name": "Arial",
+            "family": "Arial",
             "size": 12,
           },
           "mask": null,
@@ -135,7 +132,6 @@ test("getTextures, nextFrame", () => {
       },
       Object {
         "props": Object {
-          "align": "center",
           "anchorX": 0,
           "anchorY": 0,
           "color": "red",
