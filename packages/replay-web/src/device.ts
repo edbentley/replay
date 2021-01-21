@@ -57,7 +57,20 @@ export function getAudio(
         }
         return 0;
       },
-      play: (fromPosition, loop = false) => {
+      play: (fromPositionOrSettings) => {
+        let fromPosition;
+        let loop = false;
+        let overwrite = false;
+        if (typeof fromPositionOrSettings === "number") {
+          fromPosition = fromPositionOrSettings;
+        } else if (fromPositionOrSettings) {
+          ({
+            fromPosition,
+            loop = loop,
+            overwrite = overwrite,
+          } = fromPositionOrSettings);
+        }
+
         const sampleSource = audioContext.createBufferSource();
         sampleSource.buffer = buffer;
         sampleSource.connect(audioContext.destination);
@@ -78,9 +91,16 @@ export function getAudio(
 
         const soundIsAlreadyPlaying = playState && !playState.isPaused;
 
-        // If the sound is already playing, we fire and forget a new one.
-        // Otherwise, we save its info here for pausing etc.
-        if (!soundIsAlreadyPlaying) {
+        // If the sound is already playing, we fire and forget a new one unless
+        // we want to overwrite it.
+        if (!soundIsAlreadyPlaying || overwrite) {
+          // Stop other sound if it exists
+          if (playState) {
+            playState.sample.onended = null;
+            playState.sample.stop();
+          }
+
+          // Save info for pausing etc.
           data.playState = {
             startTime: audioContext.currentTime - alreadyPlayedTime,
             sample: sampleSource,

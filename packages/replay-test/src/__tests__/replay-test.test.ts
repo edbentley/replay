@@ -371,7 +371,10 @@ test("audio", async () => {
     testInput: "audioPlayLoop",
   });
   nextFrame();
-  expect(audio.play).toBeCalledWith("sound.wav", 0, true);
+  expect(audio.play).toBeCalledWith("sound.wav", {
+    fromPosition: 0,
+    loop: true,
+  });
 
   updateInputs({
     testInput: "audioPause",
@@ -704,7 +707,7 @@ const Game = makeSprite<GameProps, State, Inputs>({
         device.audio("sound.wav").play(100);
         break;
       case "audioPlayLoop":
-        device.audio("sound.wav").play(0, true);
+        device.audio("sound.wav").play({ fromPosition: 0, loop: true });
         break;
       case "audioPause":
         device.audio("sound.wav").pause();

@@ -543,7 +543,11 @@ test("supports playing audio", () => {
 
   mutableTestDevice.inputs.buttonPressed.sound.playLoop = true;
   getNextFrameTexturesOverTime();
-  expect(audioSpy.play).toBeCalledWith(0, true);
+  expect(audioSpy.play).toBeCalledWith({ fromPosition: 0, loop: true });
+
+  mutableTestDevice.inputs.buttonPressed.sound.playOverwrite = true;
+  getNextFrameTexturesOverTime();
+  expect(audioSpy.play).toBeCalledWith({ overwrite: true });
 
   mutableTestDevice.inputs.buttonPressed.sound.pause = true;
   getNextFrameTexturesOverTime();

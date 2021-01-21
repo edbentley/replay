@@ -44,6 +44,7 @@ interface TestPlatformInputs {
       play: boolean;
       playFromPosition: boolean;
       playLoop: boolean;
+      playOverwrite: boolean;
       pause: boolean;
       getPosition: boolean;
     };
@@ -85,6 +86,7 @@ function getInitTestPlatformInputs(): TestPlatformInputs {
         play: false,
         playFromPosition: false,
         playLoop: false,
+        playOverwrite: false,
         pause: false,
         getPosition: false,
       },
@@ -434,7 +436,10 @@ export const FullTestGame = makeSprite<
       device.audio("filename").play(100);
     }
     if (device.inputs.buttonPressed.sound.playLoop) {
-      device.audio("filename").play(0, true);
+      device.audio("filename").play({ fromPosition: 0, loop: true });
+    }
+    if (device.inputs.buttonPressed.sound.playOverwrite) {
+      device.audio("filename").play({ overwrite: true });
     }
     if (device.inputs.buttonPressed.sound.pause) {
       device.audio("filename").pause();

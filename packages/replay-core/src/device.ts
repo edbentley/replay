@@ -62,7 +62,11 @@ export interface Device<I = unknown> {
      * Current time in audio track in seconds
      */
     getPosition: () => number;
-    play: (fromPosition?: number, loop?: boolean) => void;
+    play: (
+      fromPositionOrSettings?:
+        | number
+        | { fromPosition?: number; loop?: boolean; overwrite?: boolean }
+    ) => void;
     pause: () => void;
   };
 

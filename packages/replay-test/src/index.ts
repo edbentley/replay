@@ -295,13 +295,11 @@ export function testSprite<P, S, I>(
     }
     return {
       getPosition: () => audio.getPosition(filename),
-      play: (fromPosition, loop) => {
-        if (loop !== undefined) {
-          audio.play(filename, fromPosition, loop);
-        } else if (fromPosition !== undefined) {
-          audio.play(filename, fromPosition);
-        } else {
+      play: (fromPositionOrSettings) => {
+        if (fromPositionOrSettings === undefined) {
           audio.play(filename);
+        } else {
+          audio.play(filename, fromPositionOrSettings);
         }
       },
       pause: () => audio.pause(filename),
