@@ -25,7 +25,7 @@ export const Menu = makeSprite<MenuProps, undefined, WebInputs | iOSInputs>({
       }),
       t.text({
         text: `High score: ${props.highScore}`,
-        font: { name: "Courier", size: 24 },
+        font: { family: "Courier", size: 24 },
         color: "white",
         y: 150,
       }),

@@ -58,7 +58,7 @@ const gameProps = {
     },
   },
   defaultFont: {
-    name: "Courier",
+    family: "Courier",
     size: 10,
   },
 };

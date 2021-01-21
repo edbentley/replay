@@ -50,7 +50,7 @@ export const gameProps: GameProps = {
     },
   },
   defaultFont: {
-    name: "Courier",
+    family: "Courier",
     size: 10,
   },
 };

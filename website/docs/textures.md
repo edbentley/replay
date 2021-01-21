@@ -80,18 +80,22 @@ t.line({
 
 ```js
 t.text({
-  font: { name: "Calibri", size: 16 },
-  align: "left",
+  font: { family: "Calibri", size: 16, align: "left", },
   text: "Hello Replay",
   color: "#ff0000",
 })
 ```
 #### Props
 
-- `font`: (Optional) Set the font name and size. If not provided, will use the game's default font (see [Top-Level Game](top-level-game.md)).
-- `align`: (Optional) Alignment of text around x position, can be `"left"`, `"center"` or `"right"`. `"left"` will put the left edge of the text at the Texture's x position. Default `"center"`.
 - `text`: A string to display.
 - `color`: An RGB hex value (e.g. `#ff0000`) or [CSS Level 1 keyword](https://developer.mozilla.org/docs/Web/CSS/color_value) (e.g. `green`).
+- `font`: (Optional) Set the font family, size, etc. If any properties are not provided, will cascade from the game's default font (see [Top-Level Game](top-level-game.md)).
+  - `family`: (Optional) Font family, e.g. `"Helvetica"`
+  - `size`: (Optional) Font size, e.g. `20`
+  - `weight`: (Optional) Font weight, e.g. `"bold"`, `500`
+  - `style`: (Optional) Font style, typically either `"normal"` (default) or `"italic"`
+  - `baseline`: (Optional) Alignment of text around y position, can be `"top"`, `"hanging"`, `"middle"` (default), `"alphabetic"`, `"ideographic"`, `"bottom"`
+  - `align`: (Optional) Alignment of text around x position, can be `"left"`, `"center"` or `"right"`. `"left"` will put the left edge of the text at the Texture's x position. Default `"center"`.
 
 ## Image
 

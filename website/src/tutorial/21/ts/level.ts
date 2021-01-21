@@ -105,7 +105,9 @@ export const Level = makeSprite<LevelProps, LevelState, WebInputs | iOSInputs>({
         color: "white",
         x: -device.size.width / 2 + 10,
         y: device.size.height / 2 + device.size.heightMargin - 80,
-        align: "left",
+        font: {
+          align: "left",
+        }
       }),
     ];
   },

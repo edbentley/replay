@@ -206,7 +206,7 @@ export const TestGameWithAssets = makeSprite<
     if (state.loading) {
       return [
         t.text({
-          font: { name: "serif", size: 22 },
+          font: { family: "serif", size: 22 },
           text: "Loading...",
           color: "black",
         }),

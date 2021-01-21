@@ -715,7 +715,7 @@ test("can copy to clipboard", () => {
 test("can define various texture shapes", () => {
   expect(
     t.text({
-      font: { name: "Arial", size: 12 },
+      font: { family: "Arial", size: 12 },
       text: "Hello",
       color: "red",
     }).type

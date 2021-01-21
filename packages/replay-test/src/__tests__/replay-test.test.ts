@@ -817,7 +817,7 @@ const Text = makeSprite<{ text: string }, undefined, Inputs>({
       t.text({
         text: props.text,
         color: "red",
-        font: { name: "Arial", size: 12 },
+        font: { family: "Arial", size: 12 },
       }),
     ];
   },
