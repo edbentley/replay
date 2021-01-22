@@ -255,9 +255,9 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
       ${font.style || "normal"} 
       ${font.weight || "normal"} 
       ${font.size ? `${font.size}px` : ""} 
-      ${font.family || ""}
+      ${font.family ? `"${font.family}"` : ""}
     `;
-    ctx.font = fontString;
+    ctx.font = fontString.replace(/\n/g,' ');
     ctx.textBaseline = font.baseline || "middle";
     ctx.textAlign = font.align || "center";
     ctx.fillStyle = fillStyle;
