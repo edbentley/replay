@@ -257,3 +257,24 @@ test("Can preload and unload image and audio assets", async () => {
   expect(Object.keys(audioElements)).toEqual(["shoot.wav"]);
   expect([...audioElements["shoot.wav"].globalSpriteIds]).toEqual(["Game"]);
 });
+
+test("Font properties", async () => {
+  const canvas = document.createElement("canvas");
+  const props = {
+    ...testGameProps,
+    defaultFont: {
+      family: "Courier",
+      size: 20,
+      weight: "bold",
+      style: "italic",
+      baseline: "alphabetic",
+      align: "start",
+    },
+  };
+  renderCanvas(TestGameWithAssets(props), {
+    dimensions: "game-coords",
+    canvas,
+  });
+
+  expect(canvasToImage(canvas)).toMatchImageSnapshot();
+});

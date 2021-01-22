@@ -19,26 +19,20 @@ export type TextureFont = {
    *
    * @default "normal"
    */
-  style?: "normal" | "italic" | "oblique" | "inherit";
+  style?: string;
   /**
    * Alignment of text around y position.
    *
    * @default "middle"
    */
-  baseline?:
-    | "top"
-    | "hanging"
-    | "middle"
-    | "alphabetic"
-    | "ideographic"
-    | "bottom";
+  baseline?: string;
   /**
    * Alignment of text around x position. `"left"` will put the left edge of
    * the text at the x position.
    *
    * @default "center"
    */
-  align?: "left" | "center" | "right" | "start" | "end";
+  align?: string;
 };
 
 /**
