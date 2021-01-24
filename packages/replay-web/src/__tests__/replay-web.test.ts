@@ -260,7 +260,7 @@ test("Can preload and unload image and audio assets", async () => {
 
 test("Font properties", async () => {
   const canvas = document.createElement("canvas");
-  const props = {
+  const props: GameProps = {
     ...testGameProps,
     defaultFont: {
       family: "Courier",
