@@ -94,8 +94,8 @@ export function getAudio(
         // If the sound is already playing, we fire and forget a new one unless
         // we want to overwrite it.
         if (!soundIsAlreadyPlaying || overwrite) {
-          // Stop other sound if it exists
-          if (playState) {
+          // Stop other sound if it exists and is playing
+          if (playState && soundIsAlreadyPlaying) {
             playState.sample.onended = null;
             playState.sample.stop();
           }
