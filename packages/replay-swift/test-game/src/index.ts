@@ -5,8 +5,7 @@ import {
   makeNativeSprite,
   NativeSpriteImplementation,
 } from "@replay/core";
-import { RenderCanvasOptions } from "@replay/web";
-import { iOSInputs } from "../../src/index";
+import { iOSInputs, swiftBridge } from "../../src/index";
 
 export const gameProps: GameProps = {
   id: "Game",
@@ -22,6 +21,7 @@ export const gameProps: GameProps = {
 export const Game = makeSprite<GameProps, undefined, iOSInputs>({
   render() {
     return [
+      BridgeSprite({ id: "bridge" }),
       MyNativeSprite({ id: "native" }),
       t.text({
         x: -100,
@@ -74,9 +74,26 @@ export const nativeSpriteMap = {
   MyNativeSprite: MyNativeSpriteWebView,
 };
 
+// -- Swift / JS Bridge
+
+const BridgeSprite = makeSprite<{}>({
+  init({ device }) {
+    swiftBridge<{ response: string }>({
+      id: "TestBridge",
+      message: "Hello!",
+    }).then(({ response }) => {
+      device.log(`Bridge response: ${response}`);
+    });
+    return undefined;
+  },
+  render() {
+    return [];
+  },
+});
+
 // -- Options
 
-export const options: RenderCanvasOptions = {
+export const options = {
   nativeSpriteMap: {
     MyNativeSprite: MyNativeSpriteWebView,
   },

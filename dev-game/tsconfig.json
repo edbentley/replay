@@ -4,5 +4,6 @@
     "outDir": "dist",
     "allowJs": true,
     "declaration": false
-  }
+  },
+  "include": ["src", "../packages/replay-swift/src/types.d.ts"]
 }

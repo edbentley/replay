@@ -4,10 +4,26 @@ public class ReplayViewController: UIViewController {
     var hideStatusBar: Bool
     public var webView: ReplayWebView
     
-    public init(hideStatusBar: Bool = true) {
+    public init(
+        hideStatusBar: Bool = true,
+        onJsCallback: @escaping (String) -> Void = {_ in }
+    ) {
         self.hideStatusBar = hideStatusBar
-        self.webView = ReplayWebViewManager().webView
+        self.webView = ReplayWebViewManager(onJsCallback: onJsCallback).webView
         super.init(nibName: nil, bundle: nil)
+    }
+    
+    // Override web view for tests
+    public init(webView: ReplayWebView) {
+        self.webView = webView
+        self.hideStatusBar = true
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    public func jsBridge(messageId: String, jsArg: String) {
+        self.webView.evaluateJavaScript(
+            "window.__replayGlobalCallbacks__[`\(messageId)`](\(jsArg));"
+        )
     }
     
     required init?(coder: NSCoder) {

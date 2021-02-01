@@ -2,6 +2,7 @@ import WebKit
 
 let CONSOLE_LOG = "consoleLog"
 let ERROR = "error"
+let JS_CALLBACK = "jsCallback"
 
 public class ReplayWebView: WKWebView {
     public override var safeAreaInsets: UIEdgeInsets {
@@ -13,18 +14,22 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     let webConfiguration = WKWebViewConfiguration()
     var webView: ReplayWebView!
     let alerter = Alerter()
+    let onJsCallback: (String) -> Void // userland
     let onLogCallback: (String) -> Void // for testing
     
     init(
         customGameJsString: String? = nil,
-        onLogCallback: @escaping (String) -> Void = {_ in }
+        onLogCallback: @escaping (String) -> Void = {_ in },
+        onJsCallback: @escaping (String) -> Void
     ) {
         self.onLogCallback = onLogCallback
+        self.onJsCallback = onJsCallback
         super.init()
         
         let contentController = WKUserContentController()
         contentController.add(self, name: CONSOLE_LOG)
         contentController.add(self, name: ERROR)
+        contentController.add(self, name: JS_CALLBACK)
         webConfiguration.userContentController = contentController
         webConfiguration.mediaTypesRequiringUserActionForPlayback = []
         
@@ -82,6 +87,8 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
         case CONSOLE_LOG:
             onLogCallback("\(message.body)")
             print(message.body)
+        case JS_CALLBACK:
+            onJsCallback("\(message.body)")
         default:
             print("Unknown webKit message \(message.name)")
         }
