@@ -359,6 +359,7 @@ const MultipleRendersSprite = makeSprite({
 
 interface FullTestGameState {
   position: number;
+  testNestedUpdateStateCounter: number;
   testInitUpdateState?: string;
   testRenderUpdateState?: string;
   testRenderUpdateState2?: string;
@@ -384,6 +385,7 @@ export const FullTestGame = makeSprite<
 
     return {
       position: 5,
+      testNestedUpdateStateCounter: 0,
     };
   },
 
@@ -405,6 +407,34 @@ export const FullTestGame = makeSprite<
           testRenderTimeout: "updateState from timeout in render",
         }));
       }, 1000);
+
+      updateState((s1) => {
+        updateState((s2) => {
+          updateState((s3) => {
+            device.log(
+              `Third updateState counter val: ${s3.testNestedUpdateStateCounter}`
+            );
+            return {
+              ...s3,
+              testNestedUpdateStateCounter: s3.testNestedUpdateStateCounter + 1,
+            };
+          });
+          device.log(
+            `Second updateState counter val: ${s2.testNestedUpdateStateCounter}`
+          );
+          return {
+            ...s2,
+            testNestedUpdateStateCounter: s2.testNestedUpdateStateCounter + 1,
+          };
+        });
+        device.log(
+          `First updateState counter val: ${s1.testNestedUpdateStateCounter}`
+        );
+        return {
+          ...s1,
+          testNestedUpdateStateCounter: s1.testNestedUpdateStateCounter + 1,
+        };
+      });
     }
 
     if (device.inputs.buttonPressed.log) {
@@ -522,6 +552,7 @@ export const FullTestGame = makeSprite<
 
     return {
       position: state.position + posInc,
+      testNestedUpdateStateCounter: state.testNestedUpdateStateCounter,
     };
   },
 
@@ -533,6 +564,10 @@ export const FullTestGame = makeSprite<
         rotation: 0,
         radius: 10,
         color: "#0095DD",
+      }),
+      t.text({
+        text: `updateState Counter: ${state.testNestedUpdateStateCounter}`,
+        color: "black",
       }),
     ];
   },
