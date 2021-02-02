@@ -253,7 +253,7 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
   text(font: TextureFont, text: string, fillStyle: string) {
     const { size, weight = "normal", style = "normal", family } = font;
     const fontString = `${style} ${weight} ${size ? `${size}px` : ""} ${
-      family ? `"${family}"` : ""
+      family ? `${family}` : ""
     }`;
     ctx.font = fontString;
     ctx.textBaseline = font.baseline || "middle";
