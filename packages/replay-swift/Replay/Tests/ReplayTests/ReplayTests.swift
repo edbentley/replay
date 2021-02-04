@@ -17,11 +17,20 @@ final class ReplayTests: XCTestCase {
             encoding: String.Encoding.utf8
         )
         
+        var webView: ReplayWebView!
+        
         let onLogCallback = { logs.append($0) }
-        let webView = ReplayWebViewManager(
+        
+        webView = ReplayWebViewManager(
             customGameJsString: gameJsString,
-            onLogCallback: onLogCallback
-        ).webView!
+            onLogCallback: onLogCallback,
+            onJsCallback: { (message) in
+                if (message == "Hello!") {
+                    webView?.jsBridge(messageId: "TestBridge", jsArg: "{ response: `Hi!` }")
+                }
+            }
+        ).webView
+        
         webView.frame = .init(x: 0, y: 0, width: 375, height: 812) // iPhone X
         
         let navigationDelegate = NavigationDelegate {
@@ -57,5 +66,8 @@ final class ReplayTests: XCTestCase {
         // Native Sprite logs
         XCTAssertTrue(logs.contains("create Game"))
         XCTAssertTrue(logs.contains("loop hello there Game"))
+        
+        // JS / Swift Bridge
+        XCTAssertTrue(logs.contains("Bridge response: Hi!"))
     }
 }

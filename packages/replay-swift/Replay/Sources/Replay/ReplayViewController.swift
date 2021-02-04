@@ -4,10 +4,17 @@ public class ReplayViewController: UIViewController {
     var hideStatusBar: Bool
     public var webView: ReplayWebView
     
-    public init(hideStatusBar: Bool = true) {
+    public init(
+        hideStatusBar: Bool = true,
+        onJsCallback: @escaping (String) -> Void = {_ in }
+    ) {
         self.hideStatusBar = hideStatusBar
-        self.webView = ReplayWebViewManager().webView
+        self.webView = ReplayWebViewManager(onJsCallback: onJsCallback).webView
         super.init(nibName: nil, bundle: nil)
+    }
+    
+    public func jsBridge(messageId: String, jsArg: String) {
+        self.webView.jsBridge(messageId: messageId, jsArg: jsArg)
     }
     
     required init?(coder: NSCoder) {
