@@ -52,16 +52,16 @@ interface Options<I> {
    */
   networkResponses?: {
     get?: {
-      [url: string]: () => object;
+      [url: string]: () => unknown;
     };
     put?: {
-      [url: string]: (body: object) => object;
+      [url: string]: (body: unknown) => unknown;
     };
     post?: {
-      [url: string]: (body: object) => object;
+      [url: string]: (body: unknown) => unknown;
     };
     delete?: {
-      [url: string]: () => object;
+      [url: string]: () => unknown;
     };
   };
   /**
@@ -107,8 +107,8 @@ interface TestSpriteUtils<I> {
   };
   network: {
     get: jest.Mock<any, [string, (data: unknown) => void]>;
-    post: jest.Mock<any, [string, object, (data: unknown) => void]>;
-    put: jest.Mock<any, [string, object, (data: unknown) => void]>;
+    post: jest.Mock<any, [string, unknown, (data: unknown) => void]>;
+    put: jest.Mock<any, [string, unknown, (data: unknown) => void]>;
     delete: jest.Mock<any, [string, (data: unknown) => void]>;
   };
   store: Store;
@@ -540,7 +540,7 @@ export function testSprite<P, S, I>(
     const stackObj: Error = {} as Error;
     Error.captureStackTrace(stackObj);
 
-    await new Promise((res, rej) => {
+    await new Promise<void>((res, rej) => {
       let i = 0;
 
       function loop() {

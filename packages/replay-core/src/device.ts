@@ -77,10 +77,14 @@ export interface Device<I = unknown> {
     get: (url: string, callback: (data: unknown) => void) => void;
     post: (
       url: string,
-      body: object,
+      body: unknown,
       callback: (data: unknown) => void
     ) => void;
-    put: (url: string, body: object, callback: (data: unknown) => void) => void;
+    put: (
+      url: string,
+      body: unknown,
+      callback: (data: unknown) => void
+    ) => void;
     delete: (url: string, callback: (data: unknown) => void) => void;
   };
 

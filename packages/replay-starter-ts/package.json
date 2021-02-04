@@ -6,7 +6,7 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "npm run dev",
-    "dev": "webpack-dev-server --config ./web/webpack.config.js --open --mode=development",
+    "dev": "webpack serve -d eval-cheap-module-source-map --config ./web/webpack.config.js --open --mode development",
     "lint": "eslint --ext .js,.ts .",
     "types": "tsc --noEmit -p tsconfig.json",
     "build": "npm run build-web && npm run build-swift",
