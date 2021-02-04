@@ -17,22 +17,19 @@ final class ReplayTests: XCTestCase {
             encoding: String.Encoding.utf8
         )
         
-        var vc: ReplayViewController?
+        var webView: ReplayWebView!
         
         let onLogCallback = { logs.append($0) }
         
-        // Create new webView to inject our test deps
-        let webView = ReplayWebViewManager(
+        webView = ReplayWebViewManager(
             customGameJsString: gameJsString,
             onLogCallback: onLogCallback,
             onJsCallback: { (message) in
                 if (message == "Hello!") {
-                    vc?.jsBridge(messageId: "TestBridge", jsArg: "{ response: `Hi!` }")
+                    webView?.jsBridge(messageId: "TestBridge", jsArg: "{ response: `Hi!` }")
                 }
             }
-        ).webView!
-        
-        vc = ReplayViewController(webView: webView)
+        ).webView
         
         webView.frame = .init(x: 0, y: 0, width: 375, height: 812) // iPhone X
         

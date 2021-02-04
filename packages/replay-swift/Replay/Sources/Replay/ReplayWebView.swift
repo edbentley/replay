@@ -8,6 +8,12 @@ public class ReplayWebView: WKWebView {
     public override var safeAreaInsets: UIEdgeInsets {
         return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
     }
+    
+    public func jsBridge(messageId: String, jsArg: String) {
+        self.evaluateJavaScript(
+            "window.__replayGlobalCallbacks__[`\(messageId)`](\(jsArg));"
+        )
+    }
 }
 
 class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNavigationDelegate {

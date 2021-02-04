@@ -13,17 +13,8 @@ public class ReplayViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
     }
     
-    // Override web view for tests
-    public init(webView: ReplayWebView) {
-        self.webView = webView
-        self.hideStatusBar = true
-        super.init(nibName: nil, bundle: nil)
-    }
-    
     public func jsBridge(messageId: String, jsArg: String) {
-        self.webView.evaluateJavaScript(
-            "window.__replayGlobalCallbacks__[`\(messageId)`](\(jsArg));"
-        )
+        self.webView.jsBridge(messageId: messageId, jsArg: jsArg)
     }
     
     required init?(coder: NSCoder) {
