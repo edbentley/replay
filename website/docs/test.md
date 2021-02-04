@@ -62,12 +62,12 @@ Note that this will run at almost synchronous speed, but doesn't block the event
 await jumpToFrame(() => props.x > 10);
 ```
 
-### `loadFiles()`
+### `resolvePromises()`
 
-An async function that loads all files specified by Sprites using [`preloadFiles`](sprites.md#init).
+An async function that can be used to flush Promises - such as loading all files specified by Sprites using [`preloadFiles`](sprites.md#init) and accessing storage.
 
 ```js
-await loadFiles();
+await resolvePromises();
 ```
 
 ### `setRandomNumbers(array)`
@@ -217,12 +217,12 @@ test("Can shoot bullet", async () => {
     updateInputs,
     getTexture,
     textureExists,
-    loadFiles,
+    resolvePromises,
   } = testSprite(Game(gameProps), gameProps, {
     initInputs,
   });
 
-  await loadFiles();
+  await resolvePromises();
   nextFrame();
 
   expect(textureExists("bullet")).toBe(false);
@@ -271,12 +271,12 @@ test("Can shoot bullet", async () => {
     updateInputs,
     getTexture,
     textureExists,
-    loadFiles,
+    resolvePromises,
   } = testSprite(Game(gameProps), gameProps, {
     initInputs,
   });
 
-  await loadFiles();
+  await resolvePromises();
   nextFrame();
 
   expect(textureExists("bullet")).toBe(false);

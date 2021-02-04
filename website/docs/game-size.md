@@ -101,7 +101,7 @@ Here's how you could render a game's score at the top of the screen on all devic
     return [
       t.text({
         text: `Score: ${props.score}`,
-        font: { name: "Courier", size: 16 },
+        font: { family: "Courier", size: 16 },
         color: "red",
         y: topY,
         anchorY: 8,

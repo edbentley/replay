@@ -89,8 +89,8 @@ export interface Device<I = unknown> {
   };
 
   storage: {
-    getStore: () => Store;
-    setStore: (store: Store) => void;
+    getItem: (key: string) => Promise<string | null>;
+    setItem: (key: string, value: string | null) => Promise<void>;
   };
 
   alert: {
@@ -144,11 +144,6 @@ export interface DeviceSize {
    */
   deviceHeight: number;
 }
-
-/**
- * The type of the store used in local storage
- */
-export type Store = Record<string, string | undefined>;
 
 export type Assets = {
   imageFileNames?: string[];

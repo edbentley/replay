@@ -346,7 +346,7 @@ describe("timer", () => {
 });
 
 test("audio", async () => {
-  const { nextFrame, audio, log, updateInputs, loadFiles } = testSprite(
+  const { nextFrame, audio, log, updateInputs, resolvePromises } = testSprite(
     Game(gameProps),
     gameProps,
     {
@@ -356,7 +356,7 @@ test("audio", async () => {
     }
   );
 
-  await loadFiles();
+  await resolvePromises();
 
   nextFrame();
   expect(audio.play).toBeCalledWith("sound.wav");
@@ -440,8 +440,8 @@ test("network", () => {
   );
 });
 
-test("storage", () => {
-  const { nextFrame, store, updateInputs } = testSprite(
+test("storage", async () => {
+  const { nextFrame, store, updateInputs, resolvePromises, log } = testSprite(
     Game(gameProps),
     gameProps,
     {
@@ -454,10 +454,17 @@ test("storage", () => {
 
   updateInputs({ testInput: "storage-set" });
   nextFrame();
+  await resolvePromises();
   expect(store).toEqual({ origStore: "origValue", testKey: "hello" });
+
+  updateInputs({ testInput: "storage-get" });
+  nextFrame();
+  await resolvePromises();
+  expect(log).toBeCalledWith("hello");
 
   updateInputs({ testInput: "storage-remove" });
   nextFrame();
+  await resolvePromises();
   expect(store).toEqual({ origStore: "origValue" });
 });
 
@@ -586,7 +593,7 @@ test("can mock Native Sprites", () => {
 });
 
 test("can load files specified in preloadFiles", async () => {
-  const { getTextures, nextFrame, loadFiles } = testSprite(
+  const { getTextures, nextFrame, resolvePromises } = testSprite(
     Game(gameProps),
     gameProps
   );
@@ -598,7 +605,7 @@ test("can load files specified in preloadFiles", async () => {
 
   expect(isLoading(getTextures())).toBe(true);
 
-  await loadFiles();
+  await resolvePromises();
   nextFrame();
 
   expect(isLoading(getTextures())).toBe(false);
@@ -739,10 +746,15 @@ const Game = makeSprite<GameProps, State, Inputs>({
         device.network.get("/test-get-fail", () => null);
         break;
       case "storage-set":
-        device.storage.setStore({ testKey: "hello" });
+        device.storage.setItem("testKey", "hello");
+        break;
+      case "storage-get":
+        device.storage.getItem("testKey").then((value) => {
+          device.log(value);
+        });
         break;
       case "storage-remove":
-        device.storage.setStore({ testKey: undefined });
+        device.storage.setItem("testKey", null);
         break;
       case "alert-ok":
         device.alert.ok("Ok?", () => {

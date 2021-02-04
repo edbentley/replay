@@ -18,13 +18,13 @@ interface State {
 }
 
 enum GameStage {
-  Query,
+  Loading,
   Play,
   GameOver,
 }
 
 const initState: Omit<State, "highScore"> = {
-  stage: GameStage.Query,
+  stage: GameStage.Loading,
   bulletSpeed: 0, // updated in query
   gameOverText: "",
   text: "Hello",
@@ -57,8 +57,6 @@ export const gameProps: GameProps = {
 
 export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
   init({ device, updateState }) {
-    const storedHighScore = device.storage.getStore().highScore;
-    const highScore = storedHighScore ? parseInt(storedHighScore, 10) : 0;
     // device.network.get(
     //   "https://jsonplaceholder.typicode.com/posts/1",
     //   data => {
@@ -69,35 +67,41 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
     //     });
     //   }
     // );
-    device.timer.start(() => {
-      updateState((state) => ({
-        ...state,
-        bulletSpeed: 10,
-        stage: GameStage.Play,
-      }));
 
-      // Uncomment below to test alerts and clipboard
-      // device.clipboard.copy("Hello", (error) => {
-      //   if (error) {
-      //     device.alert.ok(`Error copying to clipboard: ${error.message}`);
-      //   } else {
-      //     device.alert.okCancel(
-      //       `Just copied "Hello" to your clipboard. Game is about to start`,
-      //       (wasOk) => {
-      //         if (wasOk) {
-      //           updateState((state) => ({
-      //             ...state,
-      //             bulletSpeed: 10,
-      //             stage: GameStage.Play,
-      //           }));
-      //         }
-      //       }
-      //     );
-      //   }
-      // });
-    }, 1000);
+    device.storage.getItem("highScore").then((storedHighScore) => {
+      const highScore = storedHighScore ? parseInt(storedHighScore, 10) : 0;
 
-    return { ...initState, highScore };
+      device.timer.start(() => {
+        updateState((state) => ({
+          ...state,
+          highScore,
+          bulletSpeed: 10,
+          stage: GameStage.Play,
+        }));
+
+        // Uncomment below to test alerts and clipboard
+        // device.clipboard.copy("Hello", (error) => {
+        //   if (error) {
+        //     device.alert.ok(`Error copying to clipboard: ${error.message}`);
+        //   } else {
+        //     device.alert.okCancel(
+        //       `Just copied "Hello" to your clipboard. Game is about to start`,
+        //       (wasOk) => {
+        //         if (wasOk) {
+        //           updateState((state) => ({
+        //             ...state,
+        //             bulletSpeed: 10,
+        //             stage: GameStage.Play,
+        //           }));
+        //         }
+        //       }
+        //     );
+        //   }
+        // });
+      }, 1000);
+    });
+
+    return { ...initState, highScore: 0 };
   },
 
   loop({ state, device }) {
@@ -144,7 +148,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
       color: "red",
     });
     switch (state.stage) {
-      case GameStage.Query:
+      case GameStage.Loading:
         return [
           t.text({
             color: "red",
@@ -168,7 +172,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
             bulletSpeed: state.bulletSpeed,
             gameOver: (score) => {
               if (score > state.highScore) {
-                device.storage.setStore({ highScore: String(score) });
+                device.storage.setItem("highScore", String(score));
               }
 
               updateState((currState) => ({

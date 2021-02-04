@@ -29,7 +29,7 @@ function Tutorial() {
         {
           file: "index.ts",
           code: indexTs,
-          highlight: [1, 6, "12-19", 23, "30-37"],
+          highlight: [1, 6, "13-29", "36-43"],
         },
       ]}
       codesJs={[
@@ -41,7 +41,7 @@ function Tutorial() {
         {
           file: "index.js",
           code: indexJs,
-          highlight: [1, "6-13", 17, "24-31"],
+          highlight: [1, "7-23", "30-37"],
         },
       ]}
       Game={Game}

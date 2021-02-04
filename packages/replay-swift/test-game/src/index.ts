@@ -21,6 +21,7 @@ export const gameProps: GameProps = {
 export const Game = makeSprite<GameProps, undefined, iOSInputs>({
   render() {
     return [
+      StorageSprite({ id: "storage" }),
       BridgeSprite({ id: "bridge" }),
       MyNativeSprite({ id: "native" }),
       t.text({
@@ -73,6 +74,32 @@ const MyNativeSpriteWebView: NativeSpriteImplementation<
 export const nativeSpriteMap = {
   MyNativeSprite: MyNativeSpriteWebView,
 };
+
+// -- Storage
+
+const StorageSprite = makeSprite<{}>({
+  init({ device }) {
+    device.storage
+      .setItem("item1", "hi")
+      .then(() => device.storage.getItem("item1"))
+      .then((item1) => {
+        device.log(`item1 set: ${item1}`);
+      })
+      .then(() => device.storage.setItem("item1", null))
+      .then(() => device.storage.getItem("item1"))
+      .then((item1) => {
+        device.log(`item1 removed: ${item1}`);
+      });
+
+    device.storage.getItem("item2").then((item2) => {
+      device.log(`item2: ${item2}`);
+    });
+    return undefined;
+  },
+  render() {
+    return [];
+  },
+});
 
 // -- Swift / JS Bridge
 

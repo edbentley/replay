@@ -73,13 +73,22 @@ export type RenderCanvasOptions = {
   windowSize?: { width: number; height: number };
 };
 
+type PlatformOptions = {
+  storage: Device<{}>["storage"];
+};
+
 /**
  * Render your Replay game to the web canvas. Call this at your game's entry
  * file.
  */
 export function renderCanvas<S>(
   gameSprite: CustomSprite<GameProps, S, Inputs>,
-  options?: RenderCanvasOptions
+  options?: RenderCanvasOptions,
+  /**
+   * Used by platforms (like iOS) rendering in web views. You can ignore this
+   * parameter for building games.
+   */
+  platformOptions?: PlatformOptions
 ) {
   const {
     dimensions = "game-coords",
@@ -386,7 +395,8 @@ export function renderCanvas<S>(
         dimensions,
         gameSprite.props.size
       ),
-      assetUtils
+      assetUtils,
+      platformOptions?.storage || getStorage()
     ),
   };
 
@@ -488,7 +498,8 @@ export function renderCanvas<S>(
 function deviceCreator(
   audioContext: AudioContext,
   defaultSize: DeviceSize,
-  assetUtils: AssetUtils<AudioData, ImageFileData>
+  assetUtils: AssetUtils<AudioData, ImageFileData>,
+  storage: Device<{}>["storage"]
 ): ReplayPlatform<Inputs>["getGetDevice"] {
   // called once
   const initDevice: Omit<Device<Inputs>, "inputs" | "size" | "now"> = {
@@ -499,7 +510,7 @@ function deviceCreator(
     audio: getAudio(audioContext, assetUtils.audioElements),
     assetUtils: assetUtils as AssetUtils<unknown, unknown>,
     network: getNetwork(),
-    storage: getStorage(),
+    storage,
     alert: {
       ok: (message, onResponse) => {
         alert(message);

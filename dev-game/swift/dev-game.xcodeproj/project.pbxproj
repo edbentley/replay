@@ -187,7 +187,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if ! which npm > /dev/null; then\n  # Support Nix users\n  PATH=${PATH}:~/.nix-profile/bin\n\n  if ! which npm > /dev/null; then\n    echo \"error: Cannot find npm. Run \\\"which npm\\\" and add the directory to your PATH above.\"\n    exit 1\n  fi\nfi\ncd ${SRCROOT}/..\nnpm --scripts-prepend-node-path=true run build-swift\n";
+			shellScript = "if ! which npm > /dev/null; then\n  # Support Nix users\n  PATH=${PATH}:~/.nix-profile/bin\n\n  if ! which npm > /dev/null; then\n    echo \"error: Cannot find npm. Run \\\"which npm\\\" and add the directory to your PATH above.\"\n    exit 1\n  fi\nfi\ncd ${SRCROOT}/..\nnpm --scripts-prepend-node-path=true run build-swift\n\nsleep 1\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

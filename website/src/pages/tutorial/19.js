@@ -26,7 +26,7 @@ function Tutorial() {
           code: levelTs,
           highlight: [59],
         },
-        { file: "index.ts", code: indexTs, highlight: [15] },
+        { file: "index.ts", code: indexTs, highlight: [17] },
       ]}
       codesJs={[
         {
@@ -34,7 +34,7 @@ function Tutorial() {
           code: levelJs,
           highlight: [45],
         },
-        { file: "index.js", code: indexJs, highlight: [9] },
+        { file: "index.js", code: indexJs, highlight: [11] },
       ]}
       Game={Game}
       gameProps={gameProps}

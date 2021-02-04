@@ -31,7 +31,7 @@ test("gameplay", async () => {
     audio,
     store,
     log,
-    loadFiles,
+    resolvePromises,
     // alert,
     // clipboard,
   } = testSprite(Game(gameProps), gameProps, {
@@ -50,6 +50,9 @@ test("gameplay", async () => {
 
   expect(getByText("Loading game").length).toBe(1);
 
+  // Wait for storage promise to resolve
+  await resolvePromises();
+
   // Wait for initial timeout of 1000 ms
   for (let i = 0; i <= 60; i++) {
     nextFrame();
@@ -59,7 +62,7 @@ test("gameplay", async () => {
   expect(getByText("Loading level").length).toBe(1);
 
   // Load PlayStage files
-  await loadFiles();
+  await resolvePromises();
   nextFrame();
 
   expect(getByText("Loading level").length).toBe(0);

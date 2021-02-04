@@ -22,6 +22,7 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     let alerter = Alerter()
     let onJsCallback: (String) -> Void // userland
     let onLogCallback: (String) -> Void // for testing
+    let internalMessageKey = "__internalReplay"
     
     init(
         customGameJsString: String? = nil,
@@ -94,7 +95,13 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
             onLogCallback("\(message.body)")
             print(message.body)
         case JS_CALLBACK:
-            onJsCallback("\(message.body)")
+            let value = "\(message.body)"
+            if value.starts(with: internalMessageKey) {
+                let restOfMessage = String(value.dropFirst(internalMessageKey.count))
+                handleInternalMessage(message: restOfMessage)
+            } else {
+                onJsCallback(value)
+            }
         default:
             print("Unknown webKit message \(message.name)")
         }
@@ -110,6 +117,14 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         fatalError("Web view terminated. This may be caused by your game using up too much memory.")
+    }
+    
+    func handleInternalMessage(message: String) {
+        ReplayStorageProvider.handleInternalMessage(
+            message: message,
+            webView: webView,
+            internalMessageKey: internalMessageKey
+        )
     }
 }
 

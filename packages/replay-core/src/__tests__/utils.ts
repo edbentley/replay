@@ -167,8 +167,8 @@ export function getTestPlatform(customSize?: DeviceSize) {
     },
     network,
     storage: {
-      getStore: jest.fn(() => ({ text1: "storage" })),
-      setStore: jest.fn(),
+      getItem: jest.fn(() => Promise.resolve("storage")),
+      setItem: jest.fn(),
     },
     alert: {
       ok: jest.fn((_, onResponse) => {
@@ -731,8 +731,8 @@ const NestedFirstSprite2 = makeSprite<{}, undefined, TestPlatformInputs>({
 /// -- Test local storage
 
 interface LocalStorageGameState {
-  text1?: string;
-  text2?: string;
+  text1: string | null;
+  text2: string | null;
 }
 
 export const LocalStorageGame = makeSprite<
@@ -740,16 +740,18 @@ export const LocalStorageGame = makeSprite<
   LocalStorageGameState,
   TestPlatformInputs
 >({
-  init({ device }) {
-    const store = device.storage.getStore();
-    return {
-      text1: store.text1,
-      text2: store.text2,
-    };
+  init({ device, updateState }) {
+    Promise.all([
+      device.storage.getItem("text1"),
+      device.storage.getItem("text2"),
+    ]).then(([text1, text2]) => {
+      updateState((s) => ({ ...s, text1, text2 }));
+    });
+    return { text1: null, text2: null };
   },
 
   loop({ device, state }) {
-    device.storage.setStore({ text2: "new-val" });
+    device.storage.setItem("text2", "new-val");
 
     return state;
   },

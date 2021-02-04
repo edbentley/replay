@@ -186,26 +186,26 @@ network.post("/api/score", { score: 5 }, (data) => {
 
 Platform-independent way of storing save data to the local device.
 
-#### `getStore`
+#### `getItem(key)`
 
-Returns the current store: an object of keys and values of type string.
+Retrieve a saved value by its `string` key. Returns a `string` or `null`.
 
 ```js
-const { highScore } = storage.getStore();
+const playerName = storage.getItem("playerName");
 ```
 
-#### `setStore`
+#### `setItem(key, value)`
 
-Add or remove fields in the store. New fields are merged into the existing store:
+Set or remove a value in storage.
 
 ```js
-storage.setStore({ highScore: 5 });
+storage.setItem("playerName", "Replay");
 ```
 
-Setting `undefined` will remove a field from storage:
+Setting `null` will remove a field from storage:
 
 ```js
-storage.setStore({ highScore: undefined });
+storage.setItem("playerName", null);
 ```
 
 ### `alert`
