@@ -478,6 +478,39 @@ test("updateState in loop will update state in next render", () => {
   expect((spriteTextures.textures[0] as CircleTexture).props.x).toEqual(11);
 });
 
+test("can call updateState within an updateState", async () => {
+  const { platform, mutableTestDevice } = getTestPlatform();
+  const logSpy = jest.spyOn(mutableTestDevice, "log");
+
+  mutableTestDevice.inputs.buttonPressed.action = true;
+
+  const { initTextures, getNextFrameTextures } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    FullTestGame(gameProps)
+  );
+
+  expect((initTextures.textures[1] as TextTexture).props.text).toBe(
+    "updateState Counter: 0"
+  );
+
+  let time = 1;
+  const getNextFrameTexturesOverTime = () => {
+    time += 1000 * (1 / 60);
+    return getNextFrameTextures(time, jest.fn());
+  };
+
+  const spriteTextures = getNextFrameTexturesOverTime();
+
+  expect((spriteTextures.textures[1] as TextTexture).props.text).toBe(
+    "updateState Counter: 3"
+  );
+
+  expect(logSpy).toBeCalledWith("First updateState counter val: 0");
+  expect(logSpy).toBeCalledWith("Second updateState counter val: 1");
+  expect(logSpy).toBeCalledWith("Third updateState counter val: 2");
+});
+
 test("supports getState", async () => {
   const { platform, mutableTestDevice } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");

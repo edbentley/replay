@@ -455,10 +455,17 @@ function createCustomSpriteContainer<P, S, I>(
     loadFilesPromise,
     getSprites(props, device, initCreation, renderMethod, extrapolateFactor) {
       const runUpdateStateCallbacks = () => {
-        this.state = updateStateQueue.reduce(
-          (state, update) => update(state),
-          this.state
-        );
+        let queueIndex = 0;
+
+        // Use a while loop in case nested updateStates add to the array during
+        // loop
+        while (queueIndex < updateStateQueue.length) {
+          const update = updateStateQueue[queueIndex];
+
+          this.state = update(this.state);
+
+          queueIndex++;
+        }
         updateStateQueue.length = 0;
       };
 
