@@ -124,15 +124,34 @@ The returned object has the following methods:
 
 #### `play`
 
-Play the sound file. `position` and `loop` arguments are optional.
+Play the audio file. If the file is already playing, another sound will be played at the same time (unless `overwrite` is set to `true`).
+
+The first argument is optional and can be a number (start time in seconds) or an object with the following fields:
+
+- `fromPosition`: (Optional) Where to start the audio file from in seconds, same as providing the first argument as a number.
+- `overwrite`: (Optional) If this audio file is already playing, remove it first. Default `false`.
+- `loop`: (Optional) Keep playing the audio when it finishes. Default `false`.
+
+If no argument is provided or `fromPosition` is not defined in the argument object:
+
+- The audio will play from the beginning if:
+  - It's the first time being played, or
+  - The audio is already playing and `overwrite` is not set to `true`.
+- Otherwise, the audio will continue from where it was paused.
 
 ```js
-mySound.play(position = 0, loop = false);
+mySound.play();
+
+mySound.play(10);
+
+mySound.play({ overwrite: true });
+
+mySound.play({ fromPosition: 10, overwrite: true, loop: true });
 ```
 
 #### `pause`
 
-Pause the sound file.
+Pause the sound.
 
 ```js
 mySound.pause();
