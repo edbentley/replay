@@ -84,7 +84,7 @@ export const gameProps: GameProps = {
     maxHeightMargin: 150,
   },
   defaultFont: {
-    name: "Helvetica",
+    family: "Helvetica",
     size: 24,
   },
 };

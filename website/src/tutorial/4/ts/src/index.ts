@@ -18,7 +18,7 @@ export const gameProps: GameProps = {
     height: 600,
   },
   defaultFont: {
-    name: "Helvetica",
+    family: "Helvetica",
     size: 24,
   },
 };

@@ -42,7 +42,7 @@ export { Inputs as WebInputs, mapInputCoordinates } from "./input";
 export { Dimensions } from "./dimensions";
 
 const DEFAULT_FONT = {
-  name: "sans-serif",
+  family: "sans-serif",
   size: 12,
 };
 

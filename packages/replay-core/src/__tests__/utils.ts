@@ -320,7 +320,7 @@ const MultipleRendersSprite = makeSprite({
   render() {
     return [
       t.text({
-        font: { name: "Arial", size: 12 },
+        font: { family: "Arial", size: 12 },
         text: "this is landscape",
         color: "red",
       }),
@@ -329,7 +329,7 @@ const MultipleRendersSprite = makeSprite({
   renderP() {
     return [
       t.text({
-        font: { name: "Arial", size: 12 },
+        font: { family: "Arial", size: 12 },
         text: "this is portrait",
         color: "red",
       }),
@@ -338,7 +338,7 @@ const MultipleRendersSprite = makeSprite({
   renderXL() {
     return [
       t.text({
-        font: { name: "Arial", size: 12 },
+        font: { family: "Arial", size: 12 },
         text: "this is XL landscape",
         color: "red",
       }),
@@ -347,7 +347,7 @@ const MultipleRendersSprite = makeSprite({
   renderPXL() {
     return [
       t.text({
-        font: { name: "Arial", size: 12 },
+        font: { family: "Arial", size: 12 },
         text: "this is XL portrait",
         color: "red",
       }),

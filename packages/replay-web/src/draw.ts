@@ -83,12 +83,8 @@ function drawTexture(
 ): 0 {
   switch (texture.type) {
     case "text":
-      drawUtilsCtx.text(
-        texture.props.font || defaultFont,
-        texture.props.text,
-        texture.props.align,
-        texture.props.color
-      );
+      const fontDetails = { ...defaultFont, ...texture.props.font };
+      drawUtilsCtx.text(fontDetails, texture.props.text, texture.props.color);
       return 0;
     case "circle":
       drawUtilsCtx.circle(texture.props.radius, texture.props.color);
@@ -254,16 +250,14 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
       ctx.stroke();
     }
   },
-  text(
-    font: TextureFont,
-    text: string,
-    align: "left" | "center" | "right",
-    fillStyle: string
-  ) {
-    const fontString = `${font.size}px ${font.name}`;
+  text(font: TextureFont, text: string, fillStyle: string) {
+    const { size, weight = "normal", style = "normal", family } = font;
+    const fontString = `${style} ${weight} ${size ? `${size}px` : ""} ${
+      family ? `${family}` : ""
+    }`;
     ctx.font = fontString;
-    ctx.textBaseline = "middle";
-    ctx.textAlign = align;
+    ctx.textBaseline = font.baseline || "middle";
+    ctx.textAlign = font.align || "center";
     ctx.fillStyle = fillStyle;
     ctx.fillText(text, 0, 0);
   },

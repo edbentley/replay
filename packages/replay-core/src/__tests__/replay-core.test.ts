@@ -622,7 +622,6 @@ test("supports local storage", () => {
       props: {
         text: "storage",
         color: "red",
-        align: "center",
         x: 0,
         y: 0,
         rotation: 0,
@@ -632,6 +631,7 @@ test("supports local storage", () => {
         scaleX: 1,
         scaleY: 1,
         mask: null,
+        font: undefined,
       },
     },
   ]);
@@ -715,7 +715,7 @@ test("can copy to clipboard", () => {
 test("can define various texture shapes", () => {
   expect(
     t.text({
-      font: { name: "Arial", size: 12 },
+      font: { family: "Arial", size: 12 },
       text: "Hello",
       color: "red",
     }).type
@@ -844,7 +844,6 @@ test("deeply nested sprites and input position", () => {
       y: 20,
       rotation: 180,
       text: "nested",
-      align: "center",
       color: "black",
       opacity: 0.8, // texture opacity is multiplied on platform side
       anchorX: 0,
@@ -852,6 +851,7 @@ test("deeply nested sprites and input position", () => {
       scaleX: 1,
       scaleY: 1,
       mask: null,
+      font: undefined,
     },
   });
 

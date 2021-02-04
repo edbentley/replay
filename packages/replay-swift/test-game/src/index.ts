@@ -16,7 +16,7 @@ export const gameProps: GameProps = {
     maxWidthMargin: 50,
     maxHeightMargin: 50,
   },
-  defaultFont: { name: "Arial", size: 16 },
+  defaultFont: { family: "Arial", size: 16 },
 };
 
 export const Game = makeSprite<GameProps, undefined, iOSInputs>({
@@ -25,7 +25,7 @@ export const Game = makeSprite<GameProps, undefined, iOSInputs>({
       MyNativeSprite({ id: "native" }),
       t.text({
         x: -100,
-        font: { name: "serif", size: 22 },
+        font: { family: "serif", size: 22 },
         color: "red",
         text: "Test text",
       }),
