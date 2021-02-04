@@ -9,14 +9,14 @@
     "deploy": "docusaurus deploy"
   },
   "dependencies": {
-    "@docusaurus/core": "^2.0.0-alpha.61",
-    "@docusaurus/preset-classic": "^2.0.0-alpha.61",
+    "@docusaurus/core": "^2.0.0-alpha.70",
+    "@docusaurus/preset-classic": "^2.0.0-alpha.70",
     "@replay/core": "0.8.0",
     "@replay/swift": "0.8.0",
     "@replay/web": "0.8.0",
     "classnames": "^2.2.6",
-    "react": "^16.8.4",
-    "react-dom": "^16.8.4"
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1"
   },
   "browserslist": {
     "production": [
@@ -32,6 +32,6 @@
   },
   "devDependencies": {
     "@replay/test": "0.8.0",
-    "raw-loader": "^4.0.1"
+    "raw-loader": "^4.0.2"
   }
 }
