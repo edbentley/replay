@@ -123,17 +123,17 @@ export const BridgeSprite = makeSprite<{}>({
 ### Swift side
 
 ```swift
-        var vc: ReplayViewController?
+        var vc: ReplayViewController!
         vc = ReplayViewController(onJsCallback: { (message) in
             if (message == "Hello!") {
                 // Here you can call native APIs
                 let myApiVal = "Hi!"
 
-                vc?.jsBridge(
+                vc.jsBridge(
                     // This should match the id above
                     messageId: "TestBridge",
                     // The return value of the Promise in JS code.
-                    // Use a String which will be evaulated as JS code (like eval)
+                    // Use a String which will be evaluated as JS code (like eval)
                     jsArg: "{ response: `\(myApiVal)` }"
                 )
             }
