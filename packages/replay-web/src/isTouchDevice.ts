@@ -1,5 +1,6 @@
 interface TouchWindow extends Window {
   TouchEvent: unknown;
+  // eslint-disable-next-line @typescript-eslint/ban-types
   DocumentTouch: Function;
 }
 declare let window: TouchWindow;

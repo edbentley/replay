@@ -98,7 +98,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2B8258EE245896DA004E7481 /* Build configuration list for PBXNativeTarget "replay-starter-ts" */;
 			buildPhases = (
-				64D2E4BC254320B500908726 /* ShellScript */,
+				64D2E4BC254320B500908726 /* Run Script */,
 				2B8258D6245896D6004E7481 /* Sources */,
 				2B8258D7245896D6004E7481 /* Frameworks */,
 				2B8258D8245896D6004E7481 /* Resources */,
@@ -168,7 +168,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		64D2E4BC254320B500908726 /* ShellScript */ = {
+		64D2E4BC254320B500908726 /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -178,13 +178,14 @@
 			);
 			inputPaths = (
 			);
+			name = "Run Script";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if ! which npm > /dev/null; then\n  # Support Nix users\n  PATH=${PATH}:~/.nix-profile/bin\n\n  if ! which npm > /dev/null; then\n    echo \"error: Cannot find npm. Run \\\"which npm\\\" and add the directory to your PATH above.\"\n    exit 1\n  fi\nfi\ncd ${SRCROOT}/..\nnpm --scripts-prepend-node-path=true run build-swift\n";
+			shellScript = "if ! which npm > /dev/null; then\n  # Support Nix users\n  PATH=${PATH}:~/.nix-profile/bin\n\n  if ! which npm > /dev/null; then\n    echo \"error: Cannot find npm. Run \\\"which npm\\\" and add the directory to your PATH above.\"\n    exit 1\n  fi\nfi\ncd ${SRCROOT}/..\nnpm --scripts-prepend-node-path=true run build-swift\n\n# Add delay to ensure latest file is copied in\nsleep 1\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

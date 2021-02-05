@@ -15,10 +15,10 @@
   },
   "devDependencies": {
     "@replay/text-input": "0.8.0",
-    "jest": "^25.4.0",
+    "jest": "^26.6.3",
     "serve": "^11.3.2",
-    "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.11",
-    "webpack-dev-server": "^3.11.0"
+    "webpack": "^5.20.1",
+    "webpack-cli": "^4.5.0",
+    "webpack-dev-server": "^3.11.2"
   }
 }

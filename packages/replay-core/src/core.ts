@@ -245,7 +245,7 @@ function traverseCustomSpriteContainer<P, I>(
           lookupNativeSpriteContainer.type !== "native"
         ) {
           // Create a native container
-          const newContainer: NativeSpriteContainer<P, object> = {
+          const newContainer: NativeSpriteContainer<UnknownObject> = {
             type: "native",
             state: nativeSpriteImplementation.create({
               props: sprite.props,
@@ -553,7 +553,7 @@ function getRenderMethod(
 type SpriteContainer<P, S, I> =
   | CustomSpriteContainer<P, S, I>
   | PureCustomSpriteContainer<P>
-  | NativeSpriteContainer<P, S>;
+  | NativeSpriteContainer<S>;
 
 type CustomSpriteContainer<P, S, I> = {
   type: "custom";
@@ -635,7 +635,7 @@ function createPureCustomSpriteContainer<P>(
   };
 }
 
-function traversePureCustomSpriteContainer<P, I>(
+function traversePureCustomSpriteContainer<P>(
   customSpriteContainer: PureCustomSpriteContainer<P>,
   spriteProps: CustomSpriteProps<P>,
   deviceSize: DeviceSize,
@@ -717,7 +717,7 @@ function traversePureCustomSpriteContainer<P, I>(
   };
 }
 
-type NativeSpriteContainer<P, S> = {
+type NativeSpriteContainer<S> = {
   type: "native";
   state: S;
   cleanup: (params: { state: S; parentGlobalId: string }) => void;
@@ -762,3 +762,5 @@ export function getLocalCoordsForSprite(baseProps: SpriteBaseProps) {
     return { x: anchoredX, y: anchoredY };
   };
 }
+
+type UnknownObject = Record<string, unknown>;

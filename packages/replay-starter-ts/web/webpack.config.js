@@ -25,10 +25,9 @@ module.exports = {
   },
   plugins: [
     new CleanWebpackPlugin(),
-    new CopyWebpackPlugin([
-      { from: "assets/images" },
-      { from: "assets/audio" },
-    ]),
+    new CopyWebpackPlugin({
+      patterns: [{ from: "assets/images" }, { from: "assets/audio" }],
+    }),
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, "index.html"),
     }),
