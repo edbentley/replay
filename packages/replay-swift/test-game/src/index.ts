@@ -21,6 +21,7 @@ export const gameProps: GameProps = {
 export const Game = makeSprite<GameProps, undefined, iOSInputs>({
   render() {
     return [
+      ClipboardSprite({ id: "clipboard" }),
       StorageSprite({ id: "storage" }),
       BridgeSprite({ id: "bridge" }),
       MyNativeSprite({ id: "native" }),
@@ -74,6 +75,25 @@ const MyNativeSpriteWebView: NativeSpriteImplementation<
 export const nativeSpriteMap = {
   MyNativeSprite: MyNativeSpriteWebView,
 };
+
+// -- Clipboard
+
+const ClipboardSprite = makeSprite<{}>({
+  init({ device }) {
+    device.clipboard.copy("some_text", (err) => {
+      if (err) {
+        device.log("Copy Error!");
+      } else {
+        device.log("Copied!");
+      }
+    });
+
+    return undefined;
+  },
+  render() {
+    return [];
+  },
+});
 
 // -- Storage
 

@@ -74,5 +74,9 @@ final class ReplayTests: XCTestCase {
         XCTAssertTrue(logs.contains("item1 set: hi"))
         XCTAssertTrue(logs.contains("item1 removed: null"))
         XCTAssertTrue(logs.contains("item2: null"))
+        
+        // Clipboard
+        XCTAssertTrue(logs.contains("Copied!"))
+        XCTAssertEqual(UIPasteboard.general.string, "some_text")
     }
 }
