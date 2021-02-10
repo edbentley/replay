@@ -9,12 +9,20 @@ type GameState = {
 };
 
 export const Game = makeSprite<GameProps, GameState>({
-  init({ device }) {
-    const store = device.storage.getStore();
+  init({ device, updateState }) {
+    device.storage.getItem("highScore").then((highScore) => {
+      updateState((state) => {
+        return {
+          ...state,
+          highScore: Number(highScore || "0"),
+        };
+      });
+    });
+
     return {
       view: "menu",
       attempt: 0,
-      highScore: Number(store.highScore || "0"),
+      highScore: 0,
     };
   },
 
@@ -30,7 +38,7 @@ export const Game = makeSprite<GameProps, GameState>({
             let { highScore } = prevState;
             if (score > highScore) {
               highScore = score;
-              device.storage.setStore({ highScore: String(highScore) });
+              device.storage.setItem("highScore", String(highScore));
             }
             return {
               ...prevState,

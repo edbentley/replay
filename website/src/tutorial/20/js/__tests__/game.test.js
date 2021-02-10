@@ -16,7 +16,7 @@ test("Can start game", async () => {
   };
   const mainMenuText = "Start";
 
-  const { nextFrame, updateInputs, getByText, loadFiles } = testSprite(
+  const { nextFrame, updateInputs, getByText, resolvePromises } = testSprite(
     Game(gameProps),
     gameProps,
     {
@@ -24,7 +24,7 @@ test("Can start game", async () => {
     }
   );
 
-  await loadFiles();
+  await resolvePromises();
   nextFrame();
 
   expect(getByText(mainMenuText).length).toBe(1);

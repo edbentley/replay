@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { GameProps, Texture, Device, DeviceSize, Store } from "@replay/core";
+import { GameProps, Texture, Device, DeviceSize } from "@replay/core";
 import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
 import {
   CustomSprite,
@@ -46,7 +46,7 @@ interface Options<I> {
   /**
    * Set initial storage value
    */
-  initStore?: Store;
+  initStore?: Record<string, string | undefined>;
   /**
    * Mock responses for url by request type
    */
@@ -99,7 +99,7 @@ interface TestSpriteUtils<I> {
   textureExists: (testId: string) => boolean;
   getByText: (text: string) => TextTexture[];
   log: jest.Mock<any, any>;
-  loadFiles: () => Promise<void>;
+  resolvePromises: () => Promise<void>;
   audio: {
     getPosition: jest.Mock<number>;
     play: jest.Mock<any, any>;
@@ -111,7 +111,7 @@ interface TestSpriteUtils<I> {
     put: jest.Mock<any, [string, unknown, (data: unknown) => void]>;
     delete: jest.Mock<any, [string, (data: unknown) => void]>;
   };
-  store: Store;
+  store: Record<string, string | undefined>;
   alert: {
     ok: jest.Mock<any, [string, (() => void) | undefined]>;
     okCancel: jest.Mock<any, [string, (wasOk: boolean) => void]>;
@@ -344,17 +344,17 @@ export function testSprite<P, S, I>(
   };
 
   const store = { ...initStore };
-  const storage = {
-    getStore() {
-      return store;
+  const storage: Device<I>["storage"] = {
+    getItem(key) {
+      return Promise.resolve(store[key] ?? null);
     },
-    setStore(newStore: Record<string, string | undefined>) {
-      Object.entries(newStore).forEach(([field, value]) => {
-        if (value === undefined) {
-          delete store[field];
-        } else {
-          store[field] = value;
+    setItem(key, value) {
+      return Promise.resolve().then(() => {
+        if (value === null) {
+          delete store[key];
+          return;
         }
+        store[key] = value;
       });
     },
   };
@@ -364,9 +364,9 @@ export function testSprite<P, S, I>(
   const timers: Timer[] = [];
 
   /**
-   * Load files specified in `preloadFiles`.
+   * Resolve promises such as `preloadFiles` and storage.
    */
-  const loadFiles = () => new Promise(setImmediate);
+  const resolvePromises = () => new Promise(setImmediate);
 
   const audioElements: AssetMap<string> = {};
   const imageElements: AssetMap<string> = {};
@@ -636,7 +636,7 @@ export function testSprite<P, S, I>(
     getTexture,
     textureExists,
     getByText,
-    loadFiles,
+    resolvePromises,
     log,
     audio,
     network,

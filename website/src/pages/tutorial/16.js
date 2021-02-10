@@ -22,14 +22,14 @@ function Tutorial() {
         {
           file: "level.ts",
           code: levelTs,
-          highlight: [19, 28, 39, 68, 77, "102-108"],
+          highlight: [19, 28, 39, 68, 77, "102-110"],
         },
       ]}
       codesJs={[
         {
           file: "level.js",
           code: levelJs,
-          highlight: [14, 25, 54, 63, "88-94"],
+          highlight: [14, 25, 54, 63, "88-96"],
         },
       ]}
       Game={Game}

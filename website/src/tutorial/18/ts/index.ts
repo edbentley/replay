@@ -10,19 +10,25 @@ type GameState = {
 
 export const Game = makeSprite<GameProps, GameState>({
   init({ device, preloadFiles, updateState }) {
-    preloadFiles({
-      imageFileNames: ["bird.png"],
-    }).then(() => {
+    Promise.all([
+      device.storage.getItem("highScore"),
+      preloadFiles({
+        imageFileNames: ["bird.png"],
+      }),
+    ]).then(([highScore]) => {
       updateState((state) => {
-        return { ...state, view: "menu" };
+        return {
+          ...state,
+          view: "menu",
+          highScore: Number(highScore || "0"),
+        };
       });
     });
 
-    const store = device.storage.getStore();
     return {
       view: "loading",
       attempt: 0,
-      highScore: Number(store.highScore || "0"),
+      highScore: 0,
     };
   },
 
@@ -47,7 +53,7 @@ export const Game = makeSprite<GameProps, GameState>({
             let { highScore } = prevState;
             if (score > highScore) {
               highScore = score;
-              device.storage.setStore({ highScore: String(highScore) });
+              device.storage.setItem("highScore", String(highScore));
             }
             return {
               ...prevState,

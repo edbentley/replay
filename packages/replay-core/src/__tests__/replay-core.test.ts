@@ -637,13 +637,13 @@ test("supports network calls", () => {
   expect(logSpy).toBeCalledWith("DELETE-/test");
 });
 
-test("supports local storage", () => {
+test("supports local storage", async () => {
   const { platform, mutableTestDevice } = getTestPlatform();
 
   const { storage } = mutableTestDevice;
   const storageSpy = {
-    getStore: jest.spyOn(storage, "getStore"),
-    setStore: jest.spyOn(storage, "setStore"),
+    getItem: jest.spyOn(storage, "getItem"),
+    setItem: jest.spyOn(storage, "setItem"),
   };
 
   const { initTextures, getNextFrameTextures } = replayCore(
@@ -651,9 +651,17 @@ test("supports local storage", () => {
     nativeSpriteSettings,
     LocalStorageGame(gameProps)
   );
-  expect(storageSpy.getStore).toBeCalled();
+  expect(storageSpy.getItem).toBeCalledWith("text1");
+  expect(storageSpy.getItem).toBeCalledWith("text2");
 
-  expect(initTextures.textures).toEqual([
+  expect(initTextures.textures).toEqual([]);
+
+  // Wait for promises to resolve
+  await waitFrame();
+
+  const spriteTextures = getNextFrameTextures(1000 * (1 / 60) + 1, jest.fn());
+
+  expect(spriteTextures.textures).toEqual([
     {
       type: "text",
       props: {
@@ -671,11 +679,25 @@ test("supports local storage", () => {
         font: undefined,
       },
     },
+    {
+      type: "text",
+      props: {
+        text: "storage",
+        color: "blue",
+        x: 0,
+        y: 0,
+        rotation: 0,
+        opacity: 1,
+        anchorX: 0,
+        anchorY: 0,
+        scaleX: 1,
+        scaleY: 1,
+        mask: null,
+      },
+    },
   ]);
 
-  getNextFrameTextures(1000 * (1 / 60) + 1, jest.fn());
-
-  expect(storageSpy.setStore).toBeCalledWith({ text2: "new-val" });
+  expect(storageSpy.setItem).toBeCalledWith("text2", "new-val");
 });
 
 test("supports alerts", () => {

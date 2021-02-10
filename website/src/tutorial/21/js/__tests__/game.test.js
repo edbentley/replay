@@ -25,14 +25,14 @@ test("Can reach a score of 2", async () => {
     getTexture,
     jumpToFrame,
     audio,
-    loadFiles,
+    resolvePromises,
   } = testSprite(Game(gameProps), gameProps, {
     initInputs,
     // First two pipes will have gap in middle, third pipe lower down
     initRandom: [0.5, 0.5, 0],
   });
 
-  await loadFiles();
+  await resolvePromises();
   nextFrame();
 
   expect(getByText(mainMenuText).length).toBe(1);

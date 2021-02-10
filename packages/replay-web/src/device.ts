@@ -1,4 +1,4 @@
-import { Device, Store } from "@replay/core";
+import { Device } from "@replay/core";
 import { AssetMap } from "@replay/core/dist/device";
 
 /**
@@ -158,24 +158,15 @@ export function getNetwork(): Device<{}>["network"] {
 
 export function getStorage(): Device<{}>["storage"] {
   return {
-    getStore: () => {
-      const store: Store = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key) {
-          store[key] = localStorage.getItem(key) ?? undefined;
-        }
-      }
-      return store;
+    getItem: async (key) => {
+      return localStorage.getItem(key);
     },
-    setStore: (store) => {
-      Object.entries(store).forEach(([field, value]) => {
-        if (value === undefined) {
-          localStorage.removeItem(field);
-        } else {
-          localStorage.setItem(field, value);
-        }
-      });
+    setItem: async (key, value) => {
+      if (value === null) {
+        localStorage.removeItem(key);
+        return;
+      }
+      localStorage.setItem(key, value);
     },
   };
 }

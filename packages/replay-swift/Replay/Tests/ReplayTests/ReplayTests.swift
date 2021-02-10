@@ -69,5 +69,10 @@ final class ReplayTests: XCTestCase {
         
         // JS / Swift Bridge
         XCTAssertTrue(logs.contains("Bridge response: Hi!"))
+        
+        // Storage
+        XCTAssertTrue(logs.contains("item1 set: hi"))
+        XCTAssertTrue(logs.contains("item1 removed: null"))
+        XCTAssertTrue(logs.contains("item2: null"))
     }
 }
