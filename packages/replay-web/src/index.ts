@@ -35,6 +35,7 @@ import {
   getFileBuffer,
   AudioData,
   ImageFileData,
+  getClipboard,
 } from "./device";
 import { isTouchDevice } from "./isTouchDevice";
 
@@ -74,7 +75,8 @@ export type RenderCanvasOptions = {
 };
 
 type PlatformOptions = {
-  storage: Device<{}>["storage"];
+  storage?: Device<{}>["storage"];
+  clipboard?: Device<{}>["clipboard"];
 };
 
 /**
@@ -396,7 +398,8 @@ export function renderCanvas<S>(
         gameSprite.props.size
       ),
       assetUtils,
-      platformOptions?.storage || getStorage()
+      platformOptions?.storage || getStorage(),
+      platformOptions?.clipboard || getClipboard()
     ),
   };
 
@@ -499,7 +502,8 @@ function deviceCreator(
   audioContext: AudioContext,
   defaultSize: DeviceSize,
   assetUtils: AssetUtils<AudioData, ImageFileData>,
-  storage: Device<{}>["storage"]
+  storage: Device<{}>["storage"],
+  clipboard: Device<{}>["clipboard"]
 ): ReplayPlatform<Inputs>["getGetDevice"] {
   // called once
   const initDevice: Omit<Device<Inputs>, "inputs" | "size" | "now"> = {
@@ -521,29 +525,7 @@ function deviceCreator(
         onResponse(wasOk);
       },
     },
-    clipboard: {
-      copy: (text, onComplete) => {
-        // Currently not working on iOS, it may work in iOS 14?
-        if (!navigator.clipboard) {
-          onComplete(
-            new Error(
-              window.isSecureContext
-                ? "Couldn't access clipboard"
-                : "Clipboard only available on HTTPS or localhost"
-            )
-          );
-          return;
-        }
-        navigator.clipboard
-          .writeText(text)
-          .then(() => {
-            onComplete();
-          })
-          .catch((error: Error) => {
-            onComplete(error);
-          });
-      },
-    },
+    clipboard,
   };
 
   return () => {

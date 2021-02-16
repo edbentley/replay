@@ -120,11 +120,22 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     }
     
     func handleInternalMessage(message: String) {
-        ReplayStorageProvider.handleInternalMessage(
-            message: message,
-            webView: webView,
-            internalMessageKey: internalMessageKey
-        )
+        switch message {
+        case let x where x.starts(with: ReplayStorageProvider.messagePrefix):
+            ReplayStorageProvider.handleInternalMessage(
+                message: message,
+                webView: webView,
+                internalMessageKey: internalMessageKey
+            )
+        case let x where x.starts(with: ReplayClipboardManager.messagePrefix):
+            ReplayClipboardManager.handleInternalMessage(
+                message: message,
+                webView: webView,
+                internalMessageKey: internalMessageKey
+            )
+        default:
+            break
+        }
     }
 }
 

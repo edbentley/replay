@@ -18,21 +18,31 @@ export function run() {
     storage: {
       getItem(key) {
         return swiftBridge<string | null>({
-          id: `__internalReplayGetItem-${key}`,
-          message: `__internalReplayGetItem-${key}`,
+          id: `__internalReplayStorageGetItem-${key}`,
+          message: `__internalReplayStorageGetItem-${key}`,
         });
       },
       setItem(key, value) {
         if (value === null) {
           return swiftBridge<void>({
-            id: `__internalReplayRemoveItem-${key}`,
-            message: `__internalReplayRemoveItem-${key}`,
+            id: `__internalReplayStorageRemoveItem-${key}`,
+            message: `__internalReplayStorageRemoveItem-${key}`,
           });
         }
         return swiftBridge<void>({
-          id: `__internalReplaySetItem-${key}`,
+          id: `__internalReplayStorageSetItem-${key}`,
           // We assume user's keys won't contain this separator
-          message: `__internalReplaySetItem-${key}_____end_of_key______${value}`,
+          message: `__internalReplayStorageSetItem-${key}_____end_of_key______${value}`,
+        });
+      },
+    },
+    clipboard: {
+      copy(text, onComplete) {
+        swiftBridge<void>({
+          id: "__internalReplayClipboardCopy",
+          message: `__internalReplayClipboardCopy${text}`,
+        }).then(() => {
+          onComplete();
         });
       },
     },

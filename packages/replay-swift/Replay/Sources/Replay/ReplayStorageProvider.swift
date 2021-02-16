@@ -19,10 +19,12 @@ class ReplayStorageProvider {
         defaults.set(value, forKey: key)
     }
     
+    static let messagePrefix = "Storage"
+    
     static func handleInternalMessage(message: String, webView: ReplayWebView, internalMessageKey: String) {
-        let getItemKey = "GetItem-"
-        let removeItemKey = "RemoveItem-"
-        let setItemKey = "SetItem-"
+        let getItemKey = "\(messagePrefix)GetItem-"
+        let removeItemKey = "\(messagePrefix)RemoveItem-"
+        let setItemKey = "\(messagePrefix)SetItem-"
         let setItemKeyValueSeparator = "_____end_of_key______"
         
         switch message {
