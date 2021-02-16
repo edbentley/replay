@@ -2,15 +2,29 @@
   {
     "name": "Replay Bird",
     "link": "https://edbentley.github.io/replay-bird",
-    "source": "https://github.com/edbentley/replay-bird"
+    "source": "https://github.com/edbentley/replay-bird",
+    "image": "/img/games/replay-bird.png"
   },
   {
     "name": "Skwish",
-    "link": "https://pawprints.itch.io/skwish"
+    "link": "https://pawprints.itch.io/skwish",
+    "image": "/img/games/skwish.png"
   },
   {
     "name": "Sloops",
     "link": "https://jovial-hamilton-be7838.netlify.app",
-    "source": "https://github.com/pajicv/sloops"
+    "source": "https://github.com/pajicv/sloops",
+    "image": "/img/games/sloops.png"
+  },
+  {
+    "name": "Chiptari Woman",
+    "link": "https://pawprints.itch.io/chiptari-woman",
+    "image": "/img/games/chiptari-woman.png"
+  },
+  {
+    "name": "Bodega Cat Simulator",
+    "link": "https://pawprints.itch.io/bodega-cat-simulator",
+    "source": "https://github.com/ejb/bodega-cat-simulator",
+    "image": "/img/games/bodega-cat-simulator.png"
   }
 ]
