@@ -30,11 +30,11 @@ function Games() {
                     <Link to={game.link}>Play online</Link>
                     {game.source && (
                       <>
-                      {" · "}
-                      <Link to={game.source}>Source</Link>
-                    </>
-                  )}
-                </div>
+                        {" · "}
+                        <Link to={game.source}>Source</Link>
+                      </>
+                    )}
+                  </div>
                 </li>
               ))}
           </ul>
