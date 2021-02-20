@@ -4,9 +4,11 @@
  */
 
 .viewContainer {
-  width: 608px;
   margin: 2rem 0;
+  padding: 0 2rem;
   min-height: 400px;
+  width: 100%;
+  max-width: 1200px;
 }
 
 @media (max-width: 624px) {
@@ -14,4 +16,32 @@
     width: calc(100% - 16px);
     margin: 1rem 0;
   }
+}
+
+.games {
+  display: grid;
+  padding-left: 0;
+  grid-template-columns: repeat( auto-fit, minmax(250px, 1fr) );
+  grid-row-gap: 2em;
+  grid-column-gap: 2em;
+  align-items: end;
+}
+
+.game {
+  display: block;
+}
+
+.gameTitle {
+  margin-bottom: 0;
+  font-size: 18px;
+}
+
+.thumbnail {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.details {
+  grid-column: 1;
+  grid-row: 1;
 }
