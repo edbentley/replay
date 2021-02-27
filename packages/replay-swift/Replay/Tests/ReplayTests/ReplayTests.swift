@@ -19,7 +19,24 @@ final class ReplayTests: XCTestCase {
         
         var webView: ReplayWebView!
         
-        let onLogCallback = { logs.append($0) }
+        let storageExpectation1 = self.expectation(description: "item1 set")
+        let storageExpectation2 = self.expectation(description: "item1 removed")
+        let storageExpectation3 = self.expectation(description: "item2 not set")
+        
+        let onLogCallback = { (value: String) in
+            logs.append(value)
+            
+            // Check async callbacks
+            if value == "item1 set: hi" {
+                storageExpectation1.fulfill()
+            }
+            if value == "item1 removed: null" {
+                storageExpectation2.fulfill()
+            }
+            if value == "item2: null" {
+                storageExpectation3.fulfill()
+            }
+        }
         
         webView = ReplayWebViewManager(
             customGameJsString: gameJsString,
@@ -71,9 +88,7 @@ final class ReplayTests: XCTestCase {
         XCTAssertTrue(logs.contains("Bridge response: Hi!"))
         
         // Storage
-        XCTAssertTrue(logs.contains("item1 set: hi"))
-        XCTAssertTrue(logs.contains("item1 removed: null"))
-        XCTAssertTrue(logs.contains("item2: null"))
+        wait(for: [storageExpectation1, storageExpectation2, storageExpectation3], timeout: 5)
         
         // Clipboard
         XCTAssertTrue(logs.contains("Copied!"))
