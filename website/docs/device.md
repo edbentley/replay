@@ -131,6 +131,7 @@ The first argument is optional and can be a number (start time in seconds) or an
 - `fromPosition`: (Optional) Where to start the audio file from in seconds, same as providing the first argument as a number.
 - `overwrite`: (Optional) If this audio file is already playing, remove it first. Default `false`.
 - `loop`: (Optional) Keep playing the audio when it finishes. Default `false`.
+- `playbackRate`: (Optional) The speed to play at, less than `1` slows audio down and more than `1` speeds it up. Default `1`.
 
 If no argument is provided or `fromPosition` is not defined in the argument object:
 
@@ -146,7 +147,7 @@ mySound.play(10);
 
 mySound.play({ overwrite: true });
 
-mySound.play({ fromPosition: 10, overwrite: true, loop: true });
+mySound.play({ fromPosition: 10, overwrite: true, loop: true, playbackRate: 0.5 });
 ```
 
 #### `pause`

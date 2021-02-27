@@ -28,6 +28,7 @@ Object.defineProperty(window, "AudioContext", {
     createBufferSource: jest.fn(() => ({
       buffer: {},
       connect: jest.fn(),
+      playbackRate: { value: 1 },
       start: jest.fn(),
       stop: jest.fn(),
       loop: false,

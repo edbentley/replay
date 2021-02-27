@@ -192,6 +192,8 @@ export const TestGameWithAssets = makeSprite<
             Math.round(device.audio("shoot.wav").getPosition() * 1000) / 1000
           }`
         );
+      } else if (pointer.x === 4) {
+        device.audio("shoot.wav").play({ playbackRate: 0.5 });
       }
     }
 

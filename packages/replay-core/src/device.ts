@@ -65,7 +65,12 @@ export interface Device<I = unknown> {
     play: (
       fromPositionOrSettings?:
         | number
-        | { fromPosition?: number; loop?: boolean; overwrite?: boolean }
+        | {
+            fromPosition?: number;
+            loop?: boolean;
+            overwrite?: boolean;
+            playbackRate?: number;
+          }
     ) => void;
     pause: () => void;
   };

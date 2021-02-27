@@ -223,9 +223,6 @@ test("Can play audio, pause and get position", async () => {
 
   const nextFrame = () => {
     mockTime.nextFrame();
-    if (data.playState?.isPaused === false) {
-      data.playState.alreadyPlayedTime += 0.016; // advance a frame
-    }
     const { currentTime } = audioContext;
     Object.defineProperty(audioContext, "currentTime", {
       get: () => currentTime + 0.016,
@@ -241,10 +238,11 @@ test("Can play audio, pause and get position", async () => {
 
   // Sound plays
   expect(data.playState).toEqual({
-    alreadyPlayedTime: 0.032,
+    // This is only updated on pause
+    alreadyPlayedTime: 0,
     isPaused: false,
     sample: expect.any(Object),
-    startTime: 5.016,
+    playTime: 5.016,
   });
 
   clickPointer(102, 0);
@@ -263,6 +261,21 @@ test("Can play audio, pause and get position", async () => {
 
   // Can get sound's position
   expect(console.log).toBeCalledWith("Current time: 0.032");
+
+  // Resume at half speed
+  clickPointer(104, 0);
+  nextFrame();
+  releasePointer(104, 0);
+  nextFrame();
+
+  // Pause
+  clickPointer(102, 0);
+  nextFrame();
+  releasePointer(102, 0);
+  nextFrame();
+
+  // Didn't progress as far at half speed
+  expect(data.playState?.alreadyPlayedTime).toBeCloseTo(0.048);
 });
 
 test("Can show alerts", () => {

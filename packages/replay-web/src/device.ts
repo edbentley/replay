@@ -22,7 +22,7 @@ export type AudioData = {
   buffer: AudioBuffer;
   playState?: {
     isPaused: boolean;
-    startTime: number; // seconds
+    playTime: number; // seconds
     alreadyPlayedTime: number;
     sample: AudioBufferSourceNode;
   };
@@ -49,18 +49,13 @@ export function getAudio(
 
     return {
       getPosition: () => {
-        if (playState) {
-          if (playState.isPaused) {
-            return playState.alreadyPlayedTime;
-          }
-          return audioContext.currentTime - playState.startTime;
-        }
-        return 0;
+        return getAudioPosition(audioContext, playState);
       },
       play: (fromPositionOrSettings) => {
         let fromPosition;
         let loop = false;
         let overwrite = false;
+        let playbackRate = 1;
         if (typeof fromPositionOrSettings === "number") {
           fromPosition = fromPositionOrSettings;
         } else if (fromPositionOrSettings) {
@@ -68,15 +63,17 @@ export function getAudio(
             fromPosition,
             loop = loop,
             overwrite = overwrite,
+            playbackRate = playbackRate,
           } = fromPositionOrSettings);
         }
 
         const sampleSource = audioContext.createBufferSource();
         sampleSource.buffer = buffer;
+        sampleSource.playbackRate.value = playbackRate;
         sampleSource.connect(audioContext.destination);
 
         const alreadyPlayedTime =
-          fromPosition ?? playState?.alreadyPlayedTime ?? 0;
+          fromPosition ?? getAudioPosition(audioContext, playState);
 
         sampleSource.start(undefined, alreadyPlayedTime);
         sampleSource.loop = loop;
@@ -102,7 +99,7 @@ export function getAudio(
 
           // Save info for pausing etc.
           data.playState = {
-            startTime: audioContext.currentTime - alreadyPlayedTime,
+            playTime: audioContext.currentTime,
             sample: sampleSource,
             alreadyPlayedTime,
             isPaused: false,
@@ -114,13 +111,30 @@ export function getAudio(
           playState.sample.stop();
           data.playState = {
             ...playState,
-            alreadyPlayedTime: audioContext.currentTime - playState.startTime,
+            alreadyPlayedTime: getAudioPosition(audioContext, playState),
             isPaused: true,
           };
         }
       },
     };
   };
+}
+
+function getAudioPosition(
+  audioContext: AudioContext,
+  playState: AudioData["playState"]
+) {
+  if (playState) {
+    if (playState.isPaused) {
+      return playState.alreadyPlayedTime;
+    }
+    return (
+      (audioContext.currentTime - playState.playTime) *
+        playState.sample.playbackRate.value +
+      playState.alreadyPlayedTime
+    );
+  }
+  return 0;
 }
 
 export function getNetwork(): Device<{}>["network"] {
