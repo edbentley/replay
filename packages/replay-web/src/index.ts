@@ -72,6 +72,14 @@ export type RenderCanvasOptions = {
    * Override the view size, instead of using the window size
    */
   windowSize?: { width: number; height: number };
+  /**
+   * Start your own timer to test game's performance
+   */
+  statsBegin?: () => void;
+  /**
+   * End of timer to test game's performance
+   */
+  statsEnd?: () => void;
 };
 
 type PlatformOptions = {
@@ -97,6 +105,8 @@ export function renderCanvas<S>(
     canvas: userCanvas,
     nativeSpriteMap = {},
     windowSize,
+    statsBegin,
+    statsEnd,
   } = options || {};
 
   const canvas = userCanvas || document.createElement("canvas");
@@ -445,10 +455,12 @@ export function renderCanvas<S>(
 
   function loop(textures: SpriteTextures) {
     render.ref?.(textures);
+    statsEnd?.();
     window.requestAnimationFrame((time) => {
       if (isCleanedUp) {
         return;
       }
+      statsBegin?.();
       if (initTime === null) {
         initTime = time - 1 / 60;
       }
