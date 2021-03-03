@@ -71,7 +71,8 @@ interface SpriteObjInit<P, S, I> {
      * returns it will throw an error.
      */
     getState: () => S;
-    device: Device<I>;
+    device: Device;
+    inputs: I;
     updateState: (update: (state: S) => S) => void;
     /**
      * Asset file names to preload for this Sprite. They'll be cleared from
@@ -88,7 +89,8 @@ interface SpriteObjBase<P, S, I> {
   loop?: (params: {
     props: Readonly<P>;
     state: Readonly<S>;
-    device: Device<I>;
+    device: Device;
+    inputs: I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => S;
@@ -102,7 +104,8 @@ interface SpriteObjBase<P, S, I> {
   render: (params: {
     props: Readonly<P>;
     state: Readonly<S>;
-    device: Device<I>;
+    device: Device;
+    inputs: I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
     /**
@@ -120,7 +123,8 @@ interface SpriteObjBase<P, S, I> {
   renderP?: (params: {
     props: Readonly<P>;
     state: Readonly<S>;
-    device: Device<I>;
+    device: Device;
+    inputs: I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => Sprite[];
@@ -132,7 +136,8 @@ interface SpriteObjBase<P, S, I> {
   renderXL?: (params: {
     props: Readonly<P>;
     state: Readonly<S>;
-    device: Device<I>;
+    device: Device;
+    inputs: I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => Sprite[];
@@ -146,7 +151,8 @@ interface SpriteObjBase<P, S, I> {
   renderPXL?: (params: {
     props: Readonly<P>;
     state: Readonly<S>;
-    device: Device<I>;
+    device: Device;
+    inputs: I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => Sprite[];

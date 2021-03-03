@@ -1,36 +1,6 @@
 import { GameSize, DeviceSize } from "@replay/core";
 import { Dimensions } from "./dimensions";
 
-// We use a variable we mutate so that we don't need to calculate the size every
-// frame - on window resize we simply mutate the value to update it.
-let deviceSize: DeviceSize | undefined;
-
-/**
- * Get the device size, use `setDeviceSize` to update the value.
- */
-export function getDeviceSize() {
-  return deviceSize;
-}
-
-/**
- * Update the device size. This mutates the value received from `getDeviceSize`.
- */
-export function setDeviceSize(
-  innerWidth: number,
-  innerHeight: number,
-  dimensions: Dimensions,
-  gameSize: GameSize
-) {
-  const newDeviceSize = calculateDeviceSize(
-    innerWidth,
-    innerHeight,
-    dimensions,
-    gameSize
-  );
-  deviceSize = newDeviceSize;
-  return newDeviceSize;
-}
-
 export function calculateDeviceSize(
   innerWidth: number,
   innerHeight: number,

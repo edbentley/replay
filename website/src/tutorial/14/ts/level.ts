@@ -94,7 +94,7 @@ export const Level = makeSprite<LevelProps, LevelState, WebInputs | iOSInputs>({
   },
 });
 
-function newPipe(device: Device<{}>): PipeT {
+function newPipe(device: Device): PipeT {
   const height = device.size.height + device.size.heightMargin * 2;
   const randomY = (height - pipeGap * 2) * (device.random() - 0.5);
 
