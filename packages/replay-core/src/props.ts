@@ -69,3 +69,36 @@ export function getDefaultProps(
     mask: props.mask || null,
   };
 }
+
+export function mutateBaseProps(
+  prevBaseProps: SpriteBaseProps,
+  props: Partial<SpriteBaseProps>,
+  parentOpacity: number
+) {
+  prevBaseProps.x = props.x || 0;
+  prevBaseProps.y = props.y || 0;
+  prevBaseProps.rotation = props.rotation || 0;
+  prevBaseProps.opacity =
+    Math.min(1, Math.max(0, props.opacity ?? 1)) * parentOpacity;
+  prevBaseProps.scaleX = props.scaleX ?? 1;
+  prevBaseProps.scaleY = props.scaleY ?? 1;
+  prevBaseProps.anchorX = props.anchorX || 0;
+  prevBaseProps.anchorY = props.anchorY || 0;
+  prevBaseProps.mask = props.mask || null;
+}
+
+export function mutatePropsAddBaseProps<T>(
+  props: T & Partial<SpriteBaseProps>
+): T & SpriteBaseProps {
+  props.x = props.x || 0;
+  props.y = props.y || 0;
+  props.rotation = props.rotation || 0;
+  props.opacity = Math.min(1, Math.max(0, props.opacity ?? 1));
+  props.scaleX = props.scaleX ?? 1;
+  props.scaleY = props.scaleY ?? 1;
+  props.anchorX = props.anchorX || 0;
+  props.anchorY = props.anchorY || 0;
+  props.mask = props.mask || null;
+
+  return props as T & SpriteBaseProps;
+}

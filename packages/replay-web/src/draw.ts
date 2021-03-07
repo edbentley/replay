@@ -37,7 +37,6 @@ export function drawCanvas(
       // Set white background for game
       ctx.fillStyle = "white";
       ctx.fillRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
-
       drawSpriteTextures(spriteTextures, ctx, imageElements, defaultFont);
     },
   };
