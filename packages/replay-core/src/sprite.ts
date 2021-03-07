@@ -72,7 +72,7 @@ interface SpriteObjInit<P, S, I> {
      */
     getState: () => S;
     device: Device;
-    inputs: I;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     /**
      * Asset file names to preload for this Sprite. They'll be cleared from
@@ -90,7 +90,7 @@ interface SpriteObjBase<P, S, I> {
     props: Readonly<P>;
     state: Readonly<S>;
     device: Device;
-    inputs: I;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => S;
@@ -105,7 +105,7 @@ interface SpriteObjBase<P, S, I> {
     props: Readonly<P>;
     state: Readonly<S>;
     device: Device;
-    inputs: I;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
     /**
@@ -124,7 +124,7 @@ interface SpriteObjBase<P, S, I> {
     props: Readonly<P>;
     state: Readonly<S>;
     device: Device;
-    inputs: I;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => Sprite[];
@@ -137,7 +137,7 @@ interface SpriteObjBase<P, S, I> {
     props: Readonly<P>;
     state: Readonly<S>;
     device: Device;
-    inputs: I;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => Sprite[];
@@ -152,7 +152,7 @@ interface SpriteObjBase<P, S, I> {
     props: Readonly<P>;
     state: Readonly<S>;
     device: Device;
-    inputs: I;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => Sprite[];
