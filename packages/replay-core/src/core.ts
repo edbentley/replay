@@ -222,7 +222,10 @@ function traverseCustomSpriteContainer<P, I>(
   );
 
   const unusedChildIds = new Set(customSpriteContainer.prevChildIds);
-  const childIds: string[] = [];
+
+  // Mutate original to reduce GC
+  const childIds = customSpriteContainer.prevChildIds;
+  childIds.length = 0;
 
   if (unusedChildIds.size < customSpriteContainer.prevChildIds.length) {
     const duplicate = customSpriteContainer.prevChildIds.find(
@@ -419,8 +422,6 @@ function traverseCustomSpriteContainer<P, I>(
 
     delete customSpriteContainer.childContainers[id];
   });
-
-  customSpriteContainer.prevChildIds = childIds;
 
   spriteTextures.baseProps = baseProps;
 
@@ -658,7 +659,11 @@ function createPureCustomSpriteContainer<P>(
         !spriteObj.shouldRerender(this.prevProps, props) &&
         !didResize
       ) {
-        this.prevProps = props;
+        // Mutate prevProps to reduce GC
+        // Assumes objects
+        Object.entries(props).forEach(([key, val]) => {
+          (this.prevProps as any)[key] = val;
+        });
         return { type: "cachedTextures", textures: this.cache };
       }
 
@@ -704,7 +709,10 @@ function traversePureCustomSpriteContainer<P>(
   const { sprites } = spritesResult;
 
   const unusedChildIds = new Set(customSpriteContainer.prevChildIds);
-  const childIds: string[] = [];
+
+  // Mutate original to reduce GC
+  const childIds = customSpriteContainer.prevChildIds;
+  childIds.length = 0;
 
   // Reuse textures array to avoid additional garbage collection.
 
@@ -777,7 +785,6 @@ function traversePureCustomSpriteContainer<P>(
 
   // Update cache
   customSpriteContainer.cache = spriteTextures.textures;
-  customSpriteContainer.prevChildIds = childIds;
 
   spriteTextures.baseProps = baseProps;
 

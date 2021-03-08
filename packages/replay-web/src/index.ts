@@ -456,7 +456,7 @@ export function renderCanvas<S>(
   function loop(textures: SpriteTextures) {
     render.ref?.(textures);
     statsEnd?.();
-    window.requestAnimationFrame((time) => {
+    window.requestAnimationFrame(function newFrame(time) {
       if (isCleanedUp) {
         return;
       }
@@ -469,12 +469,13 @@ export function renderCanvas<S>(
         totalPageNotVisibleTime += time - lastPageNotVisibleTime;
       }
       lastTimeValue = time;
-      loop(
-        getNextFrameTextures(
-          time - initTime - totalPageNotVisibleTime,
-          resetInputs
-        )
+
+      const nextFrameTextures = getNextFrameTextures(
+        time - initTime - totalPageNotVisibleTime,
+        resetInputs
       );
+
+      loop(nextFrameTextures);
     });
   }
 

@@ -37,7 +37,14 @@ export function drawCanvas(
       // Set white background for game
       ctx.fillStyle = "white";
       ctx.fillRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
-      drawSpriteTextures(spriteTextures, ctx, imageElements, defaultFont);
+      const drawUtilsCtx = drawUtils(ctx);
+      drawSpriteTextures(
+        spriteTextures,
+        ctx,
+        drawUtilsCtx,
+        imageElements,
+        defaultFont
+      );
     },
   };
 }
@@ -45,6 +52,7 @@ export function drawCanvas(
 function drawSpriteTextures(
   spriteTextures: SpriteTextures,
   ctx: CanvasRenderingContext2D,
+  drawUtilsCtx: ReturnType<typeof drawUtils>,
   imageElements: AssetMap<ImageFileData>,
   defaultFont: TextureFont
 ) {
@@ -57,7 +65,6 @@ function drawSpriteTextures(
   textures.forEach((texture) => {
     if ("type" in texture) {
       // Is a texture to draw
-      const drawUtilsCtx = drawUtils(ctx);
 
       ctx.save();
       transformCanvas(ctx, texture.props, baseProps.opacity);
@@ -67,7 +74,7 @@ function drawSpriteTextures(
       return;
     }
     // Recursively draw SpriteTexture
-    drawSpriteTextures(texture, ctx, imageElements, defaultFont);
+    drawSpriteTextures(texture, ctx, drawUtilsCtx, imageElements, defaultFont);
   });
 
   ctx.restore();
