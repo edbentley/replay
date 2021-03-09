@@ -1,9 +1,11 @@
 import { Texture, DeviceSize, TextureFont } from "@replay/core";
-import { SpriteTextures } from "@replay/core/dist/sprite";
 import { SpriteBaseProps } from "@replay/core/dist/props";
 import { MaskShape } from "@replay/core/dist/mask";
 import { AssetMap } from "@replay/core/dist/device";
+import { PlatformRender } from "@replay/core/dist/core";
 import { ImageFileData } from "./device";
+
+export type WebRender = PlatformRender;
 
 export function drawCanvas(
   ctx: CanvasRenderingContext2D,
@@ -17,67 +19,47 @@ export function drawCanvas(
   }: DeviceSize,
   imageElements: AssetMap<ImageFileData>,
   defaultFont: TextureFont
-) {
+): { scale: number; render: PlatformRender } {
+  // Init setting up device size
   ctx.save();
   const scale = Math.min(deviceWidth / width, deviceHeight / height);
   const fullWidth = width + widthMargin * 2;
   const fullHeight = height + heightMargin * 2;
   ctx.translate(deviceWidth / 2, deviceHeight / 2);
   ctx.scale(scale, scale);
+
+  const drawUtilsCtx = drawUtils(ctx);
+
   return {
     scale,
-    render: (spriteTextures: SpriteTextures) => {
-      // First clear rect
-      ctx.clearRect(
-        -deviceWidth / 2 / scale,
-        -deviceHeight / 2 / scale,
-        deviceWidth / scale,
-        deviceHeight / scale
-      );
-      // Set white background for game
-      ctx.fillStyle = "white";
-      ctx.fillRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
-      const drawUtilsCtx = drawUtils(ctx);
-      drawSpriteTextures(
-        spriteTextures,
-        ctx,
-        drawUtilsCtx,
-        imageElements,
-        defaultFont
-      );
+    render: {
+      newFrame: () => {
+        // First clear rect
+        ctx.clearRect(
+          -deviceWidth / 2 / scale,
+          -deviceHeight / 2 / scale,
+          deviceWidth / scale,
+          deviceHeight / scale
+        );
+        // Set white background for game
+        ctx.fillStyle = "white";
+        ctx.fillRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
+      },
+      startRenderSprite: (baseProps) => {
+        ctx.save();
+        transformCanvas(ctx, baseProps);
+      },
+      endRenderSprite: () => {
+        ctx.restore();
+      },
+      renderTexture: (texture) => {
+        ctx.save();
+        transformCanvas(ctx, texture.props);
+        drawTexture(texture, drawUtilsCtx, imageElements, defaultFont);
+        ctx.restore();
+      },
     },
   };
-}
-
-function drawSpriteTextures(
-  spriteTextures: SpriteTextures,
-  ctx: CanvasRenderingContext2D,
-  drawUtilsCtx: ReturnType<typeof drawUtils>,
-  imageElements: AssetMap<ImageFileData>,
-  defaultFont: TextureFont
-) {
-  const { baseProps, textures } = spriteTextures;
-
-  ctx.save();
-
-  transformCanvas(ctx, baseProps);
-
-  textures.forEach((texture) => {
-    if ("type" in texture) {
-      // Is a texture to draw
-
-      ctx.save();
-      transformCanvas(ctx, texture.props, baseProps.opacity);
-      drawTexture(texture, drawUtilsCtx, imageElements, defaultFont);
-      ctx.restore();
-
-      return;
-    }
-    // Recursively draw SpriteTexture
-    drawSpriteTextures(texture, ctx, drawUtilsCtx, imageElements, defaultFont);
-  });
-
-  ctx.restore();
 }
 
 // this returns 0 to ensure all cases of texture.type are handled

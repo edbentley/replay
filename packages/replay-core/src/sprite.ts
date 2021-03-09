@@ -221,16 +221,6 @@ type PureSpriteObj<P> = {
 };
 
 /**
- * A nesting of textures sent to the platform to render. The nesting allows for
- * things like transforms on a Sprite.
- */
-export type SpriteTextures = {
-  id: string;
-  baseProps: SpriteBaseProps;
-  textures: (SpriteTextures | Texture)[];
-};
-
-/**
  * Native Sprites are custom platform-specific elements not inside Replay
  * itself, like text inputs. Their name is stored, and implementation
  * dynamically looked up within each platform.
