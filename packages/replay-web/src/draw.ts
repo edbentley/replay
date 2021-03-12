@@ -47,14 +47,16 @@ export function drawCanvas(
       },
       startRenderSprite: (baseProps) => {
         ctx.save();
-        transformCanvas(ctx, baseProps);
+        transformCanvas(ctx, baseProps, drawUtilsCtx.currGlobalAlphas[0]);
+        drawUtilsCtx.currGlobalAlphas.unshift(baseProps.opacity);
       },
       endRenderSprite: () => {
         ctx.restore();
+        drawUtilsCtx.currGlobalAlphas.shift();
       },
       renderTexture: (texture) => {
         ctx.save();
-        transformCanvas(ctx, texture.props);
+        transformCanvas(ctx, texture.props, drawUtilsCtx.currGlobalAlphas[0]);
         drawTexture(texture, drawUtilsCtx, imageElements, defaultFont);
         ctx.restore();
       },
@@ -134,7 +136,7 @@ const toRad = Math.PI / 180;
 const transformCanvas = (
   ctx: CanvasRenderingContext2D,
   baseProps: SpriteBaseProps,
-  parentOpacity = 1
+  currGlobalAlpha: number
 ) => {
   const {
     x,
@@ -147,11 +149,21 @@ const transformCanvas = (
     opacity,
   } = baseProps;
 
-  ctx.translate(x, -y);
-  ctx.rotate(rotation * toRad);
-  ctx.scale(scaleX, scaleY);
-  ctx.translate(-anchorX, anchorY);
-  ctx.globalAlpha = opacity * parentOpacity;
+  if (x !== 0 || y !== 0) {
+    ctx.translate(x, -y);
+  }
+  if (rotation !== 0) {
+    ctx.rotate(rotation * toRad);
+  }
+  if (scaleX !== 1 || scaleY !== 1) {
+    ctx.scale(scaleX, scaleY);
+  }
+  if (anchorX !== 0 || anchorY !== 0) {
+    ctx.translate(-anchorX, anchorY);
+  }
+  if (opacity !== currGlobalAlpha) {
+    ctx.globalAlpha = opacity;
+  }
 
   applyMask(ctx, baseProps.mask);
 };
@@ -197,6 +209,7 @@ function applyMask(ctx: CanvasRenderingContext2D, mask: MaskShape): 0 {
 }
 
 const drawUtils = (ctx: CanvasRenderingContext2D) => ({
+  currGlobalAlphas: [1],
   circle(radius: number, fillStyle: string) {
     ctx.beginPath();
     ctx.arc(0, 0, Math.round(radius), 0, Math.PI * 2);
