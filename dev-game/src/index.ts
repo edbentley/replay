@@ -130,62 +130,93 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
   },
 
   render({ state, updateState, device }) {
-    const input = TextInput({
-      id: "TestInput",
-      fontName: "Calibri",
-      fontSize: 20,
-      text: state.text,
-      onChangeText: (text) => {
-        if (state.stage === GameStage.Play) {
-          updateState((s) => ({ ...s, text }));
-        }
-      },
-      width: 100,
-      x: -device.size.width / 2 + 100,
-      y: -device.size.height / 2 + 20,
-      numberOfLines: 3,
-      align: "left",
-      color: "red",
-    });
-    switch (state.stage) {
-      case GameStage.Loading:
-        return [
-          t.text({
-            color: "red",
-            text: "Loading game",
-          }),
-        ];
-      case GameStage.GameOver:
-        return [
-          t.text({
-            color: "red",
-            text: state.gameOverText,
-            scaleX: 0.8,
-          }),
-          input,
-        ];
-      case GameStage.Play:
-        return [
-          PureCircleGroup({ id: "Circles" }),
-          PlayStage({
-            id: "play-stage",
-            bulletSpeed: state.bulletSpeed,
-            gameOver: (score) => {
-              if (score > state.highScore) {
-                device.storage.setItem("highScore", String(score));
-              }
+    return [MySprite({ id: "My", x: 250 })];
+    // const input = TextInput({
+    //   id: "TestInput",
+    //   fontName: "Calibri",
+    //   fontSize: 20,
+    //   text: state.text,
+    //   onChangeText: (text) => {
+    //     if (state.stage === GameStage.Play) {
+    //       updateState((s) => ({ ...s, text }));
+    //     }
+    //   },
+    //   width: 100,
+    //   x: -device.size.width / 2 + 100,
+    //   y: -device.size.height / 2 + 20,
+    //   numberOfLines: 3,
+    //   align: "left",
+    //   color: "red",
+    // });
+    // switch (state.stage) {
+    //   case GameStage.Loading:
+    //     return [
+    //       t.text({
+    //         color: "red",
+    //         text: "Loading game",
+    //       }),
+    //     ];
+    //   case GameStage.GameOver:
+    //     return [
+    //       t.text({
+    //         color: "red",
+    //         text: state.gameOverText,
+    //         scaleX: 0.8,
+    //       }),
+    //       input,
+    //     ];
+    //   case GameStage.Play:
+    //     return [
+    //       // PureCircleGroup({ id: "Circles" }),
+    //       PlayStage({
+    //         id: "play-stage",
+    //         bulletSpeed: state.bulletSpeed,
+    //         gameOver: (score) => {
+    //           if (score > state.highScore) {
+    //             device.storage.setItem("highScore", String(score));
+    //           }
 
-              updateState((currState) => ({
-                ...currState,
-                stage: GameStage.GameOver,
-                highScore: Math.max(score, state.highScore),
-              }));
-            },
-            highScore: state.highScore,
-          }),
-          input,
-        ];
-    }
+    //           updateState((currState) => ({
+    //             ...currState,
+    //             stage: GameStage.GameOver,
+    //             highScore: Math.max(score, state.highScore),
+    //           }));
+    //         },
+    //         highScore: state.highScore,
+    //       }),
+    //       input,
+    //     ];
+    // }
+  },
+});
+
+const MySprite = makeSprite({
+  render() {
+    return [
+      t.rectangle({
+        testId: "rect",
+        color: "black",
+        width: 100,
+        height: 100,
+        x: -250,
+        y: 0,
+      }),
+      MySprite2({ id: "Sprite", x: -200 }),
+    ];
+  },
+});
+
+const MySprite2 = makeSprite({
+  render() {
+    return [
+      t.image({
+        testId: "rect2",
+        fileName: "enemy.png",
+        width: 50,
+        height: 50,
+        rotation: 0,
+      }),
+    ];
   },
 });
 

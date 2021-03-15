@@ -3,12 +3,12 @@ import { SpriteBaseProps } from "@replay/core/dist/props";
 import { MaskShape } from "@replay/core/dist/mask";
 import { AssetMap } from "@replay/core/dist/device";
 import { PlatformRender } from "@replay/core/dist/core";
+import * as PIXI from "pixi.js";
 import { ImageFileData } from "./device";
 
 export type WebRender = PlatformRender;
 
 export function drawCanvas(
-  ctx: CanvasRenderingContext2D,
   {
     width,
     height,
@@ -21,122 +21,135 @@ export function drawCanvas(
   defaultFont: TextureFont
 ): { scale: number; render: PlatformRender } {
   // Init setting up device size
-  ctx.save();
-  const scale = Math.min(deviceWidth / width, deviceHeight / height);
-  const fullWidth = width + widthMargin * 2;
-  const fullHeight = height + heightMargin * 2;
-  ctx.translate(deviceWidth / 2, deviceHeight / 2);
-  ctx.scale(scale, scale);
 
-  const drawUtilsCtx = drawUtils(ctx);
+  const scale = Math.min(deviceWidth / width, deviceHeight / height);
+
+  const renderer = new PIXI.Renderer({
+    width: width,
+    height: height,
+    backgroundColor: 0x1099bb,
+    resolution: scale,
+  });
+
+  const stage = new PIXI.Container();
+
+  document.body.appendChild(renderer.view);
+
+  const textures: Record<
+    string,
+    { texture: Texture; object: PIXI.Container }
+  > = {};
 
   return {
     scale,
     render: {
       newFrame: () => {
-        // First clear rect
-        ctx.clearRect(
-          -deviceWidth / 2 / scale,
-          -deviceHeight / 2 / scale,
-          deviceWidth / scale,
-          deviceHeight / scale
-        );
-        // Set white background for game
-        ctx.fillStyle = "white";
-        ctx.fillRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
+        renderer.render(stage);
       },
-      startRenderSprite: (baseProps) => {
-        ctx.save();
-        transformCanvas(ctx, baseProps, drawUtilsCtx.currGlobalAlphas[0]);
-        drawUtilsCtx.currGlobalAlphas.unshift(baseProps.opacity);
+      newSprite: (platformStuff, baseProps) => {
+        const container = new PIXI.Container();
+        container.sortableChildren = true;
+        transformContainer(container, baseProps);
+
+        const parentContainer: PIXI.Container = platformStuff.data || stage;
+        parentContainer.addChild(container);
+
+        // Game sprite
+        if (!platformStuff.data) {
+          container.x = renderer.screen.width / 2;
+          container.y = renderer.screen.height / 2;
+        }
+
+        return {
+          type: "platformStuff",
+          data: container,
+        };
       },
-      endRenderSprite: () => {
-        ctx.restore();
-        drawUtilsCtx.currGlobalAlphas.shift();
+      removeSprite: (platformStuff) => {
+        const container = platformStuff.data as PIXI.Container;
+
+        container.parent.removeChild(container);
       },
-      renderTexture: (texture) => {
-        ctx.save();
-        transformCanvas(ctx, texture.props, drawUtilsCtx.currGlobalAlphas[0]);
-        drawTexture(texture, drawUtilsCtx, imageElements, defaultFont);
-        ctx.restore();
+      enterSprite: (platformStuff, baseProps) => {
+        const container = platformStuff.data as PIXI.Container;
+
+        // container.x = container.parent.width / 2;
+        // container.y = container.parent.height / 2;
+
+        transformContainer(container, baseProps);
+      },
+      exitSprite: () => {
+        // No-op
+      },
+      removeTexture: (parentStuff, globalId) => {
+        const parentContainer = parentStuff.data as PIXI.Container;
+
+        console.log("remove", globalId);
+
+        const { object } = textures[globalId];
+        parentContainer.removeChild(object);
+        delete textures[globalId];
+      },
+      renderTexture: (parentStuff, globalId, texture, isNew) => {
+        const parentContainer = parentStuff.data as PIXI.Container;
+
+        if (isNew) {
+          if (texture.type === "rectangle") {
+            const graphic = new PIXI.Graphics();
+
+            graphic.beginFill(0xff3300);
+            graphic.drawRect(
+              -texture.props.width / 2,
+              -texture.props.height / 2,
+              texture.props.width,
+              texture.props.height
+            );
+            parentContainer.addChild(graphic);
+            textures[globalId] = { texture, object: graphic };
+          } else if (texture.type === "text") {
+            // const text = new PIXI.Text(texture.props.text, {
+            //   fill: "#333333",
+            //   fontSize: 40,
+            //   fontWeight: "bold",
+            // });
+            // text.x = texture.props.x;
+            // text.y = texture.props.y;
+            // parentContainer.addChild(text);
+          } else if (texture.type === "image") {
+            const imageTexture = PIXI.Texture.from(
+              // assets dir for dev
+              `${texture.props.fileName}`
+            );
+            const image = new PIXI.Sprite(imageTexture);
+            image.width = texture.props.width;
+            image.height = texture.props.height;
+            image.anchor.set(0.5);
+
+            // image.x = -texture.props.width / 2;
+            // image.y = -texture.props.width / 2;
+
+            parentContainer.addChild(image);
+            textures[globalId] = { texture, object: image };
+          }
+        }
+        // Move texture according to props
+        const val = textures[globalId];
+        if (!val) return;
+        transformContainer(val.object, texture.props);
       },
     },
   };
 }
-
-// this returns 0 to ensure all cases of texture.type are handled
-function drawTexture(
-  texture: Texture,
-  drawUtilsCtx: ReturnType<typeof drawUtils>,
-  imageElements: AssetMap<ImageFileData>,
-  defaultFont: TextureFont
-): 0 {
-  switch (texture.type) {
-    case "text":
-      const fontDetails = { ...defaultFont, ...texture.props.font };
-      drawUtilsCtx.text(fontDetails, texture.props.text, texture.props.color);
-      return 0;
-    case "circle":
-      drawUtilsCtx.circle(texture.props.radius, texture.props.color);
-      return 0;
-    case "rectangle":
-      drawUtilsCtx.rectangle(
-        texture.props.width,
-        texture.props.height,
-        texture.props.color
-      );
-      return 0;
-    case "line":
-      drawUtilsCtx.line(
-        texture.props.path,
-        texture.props.thickness,
-        texture.props.color,
-        texture.props.fillColor,
-        texture.props.lineCap
-      );
-      return 0;
-    case "image":
-      drawUtilsCtx.image(
-        getImage(imageElements, texture.props.fileName),
-        texture.props.width,
-        texture.props.height
-      );
-      return 0;
-    case "spriteSheet":
-      drawUtilsCtx.spriteSheet(
-        getImage(imageElements, texture.props.fileName),
-        texture.props.columns,
-        texture.props.rows,
-        texture.props.index,
-        texture.props.width,
-        texture.props.height
-      );
-      return 0;
-  }
-}
-
-const getImage = (imageElements: AssetMap<ImageFileData>, fileName: string) => {
-  const imageElement = imageElements[fileName];
-  if (!imageElement) {
-    throw Error(`Image file "${fileName}" was not preloaded`);
-  }
-  if ("then" in imageElement.data) {
-    throw Error(
-      `Image file "${fileName}" did not finish loading before it was used`
-    );
-  }
-  return imageElement.data;
-};
 
 const toRad = Math.PI / 180;
 
 /**
  * Apply base props to the canvas context
  */
-const transformCanvas = (
-  ctx: CanvasRenderingContext2D,
-  baseProps: SpriteBaseProps,
-  currGlobalAlpha: number
+const transformContainer = (
+  container: PIXI.Container,
+  baseProps: SpriteBaseProps
+  // currGlobalAlpha: number
 ) => {
   const {
     x,
@@ -149,145 +162,28 @@ const transformCanvas = (
     opacity,
   } = baseProps;
 
+  // Center sprite in local container coordinates
+  // container.pivot.x = container.width / 2;
+  // container.pivot.y = container.height / 2;
+
   if (x !== 0 || y !== 0) {
-    ctx.translate(x, -y);
+    container.x = x;
+    container.y = -y;
   }
   if (rotation !== 0) {
-    ctx.rotate(rotation * toRad);
+    container.rotation = toRad * rotation;
   }
   if (scaleX !== 1 || scaleY !== 1) {
-    ctx.scale(scaleX, scaleY);
+    // TODO
+    // container.scale = new PIXI.ObservablePoint(scaleX, scaleY);
   }
   if (anchorX !== 0 || anchorY !== 0) {
-    ctx.translate(-anchorX, anchorY);
+    // TODO
   }
-  if (opacity !== currGlobalAlpha) {
-    ctx.globalAlpha = opacity;
-  }
+  // if (opacity !== currGlobalAlpha) {
+  container.alpha = opacity;
+  // }
 
-  applyMask(ctx, baseProps.mask);
+  // TODO
+  // applyMask(ctx, baseProps.mask);
 };
-
-// Return 0 to ensure switch is exhaustive
-function applyMask(ctx: CanvasRenderingContext2D, mask: MaskShape): 0 {
-  if (!mask) return 0;
-  switch (mask.type) {
-    case "lineMask": {
-      const [[moveToX, moveToY], ...lineTo] = mask.path;
-
-      ctx.beginPath();
-      ctx.moveTo(moveToX, -moveToY);
-      lineTo.forEach(([x, y]) => {
-        ctx.lineTo(x, -y);
-      });
-
-      ctx.clip();
-      return 0;
-    }
-
-    case "circleMask": {
-      ctx.beginPath();
-      ctx.arc(mask.x, -mask.y, Math.round(mask.radius), 0, Math.PI * 2);
-
-      ctx.clip();
-      return 0;
-    }
-
-    case "rectangleMask": {
-      ctx.beginPath();
-      ctx.rect(
-        mask.x - mask.width / 2,
-        -mask.y - mask.height / 2,
-        mask.width,
-        mask.height
-      );
-
-      ctx.clip();
-      return 0;
-    }
-  }
-}
-
-const drawUtils = (ctx: CanvasRenderingContext2D) => ({
-  currGlobalAlphas: [1],
-  circle(radius: number, fillStyle: string) {
-    ctx.beginPath();
-    ctx.arc(0, 0, Math.round(radius), 0, Math.PI * 2);
-    ctx.fillStyle = fillStyle;
-    ctx.fill();
-    ctx.closePath();
-  },
-  rectangle(width: number, height: number, fillStyle: string) {
-    ctx.fillStyle = fillStyle;
-    ctx.fillRect(-width / 2, -height / 2, width, height);
-    ctx.closePath();
-  },
-  line(
-    path: [number, number][],
-    lineWidth: number,
-    strokeStyle: string | undefined,
-    fillStyle: string | undefined,
-    lineCap: "butt" | "round" | "square"
-  ) {
-    if (path.length < 2) {
-      return;
-    }
-    const [[moveToX, moveToY], ...lineTo] = path;
-
-    ctx.beginPath();
-    ctx.moveTo(moveToX, -moveToY);
-    lineTo.forEach(([x, y]) => {
-      ctx.lineTo(x, -y);
-    });
-
-    if (fillStyle) {
-      ctx.fillStyle = fillStyle;
-      ctx.fill();
-    }
-    if (strokeStyle) {
-      ctx.strokeStyle = strokeStyle;
-      ctx.lineWidth = lineWidth;
-      ctx.lineCap = lineCap;
-      ctx.stroke();
-    }
-  },
-  text(font: TextureFont, text: string, fillStyle: string) {
-    const { size, weight = "normal", style = "normal", family } = font;
-    const fontString = `${style} ${weight} ${size ? `${size}px` : ""} ${
-      family ? `${family}` : ""
-    }`;
-    ctx.font = fontString;
-    ctx.textBaseline = font.baseline || "middle";
-    ctx.textAlign = font.align || "center";
-    ctx.fillStyle = fillStyle;
-    ctx.fillText(text, 0, 0);
-  },
-  image(image: HTMLImageElement, width: number, height: number) {
-    ctx.drawImage(image, -width / 2, -height / 2, width, height);
-  },
-  spriteSheet(
-    image: HTMLImageElement,
-    columns: number,
-    rows: number,
-    index: number,
-    width: number,
-    height: number
-  ) {
-    const tileWidth = image.width / columns;
-    const tileHeight = image.height / rows;
-
-    const columnIndex = index % columns;
-    const rowIndex = Math.floor(index / columns) % rows;
-    ctx.drawImage(
-      image,
-      columnIndex * tileWidth,
-      rowIndex * tileHeight,
-      tileWidth,
-      tileHeight,
-      -width / 2,
-      -height / 2,
-      width,
-      height
-    );
-  },
-});

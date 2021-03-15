@@ -107,9 +107,9 @@ export function renderCanvas<S>(
   } = options || {};
 
   const canvas = userCanvas || document.createElement("canvas");
-  if (!userCanvas) {
-    document.body.appendChild(canvas);
-  }
+  // if (!userCanvas) {
+  // document.body.appendChild(canvas);
+  // }
 
   // Support on mobile browsers that don't support this
   const pointerDownEv = window.PointerEvent ? "pointerdown" : "touchstart";
@@ -226,7 +226,6 @@ export function renderCanvas<S>(
 
     // also update render with new size
     const renderCanvasResult = drawCanvas(
-      ctx,
       deviceSize,
       imageElements,
       defaultFont
@@ -235,9 +234,12 @@ export function renderCanvas<S>(
 
     // Mutate render
     mutRender.newFrame = renderCanvasResult.render.newFrame;
-    mutRender.startRenderSprite = renderCanvasResult.render.startRenderSprite;
-    mutRender.endRenderSprite = renderCanvasResult.render.endRenderSprite;
+    mutRender.newSprite = renderCanvasResult.render.newSprite;
+    mutRender.removeSprite = renderCanvasResult.render.removeSprite;
+    mutRender.enterSprite = renderCanvasResult.render.enterSprite;
+    mutRender.exitSprite = renderCanvasResult.render.exitSprite;
     mutRender.renderTexture = renderCanvasResult.render.renderTexture;
+    mutRender.removeTexture = renderCanvasResult.render.removeTexture;
 
     nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
       canvasOffsetLeft: canvas.offsetLeft,
@@ -402,9 +404,12 @@ export function renderCanvas<S>(
 
   const mutRender: PlatformRender = {
     newFrame: () => null,
-    startRenderSprite: () => null,
-    endRenderSprite: () => null,
+    enterSprite: () => null,
+    exitSprite: () => null,
+    newSprite: () => ({ type: "platformStuff", data: null }),
+    removeSprite: () => null,
     renderTexture: () => null,
+    removeTexture: () => null,
   };
 
   const domPlatform: ReplayPlatform<Inputs> = {
