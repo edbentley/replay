@@ -1,9 +1,11 @@
 import { Texture, DeviceSize, TextureFont } from "@replay/core";
-import { SpriteTextures } from "@replay/core/dist/sprite";
 import { SpriteBaseProps } from "@replay/core/dist/props";
 import { MaskShape } from "@replay/core/dist/mask";
 import { AssetMap } from "@replay/core/dist/device";
+import { PlatformRender } from "@replay/core/dist/core";
 import { ImageFileData } from "./device";
+
+export type WebRender = PlatformRender;
 
 export function drawCanvas(
   ctx: CanvasRenderingContext2D,
@@ -17,61 +19,59 @@ export function drawCanvas(
   }: DeviceSize,
   imageElements: AssetMap<ImageFileData>,
   defaultFont: TextureFont
-) {
+): { scale: number; render: PlatformRender } {
+  // Init setting up device size
   ctx.save();
   const scale = Math.min(deviceWidth / width, deviceHeight / height);
   const fullWidth = width + widthMargin * 2;
   const fullHeight = height + heightMargin * 2;
   ctx.translate(deviceWidth / 2, deviceHeight / 2);
   ctx.scale(scale, scale);
+
+  const drawUtilsCtx = drawUtils(ctx);
+
   return {
     scale,
-    render: (spriteTextures: SpriteTextures) => {
-      // First clear rect
-      ctx.clearRect(
-        -deviceWidth / 2 / scale,
-        -deviceHeight / 2 / scale,
-        deviceWidth / scale,
-        deviceHeight / scale
-      );
-      // Set white background for game
-      ctx.fillStyle = "white";
-      ctx.fillRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
+    render: {
+      newFrame: () => {
+        // First clear rect
+        ctx.clearRect(
+          -deviceWidth / 2 / scale,
+          -deviceHeight / 2 / scale,
+          deviceWidth / scale,
+          deviceHeight / scale
+        );
+        // Set white background for game
+        ctx.fillStyle = "white";
+        ctx.fillRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
+      },
+      startRenderSprite: (baseProps) => {
+        ctx.save();
 
-      drawSpriteTextures(spriteTextures, ctx, imageElements, defaultFont);
+        const globalAlpha =
+          baseProps.opacity * drawUtilsCtx.globalAlphaStack[0];
+
+        transformCanvas(ctx, baseProps, globalAlpha);
+
+        drawUtilsCtx.globalAlphaStack.unshift(globalAlpha);
+      },
+      endRenderSprite: () => {
+        ctx.restore();
+        drawUtilsCtx.globalAlphaStack.shift();
+      },
+      renderTexture: (texture) => {
+        ctx.save();
+
+        const globalAlpha =
+          texture.props.opacity * drawUtilsCtx.globalAlphaStack[0];
+
+        transformCanvas(ctx, texture.props, globalAlpha);
+        drawTexture(texture, drawUtilsCtx, imageElements, defaultFont);
+
+        ctx.restore();
+      },
     },
   };
-}
-
-function drawSpriteTextures(
-  spriteTextures: SpriteTextures,
-  ctx: CanvasRenderingContext2D,
-  imageElements: AssetMap<ImageFileData>,
-  defaultFont: TextureFont
-) {
-  const { baseProps, textures } = spriteTextures;
-
-  ctx.save();
-
-  transformCanvas(ctx, baseProps);
-
-  textures.forEach((texture) => {
-    if ("type" in texture) {
-      // Is a texture to draw
-      const drawUtilsCtx = drawUtils(ctx);
-
-      ctx.save();
-      transformCanvas(ctx, texture.props, baseProps.opacity);
-      drawTexture(texture, drawUtilsCtx, imageElements, defaultFont);
-      ctx.restore();
-
-      return;
-    }
-    // Recursively draw SpriteTexture
-    drawSpriteTextures(texture, ctx, imageElements, defaultFont);
-  });
-
-  ctx.restore();
 }
 
 // this returns 0 to ensure all cases of texture.type are handled
@@ -146,7 +146,7 @@ const toRad = Math.PI / 180;
 const transformCanvas = (
   ctx: CanvasRenderingContext2D,
   baseProps: SpriteBaseProps,
-  parentOpacity = 1
+  globalAlpha: number
 ) => {
   const {
     x,
@@ -159,11 +159,22 @@ const transformCanvas = (
     opacity,
   } = baseProps;
 
-  ctx.translate(x, -y);
-  ctx.rotate(rotation * toRad);
-  ctx.scale(scaleX, scaleY);
-  ctx.translate(-anchorX, anchorY);
-  ctx.globalAlpha = opacity * parentOpacity;
+  if (x !== 0 || y !== 0) {
+    ctx.translate(x, -y);
+  }
+  if (rotation !== 0) {
+    ctx.rotate(rotation * toRad);
+  }
+  if (scaleX !== 1 || scaleY !== 1) {
+    ctx.scale(scaleX, scaleY);
+  }
+  if (anchorX !== 0 || anchorY !== 0) {
+    ctx.translate(-anchorX, anchorY);
+  }
+  if (opacity !== 1) {
+    // This will only need to change if not 1
+    ctx.globalAlpha = globalAlpha;
+  }
 
   applyMask(ctx, baseProps.mask);
 };
@@ -209,6 +220,7 @@ function applyMask(ctx: CanvasRenderingContext2D, mask: MaskShape): 0 {
 }
 
 const drawUtils = (ctx: CanvasRenderingContext2D) => ({
+  globalAlphaStack: [1],
   circle(radius: number, fillStyle: string) {
     ctx.beginPath();
     ctx.arc(0, 0, Math.round(radius), 0, Math.PI * 2);

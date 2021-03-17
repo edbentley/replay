@@ -3,12 +3,9 @@ import {
   replayCore,
   ReplayPlatform,
   NativeSpriteMap,
+  PlatformRender,
 } from "@replay/core/dist/core";
-import {
-  CustomSprite,
-  SpriteTextures,
-  NativeSpriteUtils,
-} from "@replay/core/dist/sprite";
+import { CustomSprite, NativeSpriteUtils } from "@replay/core/dist/sprite";
 import { AssetUtils, AssetMap } from "@replay/core/dist/device";
 import {
   getInputs,
@@ -235,7 +232,12 @@ export function renderCanvas<S>(
       defaultFont
     );
     scale = renderCanvasResult.scale;
-    render.ref = renderCanvasResult.render;
+
+    // Mutate render
+    mutRender.newFrame = renderCanvasResult.render.newFrame;
+    mutRender.startRenderSprite = renderCanvasResult.render.startRenderSprite;
+    mutRender.endRenderSprite = renderCanvasResult.render.endRenderSprite;
+    mutRender.renderTexture = renderCanvasResult.render.renderTexture;
 
     nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
       canvasOffsetLeft: canvas.offsetLeft,
@@ -398,6 +400,13 @@ export function renderCanvas<S>(
     cleanupImageFile: () => null,
   };
 
+  const mutRender: PlatformRender = {
+    newFrame: () => null,
+    startRenderSprite: () => null,
+    endRenderSprite: () => null,
+    renderTexture: () => null,
+  };
+
   const domPlatform: ReplayPlatform<Inputs> = {
     getGetDevice: deviceCreator(
       audioContext,
@@ -411,11 +420,8 @@ export function renderCanvas<S>(
       platformOptions?.storage || getStorage(),
       platformOptions?.clipboard || getClipboard()
     ),
+    render: mutRender,
   };
-
-  const render: {
-    ref: ((textures: SpriteTextures) => void) | null;
-  } = { ref: null };
 
   updateDeviceSize();
 
@@ -442,7 +448,7 @@ export function renderCanvas<S>(
   document.addEventListener("keydown", onFirstInteraction, false);
   document.addEventListener(pointerDownEv, onFirstInteraction, false);
 
-  const { initTextures, getNextFrameTextures } = replayCore<S, Inputs>(
+  const { runNextFrame } = replayCore<S, Inputs>(
     domPlatform,
     {
       nativeSpriteMap,
@@ -453,10 +459,9 @@ export function renderCanvas<S>(
 
   let initTime: number | null = null;
 
-  function loop(textures: SpriteTextures) {
-    render.ref?.(textures);
+  function loop() {
     statsEnd?.();
-    window.requestAnimationFrame((time) => {
+    window.requestAnimationFrame(function newFrame(time) {
       if (isCleanedUp) {
         return;
       }
@@ -469,16 +474,14 @@ export function renderCanvas<S>(
         totalPageNotVisibleTime += time - lastPageNotVisibleTime;
       }
       lastTimeValue = time;
-      loop(
-        getNextFrameTextures(
-          time - initTime - totalPageNotVisibleTime,
-          resetInputs
-        )
-      );
+
+      runNextFrame(time - initTime - totalPageNotVisibleTime, resetInputs);
+
+      loop();
     });
   }
 
-  loop(initTextures);
+  loop();
 
   /**
    * Unloads the game and removes all loops and event listeners

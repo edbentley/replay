@@ -1,8 +1,6 @@
 import { drawCanvas } from "../draw";
 import { canvasToImage } from "./utils";
-import { t, DeviceSize, mask } from "@replay/core";
-import { SpriteTextures } from "@replay/core/dist/sprite";
-import { getDefaultProps } from "@replay/core/dist/props";
+import { t, DeviceSize, mask, Texture } from "@replay/core";
 
 const deviceSize: DeviceSize = {
   width: 300,
@@ -14,7 +12,7 @@ const deviceSize: DeviceSize = {
 };
 
 let canvas: HTMLCanvasElement;
-let render: (textures: SpriteTextures["textures"]) => void;
+let render: (textures: Texture[]) => void;
 
 beforeAll(() => {
   render = (textures) => {
@@ -23,11 +21,14 @@ beforeAll(() => {
     canvas.height = 500;
     const ctx = canvas.getContext("2d", { alpha: false })!;
 
-    drawCanvas(ctx, deviceSize, {}, { family: "Courier", size: 12 }).render({
-      id: "test",
-      baseProps: getDefaultProps({}),
-      textures,
-    });
+    const renderTexture = drawCanvas(
+      ctx,
+      deviceSize,
+      {},
+      { family: "Courier", size: 12 }
+    ).render.renderTexture;
+
+    textures.forEach(renderTexture);
   };
 });
 

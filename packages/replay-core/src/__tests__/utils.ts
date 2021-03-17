@@ -5,8 +5,9 @@ import {
   NativeSpriteImplementation,
   makePureSprite,
 } from "../sprite";
-import { mask } from "../mask";
+import { mask, MaskShape } from "../mask";
 import { Assets } from "../device";
+import { Texture } from "../t";
 
 export const gameProps: GameProps = {
   id: "Game" as const,
@@ -189,20 +190,46 @@ export function getTestPlatform(customSize?: DeviceSize) {
     mutableTestDevice.inputs = getInitTestPlatformInputs();
   }
 
-  return {
-    platform: {
-      getGetDevice() {
-        return (globalToLocalCoords) => {
-          const local = globalToLocalCoords(mutableTestDevice.inputs);
-          return {
-            ...mutableTestDevice,
-            inputs: { ...mutableTestDevice.inputs, x: local.x, y: local.y },
-          };
+  const textures: Texture[] = [];
+
+  const masks: MaskShape[] = [];
+
+  const platform: ReplayPlatform<TestPlatformInputs> = {
+    getGetDevice() {
+      return (globalToLocalCoords) => {
+        const local = globalToLocalCoords(mutableTestDevice.inputs);
+        return {
+          ...mutableTestDevice,
+          inputs: { ...mutableTestDevice.inputs, x: local.x, y: local.y },
         };
+      };
+    },
+    render: {
+      newFrame: () => {
+        textures.length = 0;
+        masks.length = 0;
       },
-    } as ReplayPlatform<TestPlatformInputs>,
+      startRenderSprite: (baseProps) => {
+        if (baseProps.mask) {
+          masks.push(baseProps.mask);
+        }
+      },
+      endRenderSprite: () => null,
+      renderTexture: (texture) => {
+        if (texture.props.mask) {
+          masks.push(texture.props.mask);
+        }
+        textures.push(texture);
+      },
+    },
+  };
+
+  return {
+    platform,
     resetInputs,
     mutableTestDevice,
+    textures,
+    masks,
   };
 }
 
