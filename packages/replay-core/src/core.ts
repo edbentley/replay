@@ -241,20 +241,21 @@ function traverseCustomSpriteContainer<P, I>(
     throw Error(`Duplicate Sprite id ${duplicate}`);
   }
 
-  // Mutate original to reduce GC
+  // Reuse original array to reduce GC
   const childIds = customSpriteContainer.prevChildIds;
-  childIds.length = 0;
+  let childIdIndex = 0;
 
   platformRender.startRenderSprite(baseProps);
-  sprites.forEach(renderSprite);
-  platformRender.endRenderSprite();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function renderSprite(sprite: Sprite<any, unknown, I>) {
-    if (!sprite) return;
+  for (let i = 0; i < sprites.length; i++) {
+    const sprite = sprites[i];
+
+    if (!sprite) continue;
 
     if (sprite.type === "native") {
-      childIds.push(sprite.props.id);
+      childIds[childIdIndex] = sprite.props.id;
+      childIdIndex++;
+
       unusedChildIds.delete(sprite.props.id);
 
       const nativeSpriteImplementation = nativeSpriteMap[sprite.name];
@@ -296,12 +297,9 @@ function traverseCustomSpriteContainer<P, I>(
         parentGlobalId,
         utils: nativeSpriteUtils,
       });
-
-      return;
-    }
-
-    if (sprite.type === "pure") {
-      childIds.push(sprite.props.id);
+    } else if (sprite.type === "pure") {
+      childIds[childIdIndex] = sprite.props.id;
+      childIdIndex++;
       unusedChildIds.delete(sprite.props.id);
 
       let lookupPureCustomSpriteContainer =
@@ -327,12 +325,11 @@ function traverseCustomSpriteContainer<P, I>(
         renderMethod,
         platformRender
       );
-      return;
-    }
-
-    if (sprite.type === "custom") {
-      childIds.push(sprite.props.id);
+    } else if (sprite.type === "custom") {
+      childIds[childIdIndex] = sprite.props.id;
+      childIdIndex++;
       unusedChildIds.delete(sprite.props.id);
+
       let spriteInitCreation = false;
 
       let lookupCustomSpriteContainer =
@@ -368,13 +365,17 @@ function traverseCustomSpriteContainer<P, I>(
         nativeSpriteSettings,
         platformRender
       );
-      return;
+    } else {
+      platformRender.renderTexture(sprite);
     }
-
-    platformRender.renderTexture(sprite);
   }
 
+  platformRender.endRenderSprite();
+
   nativeSpriteUtils.didResize = false;
+  if (childIdIndex < childIds.length) {
+    childIds.length = childIdIndex;
+  }
 
   unusedChildIds.forEach((id) => {
     // Run cleanup of Sprites on all the removed child containers
@@ -461,6 +462,25 @@ function createCustomSpriteContainer<P, S, I>(
     });
   }
 
+  const runUpdateStateCallbacks = () => {
+    let queueIndex = 0;
+
+    // Use a while loop in case nested updateStates add to the array during
+    // loop
+    while (queueIndex < updateStateQueue.length) {
+      const update = updateStateQueue[queueIndex];
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      spriteContainer!.state = update(spriteContainer!.state);
+
+      queueIndex++;
+    }
+    updateStateQueue.length = 0;
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const getState = () => spriteContainer!.state;
+
   spriteContainer = {
     type: "custom",
     // WARNING: types are a bit tricky here, need to cast.
@@ -473,23 +493,6 @@ function createCustomSpriteContainer<P, S, I>(
     currentLag: 0,
     loadFilesPromise,
     getSprites(props, device, initCreation, renderMethod, extrapolateFactor) {
-      const runUpdateStateCallbacks = () => {
-        let queueIndex = 0;
-
-        // Use a while loop in case nested updateStates add to the array during
-        // loop
-        while (queueIndex < updateStateQueue.length) {
-          const update = updateStateQueue[queueIndex];
-
-          this.state = update(this.state);
-
-          queueIndex++;
-        }
-        updateStateQueue.length = 0;
-      };
-
-      const getState = () => this.state;
-
       // Run any updateState from callbacks in other sprites last render
       runUpdateStateCallbacks();
 
@@ -610,9 +613,7 @@ type PureCustomSpriteContainer<P> = {
     size: DeviceSize,
     didResize: boolean,
     renderMethod: RenderMethod
-  ) =>
-    | { type: "pureSprites"; sprites: PureSprite[] }
-    | { type: "cached"; cache: PureSpriteCache };
+  ) => { type: "pureSprites"; sprites: PureSprite[] } | PureSpriteCache;
 };
 
 type PureSpriteCache = {
@@ -632,15 +633,6 @@ function createPureCustomSpriteContainer<P>(
     prevChildIds: [],
     baseProps: getDefaultProps(sprite.props),
     getSprites(props, size, didResize, renderMethod) {
-      let render = spriteObj[renderMethod];
-      if (!render) {
-        // default to other renderXL or render method if not defined by user
-        render =
-          renderMethod === "renderPXL" && spriteObj.renderXL
-            ? spriteObj.renderXL
-            : spriteObj.render;
-      }
-
       if (
         this.prevProps &&
         this.cache &&
@@ -648,7 +640,16 @@ function createPureCustomSpriteContainer<P>(
         !didResize
       ) {
         this.prevProps = props;
-        return { type: "cached", cache: this.cache };
+        return this.cache;
+      }
+
+      let render = spriteObj[renderMethod];
+      if (!render) {
+        // default to other renderXL or render method if not defined by user
+        render =
+          renderMethod === "renderPXL" && spriteObj.renderXL
+            ? spriteObj.renderXL
+            : spriteObj.render;
       }
 
       // Cache will be updated outside of this function
@@ -682,48 +683,53 @@ function traversePureCustomSpriteContainer<P>(
     renderMethod
   );
 
-  if (spritesResult.type === "cached") {
+  if (spritesResult.type === "cache") {
     // Need to traverse to apply base props of nested Sprites
+    traversePureSpriteCache(spritesResult, platformRender);
 
-    function traverseThroughCache(cache: PureSpriteCache) {
-      platformRender.startRenderSprite(cache.baseProps);
-
-      cache.items.forEach((item) => {
-        if (item.type === "cache") {
-          traverseThroughCache(item);
-          return;
-        }
-        platformRender.renderTexture(item);
-      });
-
-      platformRender.endRenderSprite();
-    }
-    traverseThroughCache(spritesResult.cache);
-
-    return spritesResult.cache;
+    return spritesResult;
   }
 
-  const { sprites } = spritesResult;
+  return traversePureCustomSpriteContainerNotCached(
+    pureSpriteContainer,
+    spritesResult.sprites,
+    deviceSize,
+    didResize,
+    renderMethod,
+    platformRender
+  );
+}
+
+function traversePureCustomSpriteContainerNotCached<P>(
+  pureSpriteContainer: PureCustomSpriteContainer<P>,
+  sprites: PureSprite<unknown>[],
+  deviceSize: DeviceSize,
+  didResize: boolean,
+  renderMethod: RenderMethod,
+  platformRender: PlatformRender
+): PureSpriteCache {
+  const { baseProps } = pureSpriteContainer;
 
   const unusedChildIds = new Set(pureSpriteContainer.prevChildIds);
 
   // Mutate original to reduce GC
   const childIds = pureSpriteContainer.prevChildIds;
-  childIds.length = 0;
+  let childIdIndex = 0;
 
   platformRender.startRenderSprite(baseProps);
 
-  const cacheItems = sprites.map(renderPureSprite).filter(isNotNullOrUndefined);
+  const cacheItems = new Array<PureSpriteCache | Texture>(sprites.length);
+  let cacheItemIndex = 0;
 
-  platformRender.endRenderSprite();
+  for (let i = 0; i < sprites.length; i++) {
+    const sprite = sprites[i];
 
-  function renderPureSprite(
-    sprite: PureSprite<unknown>
-  ): PureSpriteCache | Texture | null {
-    if (!sprite) return null;
+    if (!sprite) continue;
 
     if (sprite.type === "pure") {
-      childIds.push(sprite.props.id);
+      childIds[childIdIndex] = sprite.props.id;
+      childIdIndex++;
+
       unusedChildIds.delete(sprite.props.id);
 
       let lookupPureCustomSpriteContainer =
@@ -741,7 +747,7 @@ function traversePureCustomSpriteContainer<P>(
         ] = lookupPureCustomSpriteContainer;
       }
 
-      return traversePureCustomSpriteContainer(
+      cacheItems[cacheItemIndex] = traversePureCustomSpriteContainer(
         lookupPureCustomSpriteContainer,
         sprite.props,
         deviceSize,
@@ -749,11 +755,19 @@ function traversePureCustomSpriteContainer<P>(
         renderMethod,
         platformRender
       );
-    }
+      cacheItemIndex++;
+    } else {
+      platformRender.renderTexture(sprite);
 
-    platformRender.renderTexture(sprite);
-    return sprite;
+      cacheItems[cacheItemIndex] = sprite;
+      cacheItemIndex++;
+    }
   }
+  if (cacheItemIndex < cacheItems.length) {
+    cacheItems.length = cacheItemIndex;
+  }
+
+  platformRender.endRenderSprite();
 
   unusedChildIds.forEach((id) => {
     delete pureSpriteContainer.childContainers[id];
@@ -768,7 +782,29 @@ function traversePureCustomSpriteContainer<P>(
   // Update cache
   pureSpriteContainer.cache = cache;
 
+  if (childIdIndex < childIds.length) {
+    childIds.length = childIdIndex;
+  }
+
   return cache;
+}
+
+function traversePureSpriteCache(
+  cache: PureSpriteCache,
+  platformRender: PlatformRender
+) {
+  platformRender.startRenderSprite(cache.baseProps);
+
+  for (let i = 0; i < cache.items.length; i++) {
+    const item = cache.items[i];
+    if (item.type === "cache") {
+      traversePureSpriteCache(item, platformRender);
+    } else {
+      platformRender.renderTexture(item);
+    }
+  }
+
+  platformRender.endRenderSprite();
 }
 
 type NativeSpriteContainer<S> = {
@@ -784,10 +820,6 @@ export type NativeSpriteSettings = {
   nativeSpriteMap: NativeSpriteMap;
   nativeSpriteUtils: NativeSpriteUtils;
 };
-
-function isNotNullOrUndefined<T>(arg: T | null | undefined): arg is T {
-  return arg !== null && arg !== undefined;
-}
 
 /**
  * A mapping of the parent Sprite's (x, y) coordinate to local Sprite
