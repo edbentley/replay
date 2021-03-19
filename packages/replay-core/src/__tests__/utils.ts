@@ -134,8 +134,7 @@ export function getTestPlatform(customSize?: DeviceSize) {
     }),
   };
 
-  const mutableTestDevice: Device<TestPlatformInputs> = {
-    inputs: getInitTestPlatformInputs(),
+  const mutableTestDevice: Device = {
     isTouchScreen: false,
     size: customSize || {
       width: 300,
@@ -186,8 +185,10 @@ export function getTestPlatform(customSize?: DeviceSize) {
     },
   };
 
+  const mutInputs = { ref: getInitTestPlatformInputs() };
+
   function resetInputs() {
-    mutableTestDevice.inputs = getInitTestPlatformInputs();
+    mutInputs.ref = getInitTestPlatformInputs();
   }
 
   const textures: Texture[] = [];
@@ -195,15 +196,11 @@ export function getTestPlatform(customSize?: DeviceSize) {
   const masks: MaskShape[] = [];
 
   const platform: ReplayPlatform<TestPlatformInputs> = {
-    getGetDevice() {
-      return (globalToLocalCoords) => {
-        const local = globalToLocalCoords(mutableTestDevice.inputs);
-        return {
-          ...mutableTestDevice,
-          inputs: { ...mutableTestDevice.inputs, x: local.x, y: local.y },
-        };
-      };
+    getInputs: (globalToLocalCoords) => {
+      const local = globalToLocalCoords(mutInputs.ref);
+      return { ...mutInputs.ref, x: local.x, y: local.y };
     },
+    mutDevice: mutableTestDevice,
     render: {
       newFrame: () => {
         textures.length = 0;
@@ -228,6 +225,7 @@ export function getTestPlatform(customSize?: DeviceSize) {
     platform,
     resetInputs,
     mutableTestDevice,
+    mutInputs,
     textures,
     masks,
   };
@@ -264,8 +262,8 @@ export const TestGame = makeSprite<
     return { position: 5 };
   },
 
-  loop({ state, device }) {
-    const posInc = device.inputs.buttonPressed.move ? 1 : 0;
+  loop({ state, getInputs }) {
+    const posInc = getInputs().buttonPressed.move ? 1 : 0;
     return { position: state.position + posInc };
   },
 
@@ -292,13 +290,14 @@ export const TestGameWithSprites = makeSprite<
     return { showSprite: true };
   },
 
-  loop({ device }) {
-    const showSprite = device.inputs.buttonPressed.show;
+  loop({ getInputs }) {
+    const showSprite = getInputs().buttonPressed.show;
     return { showSprite };
   },
 
-  render({ state }) {
-    return state.showSprite
+  render({ state, getInputs }) {
+    // Testing getInputs is cached between Sprite methods
+    return state.showSprite && getInputs().buttonPressed.show
       ? [
           TestSprite({
             id: "test",
@@ -416,10 +415,12 @@ export const FullTestGame = makeSprite<
     };
   },
 
-  loop({ state, device, updateState }) {
-    const posInc = device.inputs.buttonPressed.move ? 1 : 0;
+  loop({ state, device, getInputs, updateState }) {
+    const inputs = getInputs();
 
-    if (device.inputs.buttonPressed.action) {
+    const posInc = inputs.buttonPressed.move ? 1 : 0;
+
+    if (inputs.buttonPressed.action) {
       updateState((prevState) => ({
         ...prevState,
         testRenderUpdateState: `render time: ${device.now().toISOString()}`,
@@ -464,17 +465,17 @@ export const FullTestGame = makeSprite<
       });
     }
 
-    if (device.inputs.buttonPressed.log) {
+    if (inputs.buttonPressed.log) {
       device.log("Log Message");
     }
 
     // Timer
-    if (device.inputs.buttonPressed.timer.start) {
+    if (inputs.buttonPressed.timer.start) {
       device.timer.start(() => {
         device.log("timeout complete");
       }, 100);
     }
-    const { pause, resume, cancel } = device.inputs.buttonPressed.timer;
+    const { pause, resume, cancel } = inputs.buttonPressed.timer;
     if (pause) {
       device.timer.pause(pause);
     }
@@ -486,67 +487,67 @@ export const FullTestGame = makeSprite<
     }
 
     // Audio
-    if (device.inputs.buttonPressed.sound.play) {
+    if (inputs.buttonPressed.sound.play) {
       device.audio("filename").play();
     }
-    if (device.inputs.buttonPressed.sound.playFromPosition) {
+    if (inputs.buttonPressed.sound.playFromPosition) {
       device.audio("filename").play(100);
     }
-    if (device.inputs.buttonPressed.sound.playLoop) {
+    if (inputs.buttonPressed.sound.playLoop) {
       device.audio("filename").play({ fromPosition: 0, loop: true });
     }
-    if (device.inputs.buttonPressed.sound.playOverwrite) {
+    if (inputs.buttonPressed.sound.playOverwrite) {
       device.audio("filename").play({ overwrite: true });
     }
-    if (device.inputs.buttonPressed.sound.pause) {
+    if (inputs.buttonPressed.sound.pause) {
       device.audio("filename").pause();
     }
-    if (device.inputs.buttonPressed.sound.getPosition) {
+    if (inputs.buttonPressed.sound.getPosition) {
       device.log(device.audio("filename").getPosition());
     }
 
     // Network
-    if (device.inputs.buttonPressed.network.get) {
+    if (inputs.buttonPressed.network.get) {
       device.network.get("/test", (data) => {
         device.log(data);
       });
     }
-    if (device.inputs.buttonPressed.network.put) {
+    if (inputs.buttonPressed.network.put) {
       device.network.put("/test", { data: "PUT_BODY" }, (data) => {
         device.log(data);
       });
     }
-    if (device.inputs.buttonPressed.network.post) {
+    if (inputs.buttonPressed.network.post) {
       device.network.post("/test", { data: "POST_BODY" }, (data) => {
         device.log(data);
       });
     }
-    if (device.inputs.buttonPressed.network.delete) {
+    if (inputs.buttonPressed.network.delete) {
       device.network.delete("/test", (data) => {
         device.log(data);
       });
     }
 
-    if (device.inputs.buttonPressed.setDate) {
+    if (inputs.buttonPressed.setDate) {
       device.log(device.now().toISOString());
     }
 
-    if (device.inputs.buttonPressed.setRandom) {
+    if (inputs.buttonPressed.setRandom) {
       device.log(device.random());
     }
 
-    if (device.inputs.buttonPressed.alert.ok) {
+    if (inputs.buttonPressed.alert.ok) {
       device.alert.ok("Message", () => {
         device.log("Hit ok");
       });
     }
-    if (device.inputs.buttonPressed.alert.okCancel) {
+    if (inputs.buttonPressed.alert.okCancel) {
       device.alert.okCancel("Message Confirm", (wasOk) => {
         device.log(`Was ok: ${wasOk}`);
       });
     }
 
-    const { copyMessage } = device.inputs.buttonPressed.clipboard;
+    const { copyMessage } = inputs.buttonPressed.clipboard;
     if (copyMessage) {
       device.clipboard.copy(copyMessage, (error) => {
         if (error) {
@@ -573,7 +574,7 @@ export const FullTestGame = makeSprite<
       device.log(state.testRenderTimeout);
     }
 
-    if (device.inputs.buttonPressed.moveWithUpdateState) {
+    if (inputs.buttonPressed.moveWithUpdateState) {
       updateState((s) => ({ ...s, position: s.position + 5 }));
     }
 
@@ -662,11 +663,10 @@ export const NestedSpriteGame = makeSprite<
   undefined,
   TestPlatformInputs
 >({
-  render({ device }) {
-    if (device.inputs.x) {
-      device.log(
-        `NestedSpriteGame x: ${device.inputs.x}, y: ${device.inputs.y}`
-      );
+  render({ device, getInputs }) {
+    const inputs = getInputs();
+    if (inputs.x) {
+      device.log(`NestedSpriteGame x: ${inputs.x}, y: ${inputs.y}`);
     }
     return [
       NestedFirstSprite({
@@ -681,11 +681,12 @@ export const NestedSpriteGame = makeSprite<
 });
 
 const NestedFirstSprite = makeSprite<{}, undefined, TestPlatformInputs>({
-  render({ device }) {
-    if (device.inputs.x) {
+  render({ device, getInputs }) {
+    const inputs = getInputs();
+    if (inputs.x) {
       device.log(
-        `NestedFirstSprite x: ${Math.round(device.inputs.x)}, y: ${Math.round(
-          device.inputs.y
+        `NestedFirstSprite x: ${Math.round(inputs.x)}, y: ${Math.round(
+          inputs.y
         )}`
       );
     }
@@ -702,11 +703,12 @@ const NestedFirstSprite = makeSprite<{}, undefined, TestPlatformInputs>({
 });
 
 const NestedSecondSprite = makeSprite<{}, undefined, TestPlatformInputs>({
-  render({ device }) {
-    if (device.inputs.x) {
+  render({ device, getInputs }) {
+    const inputs = getInputs();
+    if (inputs.x) {
       device.log(
-        `NestedSecondSprite x: ${Math.round(device.inputs.x)}, y: ${Math.round(
-          device.inputs.y
+        `NestedSecondSprite x: ${Math.round(inputs.x)}, y: ${Math.round(
+          inputs.y
         )}`
       );
     }
@@ -743,11 +745,12 @@ export const NestedSpriteGame2 = makeSprite<
 });
 
 const NestedFirstSprite2 = makeSprite<{}, undefined, TestPlatformInputs>({
-  render({ device }) {
-    if (device.inputs.x) {
+  render({ device, getInputs }) {
+    const inputs = getInputs();
+    if (inputs.x) {
       device.log(
-        `NestedFirstSprite2 x: ${Math.round(device.inputs.x)}, y: ${Math.round(
-          device.inputs.y
+        `NestedFirstSprite2 x: ${Math.round(inputs.x)}, y: ${Math.round(
+          inputs.y
         )}`
       );
     }
@@ -857,8 +860,8 @@ export const AssetsGame = makeSprite<
     return { loading: true, show: true };
   },
 
-  loop({ state, device }) {
-    return { ...state, show: device.inputs.buttonPressed.show };
+  loop({ state, getInputs }) {
+    return { ...state, show: getInputs().buttonPressed.show };
   },
 
   render({ state }) {
@@ -952,8 +955,8 @@ export const PureSpriteGame = makeSprite<
     return { show: true };
   },
 
-  loop({ device }) {
-    return { show: device.inputs.buttonPressed.show };
+  loop({ getInputs }) {
+    return { show: getInputs().buttonPressed.show };
   },
 
   render({ state }) {
@@ -1025,8 +1028,8 @@ export const NativeSpriteGame = makeSprite<
   undefined,
   TestPlatformInputs
 >({
-  render({ device }) {
-    if (device.inputs.x === 100) {
+  render({ getInputs }) {
+    if (getInputs().x === 100) {
       return [];
     }
     return [NestedNativeSprite({ id: "nested" })];

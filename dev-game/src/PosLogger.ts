@@ -3,11 +3,11 @@ import { WebInputs } from "../../packages/replay-web/src";
 import { iOSInputs } from "../../packages/replay-swift/src";
 
 export const PosLogger = makeSprite<{}, undefined, WebInputs | iOSInputs>({
-  render({ device }) {
-    if (device.inputs.pointer.justPressed) {
-      device.log(
-        `x: ${device.inputs.pointer.x}, y: ${device.inputs.pointer.y}`
-      );
+  render({ device, getInputs }) {
+    const inputs = getInputs();
+
+    if (inputs.pointer.justPressed) {
+      device.log(`x: ${inputs.pointer.x}, y: ${inputs.pointer.y}`);
     }
     return [];
   },

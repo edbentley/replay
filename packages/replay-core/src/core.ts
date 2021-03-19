@@ -65,18 +65,20 @@ export interface GameOrientationSize {
  */
 export interface ReplayPlatform<I> {
   /**
-   * This returns `getDevice`, which is a callback that can be shared every
-   * frame.
-   *
-   * `getDevice` can then be called individually by each Sprite to get inputs
-   * relative to its position
+   * Get the inputs for an individual sprite
    */
-  getGetDevice: () => (
+  getInputs: (
     getLocalCoords: (globalCoords: {
       x: number;
       y: number;
     }) => { x: number; y: number }
-  ) => Device<I>;
+  ) => I;
+
+  /**
+   * Returns a device instance that's shared between all Sprites and mutated by
+   * the platform to update it
+   */
+  mutDevice: Device;
 
   render: PlatformRender;
 }
@@ -108,17 +110,18 @@ export function replayCore<S, I>(
 } {
   const globalToGameCoords = ({ x, y }: { x: number; y: number }) => ({ x, y });
 
-  const getInitDevice = platform.getGetDevice();
-  const initDevice = getInitDevice(globalToGameCoords);
+  const { mutDevice, getInputs: getInputsPlatform } = platform;
+
   const gameContainer = createCustomSpriteContainer(
     gameSprite,
-    getInitDevice(globalToGameCoords),
+    mutDevice,
+    () => getInputsPlatform(globalToGameCoords),
     0,
     gameSprite.props.id
   );
   const gameSize = gameSizeArg || gameSprite.props.size;
 
-  const initRenderMethod = getRenderMethod(initDevice.size, gameSize);
+  const initRenderMethod = getRenderMethod(mutDevice.size, gameSize);
 
   let prevTime = 0;
   let currentLag = 0;
@@ -126,7 +129,8 @@ export function replayCore<S, I>(
   traverseCustomSpriteContainer<GameProps, I>(
     gameContainer,
     gameSprite.props,
-    getInitDevice,
+    mutDevice,
+    getInputsPlatform,
     globalToGameCoords,
     true,
     initRenderMethod,
@@ -157,9 +161,7 @@ export function replayCore<S, I>(
 
         const extrapolateFactor = currentLag / REPLAY_TIME_PER_UPDATE_MS;
 
-        const getDevice = platform.getGetDevice();
-        const device = getDevice(globalToGameCoords);
-        const renderMethod = getRenderMethod(device.size, gameSize);
+        const renderMethod = getRenderMethod(mutDevice.size, gameSize);
 
         // Only draw on last frame
         const platformRender =
@@ -170,7 +172,8 @@ export function replayCore<S, I>(
         traverseCustomSpriteContainer<GameProps, I>(
           gameContainer,
           gameSprite.props,
-          getDevice,
+          mutDevice,
+          getInputsPlatform,
           globalToGameCoords,
           false,
           renderMethod,
@@ -194,12 +197,8 @@ export function replayCore<S, I>(
 function traverseCustomSpriteContainer<P, I>(
   customSpriteContainer: CustomSpriteContainer<P, unknown, I>,
   spriteProps: CustomSpriteProps<P>,
-  getDeviceGlobal: (
-    getLocalCoords: (globalCoords: {
-      x: number;
-      y: number;
-    }) => { x: number; y: number }
-  ) => Device<I>,
+  mutDevice: Device,
+  getInputsPlatform: ReplayPlatform<I>["getInputs"],
   getParentCoords: (globalCoords: {
     x: number;
     y: number;
@@ -221,11 +220,19 @@ function traverseCustomSpriteContainer<P, I>(
     const getParentToLocalCoords = getLocalCoordsForSprite(baseProps);
     return getParentToLocalCoords(parentCoords);
   };
-  const device = getDeviceGlobal(getLocalCoords);
+
+  // Cache in case called in multiple sprite methods
+  let cachedInputs: I | null = null;
+  const getInputs = () => {
+    if (!cachedInputs) {
+      cachedInputs = getInputsPlatform(getLocalCoords);
+    }
+    return cachedInputs;
+  };
 
   const sprites = customSpriteContainer.getSprites(
     spriteProps,
-    device,
+    getInputs,
     initCreation,
     renderMethod,
     extrapolateFactor
@@ -320,7 +327,7 @@ function traverseCustomSpriteContainer<P, I>(
       traversePureCustomSpriteContainer(
         lookupPureCustomSpriteContainer,
         sprite.props,
-        device.size,
+        mutDevice.size,
         nativeSpriteUtils.didResize, // conveniently get this from native utils
         renderMethod,
         platformRender
@@ -344,7 +351,8 @@ function traverseCustomSpriteContainer<P, I>(
         spriteInitCreation = true;
         lookupCustomSpriteContainer = createCustomSpriteContainer(
           sprite,
-          device,
+          mutDevice,
+          getInputs,
           customSpriteContainer.prevTime,
           globalId
         );
@@ -356,7 +364,8 @@ function traverseCustomSpriteContainer<P, I>(
       traverseCustomSpriteContainer(
         lookupCustomSpriteContainer,
         sprite.props,
-        getDeviceGlobal,
+        mutDevice,
+        getInputsPlatform,
         getLocalCoords,
         spriteInitCreation,
         renderMethod,
@@ -392,7 +401,7 @@ function traverseCustomSpriteContainer<P, I>(
           if (container.loadFilesPromise) {
             container.loadFilesPromise.then(() => {
               // Only cleanup once the initial load is complete
-              cleanupFiles(containerGlobalId, device.assetUtils);
+              cleanupFiles(containerGlobalId, mutDevice.assetUtils);
             });
           }
         } else if (container.type === "native") {
@@ -422,7 +431,8 @@ const REPLAY_TIME_PER_UPDATE_MS = 1000 * (1 / 60);
  */
 function createCustomSpriteContainer<P, S, I>(
   sprite: CustomSprite<P, S, I>,
-  initDevice: Device<I>,
+  mutDevice: Device,
+  getInitInputs: () => I,
   currentTime: number,
   globalId: string
 ): CustomSpriteContainer<P, S, I> {
@@ -447,10 +457,11 @@ function createCustomSpriteContainer<P, S, I>(
         }
         return spriteContainer.state;
       },
-      device: initDevice,
+      device: mutDevice,
+      getInputs: getInitInputs,
       updateState,
       preloadFiles: async (assets) => {
-        const loadFiles = preloadFiles(globalId, assets, initDevice.assetUtils);
+        const loadFiles = preloadFiles(globalId, assets, mutDevice.assetUtils);
         if (spriteContainer) {
           spriteContainer.loadFilesPromise = loadFiles;
         } else {
@@ -492,7 +503,13 @@ function createCustomSpriteContainer<P, S, I>(
     prevTime: currentTime,
     currentLag: 0,
     loadFilesPromise,
-    getSprites(props, device, initCreation, renderMethod, extrapolateFactor) {
+    getSprites(
+      props,
+      getInputs,
+      initCreation,
+      renderMethod,
+      extrapolateFactor
+    ) {
       // Run any updateState from callbacks in other sprites last render
       runUpdateStateCallbacks();
 
@@ -501,7 +518,8 @@ function createCustomSpriteContainer<P, S, I>(
         this.state = spriteObj.loop({
           props,
           state: this.state,
-          device,
+          device: mutDevice,
+          getInputs,
           updateState,
           getState,
         });
@@ -521,7 +539,8 @@ function createCustomSpriteContainer<P, S, I>(
       const sprites = render({
         props,
         state: this.state,
-        device,
+        device: mutDevice,
+        getInputs,
         updateState,
         getState,
         extrapolateFactor,
@@ -592,7 +611,7 @@ type CustomSpriteContainer<P, S, I> = {
   loadFilesPromise: null | Promise<void>;
   getSprites: (
     props: CustomSpriteProps<P>,
-    device: Device<I>,
+    getInputs: () => I,
     initCreation: boolean,
     renderMethod: RenderMethod,
     time: number

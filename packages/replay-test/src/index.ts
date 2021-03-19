@@ -229,17 +229,6 @@ export function testSprite<P, S, I>(
   };
 
   let inputs: I = { ...initInputs };
-  function getInputs(
-    globalToLocalCoords: (globalCoords: {
-      x: number;
-      y: number;
-    }) => {
-      x: number;
-      y: number;
-    }
-  ) {
-    return mapInputCoordinates(globalToLocalCoords, inputs);
-  }
   /**
    * Update the current input state in the game.
    */
@@ -276,7 +265,7 @@ export function testSprite<P, S, I>(
     return randomNumber;
   };
 
-  const audioFn: Device<I>["audio"] = (filename) => {
+  const audioFn: Device["audio"] = (filename) => {
     if (throwAssetErrors) {
       const audioElement = audioElements[filename];
       if (!audioElement) {
@@ -302,7 +291,7 @@ export function testSprite<P, S, I>(
     };
   };
 
-  const timer: Device<I>["timer"] = {
+  const timer: Device["timer"] = {
     start: (callback, ms) => {
       // Get a unique ID
       let id = "";
@@ -340,7 +329,7 @@ export function testSprite<P, S, I>(
   };
 
   const store = { ...initStore };
-  const storage: Device<I>["storage"] = {
+  const storage: Device["storage"] = {
     getItem(key) {
       return Promise.resolve(store[key] ?? null);
     },
@@ -374,41 +363,36 @@ export function testSprite<P, S, I>(
   const getPosStack: ((localCoords: Pos) => Pos)[] = [];
 
   const testPlatform: ReplayPlatform<I> = {
-    getGetDevice: () => {
-      const now = () => {
-        return new Date(Date.UTC(2000, 1, 1));
-      };
-      // called individually by each Sprite
-      return (globalToLocalCoords) => ({
-        inputs: getInputs(globalToLocalCoords),
-        isTouchScreen,
-        size,
-        log,
-        random,
-        timer,
-        now,
-        audio: audioFn,
-        assetUtils: {
-          audioElements,
-          imageElements,
-          loadAudioFile: (fileName) => {
-            return Promise.resolve().then(() => {
-              return `audioData-${fileName}`;
-            });
-          },
-          loadImageFile: (fileName) => {
-            return Promise.resolve().then(() => {
-              return `imageData-${fileName}`;
-            });
-          },
-          cleanupAudioFile: () => null,
-          cleanupImageFile: () => null,
+    getInputs: (globalToLocalCoords) =>
+      mapInputCoordinates(globalToLocalCoords, inputs),
+    mutDevice: {
+      isTouchScreen,
+      size,
+      log,
+      random,
+      timer,
+      now: () => new Date(Date.UTC(2000, 1, 1)),
+      audio: audioFn,
+      assetUtils: {
+        audioElements,
+        imageElements,
+        loadAudioFile: (fileName) => {
+          return Promise.resolve().then(() => {
+            return `audioData-${fileName}`;
+          });
         },
-        network,
-        storage,
-        alert,
-        clipboard,
-      });
+        loadImageFile: (fileName) => {
+          return Promise.resolve().then(() => {
+            return `imageData-${fileName}`;
+          });
+        },
+        cleanupAudioFile: () => null,
+        cleanupImageFile: () => null,
+      },
+      network,
+      storage,
+      alert,
+      clipboard,
     },
     render: {
       newFrame: () => {

@@ -216,6 +216,7 @@ All Sprite methods have the following parameters:
 
 - `props`: The props passed in by the parent Sprite.
 - `device`: The device object, see [Device](device.md).
+- `getInputs`: A function which return the current inputs as an object, see [Device](device.md).
 - `updateState`: A callback to update the `state` of the Sprite. Useful for asynchronous things like timers. Pass a function which takes the existing state and returns a new state. E.g:
    ```js
    updateState((prevState) => ({ ...prevState, playerX: 0 }));
@@ -227,7 +228,7 @@ All Sprite methods have the following parameters:
 Called on initial load of Sprite. Use this to run anything you need on setup. Returns the initial state.
 
 ```js
-  init({ props, device, updateState, preloadFiles, getState }) {
+  init({ props, device, getInputs, updateState, preloadFiles, getState }) {
     return { ... };
   },
 ```
@@ -249,7 +250,7 @@ Called on initial load of Sprite. Use this to run anything you need on setup. Re
 Called every frame of the game. Put your game logic here. Returns the next frame's state.
 
 ```js
-  loop({ props, state, device, updateState, getState }) {
+  loop({ props, state, device, getInputs, updateState, getState }) {
     return { ...state, ... };
   },
 ```
@@ -263,7 +264,7 @@ Called every frame of the game. Put your game logic here. Returns the next frame
 Called when the device renders to screen. Returns an array of Sprites to render.
 
 ```js
-  render({ props, state, device, updateState, getState, extrapolateFactor }) {
+  render({ props, state, device, getInputs, updateState, getState, extrapolateFactor }) {
     return [ ... ];
   },
 ```

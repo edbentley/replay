@@ -673,14 +673,15 @@ const Game = makeSprite<GameProps, State, Inputs>({
     };
   },
 
-  loop({ state, device, updateState }) {
-    if (device.inputs.pressed) {
+  loop({ state, device, getInputs, updateState }) {
+    const inputs = getInputs();
+    if (inputs.pressed) {
       return {
         ...state,
         x: state.x + 1,
       };
     }
-    switch (device.inputs.testInput) {
+    switch (inputs.testInput) {
       case "logRandom":
         device.log(device.random());
         break;
@@ -820,9 +821,10 @@ const Game = makeSprite<GameProps, State, Inputs>({
 });
 
 const Text = makeSprite<{ text: string }, undefined, Inputs>({
-  render({ props, device }) {
-    if (device.inputs.x) {
-      device.log(`x in Text Sprite is ${device.inputs.x}`);
+  render({ props, device, getInputs }) {
+    const inputs = getInputs();
+    if (inputs.x) {
+      device.log(`x in Text Sprite is ${inputs.x}`);
     }
     return [
       t.text({

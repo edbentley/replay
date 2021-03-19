@@ -19,16 +19,16 @@ export const gameProps: GameProps = {
 };
 
 export const Game = makeSprite<GameProps, State, iOSInputs | WebInputs>({
-  init({ device }) {
-    const { pointer } = device.inputs;
+  init({ getInputs }) {
+    const { pointer } = getInputs();
     return {
       view: getViewFromPointer(pointer.x),
       textValue: "Hello",
     };
   },
 
-  loop({ state, device, updateState }) {
-    const { pointer } = device.inputs;
+  loop({ state, getInputs, updateState }) {
+    const { pointer } = getInputs();
 
     if (pointer.justPressed) {
       updateState((s) => ({ ...s, view: getViewFromPointer(pointer.x) }));

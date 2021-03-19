@@ -58,8 +58,7 @@ function getBenchmarkPlatform() {
     clicked: false,
   };
 
-  const mutableTestDevice: Device<Inputs> = {
-    inputs,
+  const mutableTestDevice: Device = {
     isTouchScreen: false,
     size: {
       width: 300,
@@ -128,15 +127,11 @@ function getBenchmarkPlatform() {
   };
 
   const platform: ReplayPlatform<Inputs> = {
-    getGetDevice: () => {
-      return (getLocalCoords) => {
-        const local = getLocalCoords(inputs);
-        return {
-          ...mutableTestDevice,
-          inputs: { ...inputs, x: local.x, y: local.y },
-        };
-      };
+    getInputs: (globalToLocalCoords) => {
+      const local = globalToLocalCoords(inputs);
+      return { ...inputs, x: local.x, y: local.y };
     },
+    mutDevice: mutableTestDevice,
     render: {
       newFrame: () => null,
       startRenderSprite: () => null,

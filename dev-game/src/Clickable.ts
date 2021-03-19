@@ -16,9 +16,10 @@ export const Clickable = makeSprite<
 >({
   render({
     props: { sprites, width, height, onPress, onPressOutside },
-    device,
+    getInputs,
   }) {
-    const { x, y, justReleased, pressed } = device.inputs.pointer;
+    const inputs = getInputs();
+    const { x, y, justReleased, pressed } = inputs.pointer;
 
     const isOnButton =
       x <= width / 2 && x >= -width / 2 && y <= height / 2 && y >= -height / 2;

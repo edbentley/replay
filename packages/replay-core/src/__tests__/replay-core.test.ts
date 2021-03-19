@@ -29,12 +29,12 @@ import { NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture } from "../t";
 
 test("can render simple game and runNextFrame", () => {
-  const { platform, mutableTestDevice, textures } = getTestPlatform();
+  const { platform, mutInputs, textures } = getTestPlatform();
   const platformSpy = {
-    getDevice: jest.spyOn(platform, "getGetDevice"),
+    getInputs: jest.spyOn(platform, "getInputs"),
   };
 
-  mutableTestDevice.inputs.buttonPressed.move = true;
+  mutInputs.ref.buttonPressed.move = true;
 
   const { runNextFrame } = replayCore(
     platform,
@@ -48,7 +48,7 @@ test("can render simple game and runNextFrame", () => {
     runNextFrame(time, jest.fn());
   };
 
-  expect(platformSpy.getDevice).toBeCalledTimes(1);
+  expect(platformSpy.getInputs).toBeCalledTimes(0);
   expect(textures).toEqual([
     {
       type: "circle",
@@ -70,7 +70,7 @@ test("can render simple game and runNextFrame", () => {
 
   nextFrame();
 
-  expect(platformSpy.getDevice).toBeCalledTimes(2);
+  expect(platformSpy.getInputs).toBeCalledTimes(1);
   expect(textures[0]).toEqual({
     type: "circle",
     props: {
@@ -88,10 +88,10 @@ test("can render simple game and runNextFrame", () => {
     },
   });
 
-  mutableTestDevice.inputs.buttonPressed.move = true;
+  mutInputs.ref.buttonPressed.move = true;
   nextFrame();
 
-  expect(platformSpy.getDevice).toBeCalledTimes(3);
+  expect(platformSpy.getInputs).toBeCalledTimes(2);
   expect(textures[0]).toEqual({
     type: "circle",
     props: {
@@ -111,12 +111,12 @@ test("can render simple game and runNextFrame", () => {
 });
 
 test("can render simple game with sprites", () => {
-  const { platform, mutableTestDevice, textures } = getTestPlatform();
+  const { platform, mutInputs, textures } = getTestPlatform();
   const platformSpy = {
-    getDevice: jest.spyOn(platform, "getGetDevice"),
+    getInputs: jest.spyOn(platform, "getInputs"),
   };
 
-  mutableTestDevice.inputs.buttonPressed.move = true;
+  mutInputs.ref.buttonPressed.move = true;
 
   const { runNextFrame } = replayCore(
     platform,
@@ -130,7 +130,7 @@ test("can render simple game with sprites", () => {
     runNextFrame(time, jest.fn());
   };
 
-  expect(platformSpy.getDevice).toBeCalledTimes(1);
+  expect(platformSpy.getInputs).toBeCalledTimes(1);
 
   expect(textures[0]).toEqual({
     type: "circle",
@@ -151,7 +151,7 @@ test("can render simple game with sprites", () => {
 
   nextFrame();
 
-  expect(platformSpy.getDevice).toBeCalledTimes(2);
+  expect(platformSpy.getInputs).toBeCalledTimes(2);
 
   expect(textures[0]).toEqual({
     type: "circle",
@@ -170,13 +170,13 @@ test("can render simple game with sprites", () => {
     },
   });
 
-  mutableTestDevice.inputs.buttonPressed.show = false;
+  mutInputs.ref.buttonPressed.show = false;
 
   nextFrame();
 
   expect(textures).toEqual([]);
 
-  mutableTestDevice.inputs.buttonPressed.show = true;
+  mutInputs.ref.buttonPressed.show = true;
 
   nextFrame();
 
@@ -264,7 +264,7 @@ test("Can render simple game with sprites in XL portrait", () => {
 });
 
 test("can log", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const { runNextFrame } = replayCore(
@@ -279,14 +279,14 @@ test("can log", () => {
     runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.log = true;
+  mutInputs.ref.buttonPressed.log = true;
   nextFrame();
 
   expect(logSpy).toBeCalledWith("Log Message");
 });
 
 test("can provide a random number", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const randomSpy = jest.spyOn(mutableTestDevice, "random");
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
@@ -296,7 +296,7 @@ test("can provide a random number", () => {
     FullTestGame(gameProps)
   );
 
-  mutableTestDevice.inputs.buttonPressed.setRandom = true;
+  mutInputs.ref.buttonPressed.setRandom = true;
   runNextFrame(1000 * (1 / 60) + 1, jest.fn());
 
   expect(logSpy).toBeCalledWith(0.5);
@@ -304,7 +304,7 @@ test("can provide a random number", () => {
 });
 
 test("supports timer", async () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const startSpy = jest.spyOn(mutableTestDevice.timer, "start");
   const cancelSpy = jest.spyOn(mutableTestDevice.timer, "cancel");
   const pauseSpy = jest.spyOn(mutableTestDevice.timer, "pause");
@@ -323,7 +323,7 @@ test("supports timer", async () => {
     runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.timer.start = true;
+  mutInputs.ref.buttonPressed.timer.start = true;
   nextFrame();
 
   await waitFrame();
@@ -331,27 +331,27 @@ test("supports timer", async () => {
   expect(logSpy).toBeCalledWith("timeout complete");
   expect(startSpy).toBeCalledTimes(2); // once in init
 
-  mutableTestDevice.inputs.buttonPressed.timer.start = false;
-  mutableTestDevice.inputs.buttonPressed.timer.pause = "abc";
+  mutInputs.ref.buttonPressed.timer.start = false;
+  mutInputs.ref.buttonPressed.timer.pause = "abc";
   nextFrame();
   expect(pauseSpy).toBeCalledTimes(1);
   expect(pauseSpy).toBeCalledWith("abc");
 
-  mutableTestDevice.inputs.buttonPressed.timer.pause = "";
-  mutableTestDevice.inputs.buttonPressed.timer.resume = "abc";
+  mutInputs.ref.buttonPressed.timer.pause = "";
+  mutInputs.ref.buttonPressed.timer.resume = "abc";
   nextFrame();
   expect(resumeSpy).toBeCalledTimes(1);
   expect(resumeSpy).toBeCalledWith("abc");
 
-  mutableTestDevice.inputs.buttonPressed.timer.resume = "";
-  mutableTestDevice.inputs.buttonPressed.timer.cancel = "abc";
+  mutInputs.ref.buttonPressed.timer.resume = "";
+  mutInputs.ref.buttonPressed.timer.cancel = "abc";
   nextFrame();
   expect(cancelSpy).toBeCalledTimes(1);
   expect(cancelSpy).toBeCalledWith("abc");
 });
 
 test("supports getting date now", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const setDateSpy = jest.spyOn(mutableTestDevice, "now");
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
@@ -361,7 +361,7 @@ test("supports getting date now", () => {
     FullTestGame(gameProps)
   );
 
-  mutableTestDevice.inputs.buttonPressed.setDate = true;
+  mutInputs.ref.buttonPressed.setDate = true;
   runNextFrame(1000 * (1 / 60) + 1, jest.fn());
 
   expect(logSpy).toBeCalledWith("1996-01-17T03:24:00.000Z");
@@ -369,7 +369,7 @@ test("supports getting date now", () => {
 });
 
 test("supports updateState", async () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const { runNextFrame } = replayCore(
@@ -389,7 +389,7 @@ test("supports updateState", async () => {
   nextFrame();
   expect(logSpy).toBeCalledWith("initialised");
 
-  mutableTestDevice.inputs.buttonPressed.action = true;
+  mutInputs.ref.buttonPressed.action = true;
   nextFrame();
   await waitFrame();
   nextFrame(); // log called on state change in next loop
@@ -400,7 +400,7 @@ test("supports updateState", async () => {
 });
 
 test("updateState in loop will update state in next render", () => {
-  const { platform, mutableTestDevice, textures } = getTestPlatform();
+  const { platform, mutInputs, textures } = getTestPlatform();
 
   const { runNextFrame } = replayCore(
     platform,
@@ -416,8 +416,8 @@ test("updateState in loop will update state in next render", () => {
     runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.move = true;
-  mutableTestDevice.inputs.buttonPressed.moveWithUpdateState = true;
+  mutInputs.ref.buttonPressed.move = true;
+  mutInputs.ref.buttonPressed.moveWithUpdateState = true;
 
   nextFrame();
 
@@ -426,10 +426,15 @@ test("updateState in loop will update state in next render", () => {
 });
 
 test("can call updateState within an updateState", async () => {
-  const { platform, mutableTestDevice, textures } = getTestPlatform();
+  const {
+    platform,
+    mutableTestDevice,
+    mutInputs,
+    textures,
+  } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  mutableTestDevice.inputs.buttonPressed.action = true;
+  mutInputs.ref.buttonPressed.action = true;
 
   const { runNextFrame } = replayCore(
     platform,
@@ -459,7 +464,7 @@ test("can call updateState within an updateState", async () => {
 });
 
 test("supports getState", async () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const { runNextFrame } = replayCore(
@@ -468,7 +473,7 @@ test("supports getState", async () => {
     FullTestGame(gameProps)
   );
 
-  mutableTestDevice.inputs.buttonPressed.move = true;
+  mutInputs.ref.buttonPressed.move = true;
 
   let time = 1;
   const nextFrame = () => {
@@ -491,7 +496,7 @@ test("getState will throw error if called synchronously", () => {
 });
 
 test("supports playing audio", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const audio = mutableTestDevice.audio("filename");
@@ -513,34 +518,34 @@ test("supports playing audio", () => {
     runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.sound.play = true;
+  mutInputs.ref.buttonPressed.sound.play = true;
   nextFrame();
   expect(audioSpy.play).toBeCalledWith();
 
-  mutableTestDevice.inputs.buttonPressed.sound.playFromPosition = true;
+  mutInputs.ref.buttonPressed.sound.playFromPosition = true;
   nextFrame();
   expect(audioSpy.play).toBeCalledWith(100);
 
-  mutableTestDevice.inputs.buttonPressed.sound.playLoop = true;
+  mutInputs.ref.buttonPressed.sound.playLoop = true;
   nextFrame();
   expect(audioSpy.play).toBeCalledWith({ fromPosition: 0, loop: true });
 
-  mutableTestDevice.inputs.buttonPressed.sound.playOverwrite = true;
+  mutInputs.ref.buttonPressed.sound.playOverwrite = true;
   nextFrame();
   expect(audioSpy.play).toBeCalledWith({ overwrite: true });
 
-  mutableTestDevice.inputs.buttonPressed.sound.pause = true;
+  mutInputs.ref.buttonPressed.sound.pause = true;
   nextFrame();
   expect(audioSpy.pause).toBeCalledWith();
 
-  mutableTestDevice.inputs.buttonPressed.sound.getPosition = true;
+  mutInputs.ref.buttonPressed.sound.getPosition = true;
   nextFrame();
   expect(audioSpy.getPosition).toBeCalledWith();
   expect(logSpy).toBeCalledWith(50);
 });
 
 test("supports network calls", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const { network } = mutableTestDevice;
@@ -563,22 +568,22 @@ test("supports network calls", () => {
     runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.network.get = true;
+  mutInputs.ref.buttonPressed.network.get = true;
   nextFrame();
   expect(networkSpy.get).toBeCalled();
   expect(logSpy).toBeCalledWith("GET-/test");
 
-  mutableTestDevice.inputs.buttonPressed.network.put = true;
+  mutInputs.ref.buttonPressed.network.put = true;
   nextFrame();
   expect(networkSpy.put).toBeCalled();
   expect(logSpy).toBeCalledWith("PUT-/test-PUT_BODY");
 
-  mutableTestDevice.inputs.buttonPressed.network.post = true;
+  mutInputs.ref.buttonPressed.network.post = true;
   nextFrame();
   expect(networkSpy.post).toBeCalled();
   expect(logSpy).toBeCalledWith("POST-/test-POST_BODY");
 
-  mutableTestDevice.inputs.buttonPressed.network.delete = true;
+  mutInputs.ref.buttonPressed.network.delete = true;
   nextFrame();
   expect(networkSpy.delete).toBeCalled();
   expect(logSpy).toBeCalledWith("DELETE-/test");
@@ -648,7 +653,7 @@ test("supports local storage", async () => {
 });
 
 test("supports alerts", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const { alert } = mutableTestDevice;
@@ -669,19 +674,19 @@ test("supports alerts", () => {
     runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.alert.ok = true;
+  mutInputs.ref.buttonPressed.alert.ok = true;
   nextFrame();
   expect(alertSpy.ok).toBeCalled();
   expect(logSpy).toBeCalledWith("Hit ok");
 
-  mutableTestDevice.inputs.buttonPressed.alert.okCancel = true;
+  mutInputs.ref.buttonPressed.alert.okCancel = true;
   nextFrame();
   expect(alertSpy.okCancel).toBeCalled();
   expect(logSpy).toBeCalledWith("Was ok: true");
 });
 
 test("can copy to clipboard", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const { clipboard } = mutableTestDevice;
@@ -703,8 +708,7 @@ test("can copy to clipboard", () => {
 
   expect(clipboardSpy.copy).not.toHaveBeenCalled();
 
-  mutableTestDevice.inputs.buttonPressed.clipboard.copyMessage =
-    "Hello clipboard";
+  mutInputs.ref.buttonPressed.clipboard.copyMessage = "Hello clipboard";
   nextFrame();
   expect(clipboardSpy.copy).toBeCalledWith(
     "Hello clipboard",
@@ -712,7 +716,7 @@ test("can copy to clipboard", () => {
   );
   expect(logSpy).toBeCalledWith("Copied");
 
-  mutableTestDevice.inputs.buttonPressed.clipboard.copyMessage = "Error";
+  mutInputs.ref.buttonPressed.clipboard.copyMessage = "Error";
   nextFrame();
   expect(clipboardSpy.copy).toBeCalledWith("Error", expect.any(Function));
   expect(logSpy).toBeCalledWith("Error copying: !");
@@ -808,11 +812,16 @@ test("deeply nested input position", () => {
   // Note: deeply nested sprite positions are handled by the platforms (there's
   // a test case for this in replay-test)
 
-  const { platform, mutableTestDevice, textures } = getTestPlatform();
+  const {
+    platform,
+    mutableTestDevice,
+    mutInputs,
+    textures,
+  } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  mutableTestDevice.inputs.x = 50;
-  mutableTestDevice.inputs.y = 50;
+  mutInputs.ref.x = 50;
+  mutInputs.ref.y = 50;
 
   replayCore(platform, nativeSpriteSettings, NestedSpriteGame(gameProps));
 
@@ -834,11 +843,11 @@ test("deeply nested input position", () => {
 });
 
 test("nested sprites and input position with scale", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  mutableTestDevice.inputs.x = 10;
-  mutableTestDevice.inputs.y = 10;
+  mutInputs.ref.x = 10;
+  mutInputs.ref.y = 10;
 
   replayCore(platform, nativeSpriteSettings, NestedSpriteGame2(gameProps));
 
@@ -887,7 +896,12 @@ test("loop and render order for callback prop change on low render FPS", () => {
 });
 
 test("can preload and clear file assets", async () => {
-  const { platform, mutableTestDevice, textures } = getTestPlatform();
+  const {
+    platform,
+    mutableTestDevice,
+    mutInputs,
+    textures,
+  } = getTestPlatform();
   const resetInputs = jest.fn();
 
   const { runNextFrame } = replayCore(
@@ -974,7 +988,7 @@ test("can preload and clear file assets", async () => {
   });
 
   // Unmount Sprites
-  mutableTestDevice.inputs.buttonPressed.show = false;
+  mutInputs.ref.buttonPressed.show = false;
   nextFrame();
 
   // Need resolved promise to be called
@@ -988,7 +1002,7 @@ test("can preload and clear file assets", async () => {
 });
 
 test("Sprite unmounted before it loads", async () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const resetInputs = jest.fn();
 
   const { runNextFrame } = replayCore(
@@ -1011,7 +1025,7 @@ test("Sprite unmounted before it loads", async () => {
   expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(2);
 
   // Unmount Sprites before they finish loading
-  mutableTestDevice.inputs.buttonPressed.show = false;
+  mutInputs.ref.buttonPressed.show = false;
   nextFrame();
 
   // Wait for promises to load
@@ -1036,7 +1050,7 @@ test("throws error on duplicate Sprites", () => {
 });
 
 test("supports Pure Sprites", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutInputs } = getTestPlatform();
 
   const { runNextFrame } = replayCore(
     platform,
@@ -1060,7 +1074,7 @@ test("supports Pure Sprites", () => {
   expect(pureSpriteNeverRendersFn).toBeCalledTimes(1);
   expect(pureSpriteConditionalRendersFn).toBeCalledTimes(1);
 
-  mutableTestDevice.inputs.buttonPressed.show = false;
+  mutInputs.ref.buttonPressed.show = false;
   nextFrame();
 
   expect(pureSpriteAlwaysRendersFn).toBeCalledTimes(3);
@@ -1069,7 +1083,7 @@ test("supports Pure Sprites", () => {
 });
 
 test("supports Native Sprites", () => {
-  const { platform, mutableTestDevice, textures } = getTestPlatform();
+  const { platform, mutInputs, textures } = getTestPlatform();
 
   const mutableNativeSpriteUtils: NativeSpriteUtils = {
     didResize: false,
@@ -1122,7 +1136,7 @@ test("supports Native Sprites", () => {
   expect(widgetState.x).toBe(20);
 
   // test cleanup
-  mutableTestDevice.inputs.x = 100;
+  mutInputs.ref.x = 100;
   nextFrame();
   expect(widgetState.text).toBe("");
 });

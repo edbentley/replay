@@ -31,10 +31,11 @@ export const TestGame = makeSprite<
     return { position: 0, timerId: null };
   },
 
-  loop({ state, device, updateState }) {
-    const posInc = device.inputs.keysDown.ArrowRight ? 10 : 0;
+  loop({ state, device, updateState, getInputs }) {
+    const inputs = getInputs();
+    const posInc = inputs.keysDown.ArrowRight ? 10 : 0;
 
-    const { pointer } = device.inputs;
+    const { pointer } = inputs;
     if (pointer.justPressed) {
       if (pointer.x === 1) {
         device.log(device.now().toUTCString());
@@ -133,8 +134,9 @@ const TestSprite = makeSprite<TestGameProps, TestGameState, Inputs>({
     return { position: 0 };
   },
 
-  loop({ state, device }) {
-    const posInc = device.inputs.keysDown.ArrowRight ? 10 : 0;
+  loop({ state, getInputs }) {
+    const inputs = getInputs();
+    const posInc = inputs.keysDown.ArrowRight ? 10 : 0;
     return { position: state.position + posInc };
   },
 
@@ -174,13 +176,15 @@ export const TestGameWithAssets = makeSprite<
     return { position: 0, rotation: 0, loading: true };
   },
 
-  loop({ state, device }) {
+  loop({ state, device, getInputs }) {
     if (state.loading) return state;
 
-    const posInc = device.inputs.keysDown.ArrowRight ? 10 : 0;
-    const rotInc = device.inputs.keysDown.ArrowRight ? 45 : 0;
+    const inputs = getInputs();
 
-    const { pointer } = device.inputs;
+    const posInc = inputs.keysDown.ArrowRight ? 10 : 0;
+    const rotInc = inputs.keysDown.ArrowRight ? 45 : 0;
+
+    const { pointer } = inputs;
     if (pointer.justPressed) {
       if (pointer.x === 1) {
         device.audio("shoot.wav").play();
@@ -330,8 +334,9 @@ export const TestAssetsGame = makeSprite<
     return { loading: true, show: true };
   },
 
-  loop({ state, device }) {
-    return { ...state, show: !device.inputs.pointer.pressed };
+  loop({ state, getInputs }) {
+    const inputs = getInputs();
+    return { ...state, show: !inputs.pointer.pressed };
   },
 
   render({ state }) {
@@ -368,8 +373,9 @@ export const TestGameWithNativeSprite = makeSprite<
   undefined,
   Inputs
 >({
-  render({ device }) {
-    if (device.inputs.pointer.pressed) {
+  render({ getInputs }) {
+    const inputs = getInputs();
+    if (inputs.pointer.pressed) {
       return [];
     }
     return [TestNativeSprite({ id: "test" })];

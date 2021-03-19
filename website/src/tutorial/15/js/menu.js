@@ -1,8 +1,8 @@
 import { makeSprite, t } from "@replay/core";
 
 export const Menu = makeSprite({
-  render({ props, device }) {
-    const { inputs } = device;
+  render({ props, getInputs, device }) {
+    const inputs = getInputs();
 
     if (inputs.pointer.justReleased || inputs.keysJustPressed[" "]) {
       props.start();

@@ -11,8 +11,8 @@ export const Level = makeSprite({
     };
   },
 
-  loop({ state, device }) {
-    const { inputs } = device;
+  loop({ state, getInputs }) {
+    const inputs = getInputs();
 
     let { birdGravity, birdY } = state;
 

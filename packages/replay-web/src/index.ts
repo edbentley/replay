@@ -21,7 +21,7 @@ import {
   pointerCancelHandler,
 } from "./input";
 import { drawCanvas } from "./draw";
-import { getDeviceSize, setDeviceSize, calculateDeviceSize } from "./size";
+import { calculateDeviceSize } from "./size";
 import { Dimensions } from "./dimensions";
 import { getGameXToWebX, getGameYToWebY } from "./coordinates";
 import { getTimer } from "./timer";
@@ -80,8 +80,8 @@ export type RenderCanvasOptions = {
 };
 
 type PlatformOptions = {
-  storage?: Device<{}>["storage"];
-  clipboard?: Device<{}>["clipboard"];
+  storage?: Device["storage"];
+  clipboard?: Device["clipboard"];
 };
 
 /**
@@ -210,24 +210,24 @@ export function renderCanvas<S>(
     }
 
     // Don't update device size on scroll as window gets smaller
-    const deviceSize =
-      didScroll && prevDeviceSize
-        ? prevDeviceSize
-        : setDeviceSize(
-            windowSize?.width || window.innerWidth,
-            windowSize?.height || window.innerHeight,
-            dimensions,
-            gameSprite.props.size
-          );
-    canvas.width = deviceSize.deviceWidth;
-    canvas.height = deviceSize.deviceHeight;
+    if (!(didScroll && prevDeviceSize)) {
+      mutDevice.size = calculateDeviceSize(
+        windowSize?.width || window.innerWidth,
+        windowSize?.height || window.innerHeight,
+        dimensions,
+        gameSprite.props.size
+      );
+    }
+
+    canvas.width = mutDevice.size.deviceWidth;
+    canvas.height = mutDevice.size.deviceHeight;
 
     const defaultFont = gameSprite.props.defaultFont || DEFAULT_FONT;
 
     // also update render with new size
     const renderCanvasResult = drawCanvas(
       ctx,
-      deviceSize,
+      mutDevice.size,
       imageElements,
       defaultFont
     );
@@ -241,15 +241,15 @@ export function renderCanvas<S>(
 
     nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
       canvasOffsetLeft: canvas.offsetLeft,
-      width: deviceSize.width,
-      widthMargin: deviceSize.widthMargin,
+      width: mutDevice.size.width,
+      widthMargin: mutDevice.size.widthMargin,
       scale,
     });
 
     nativeSpriteUtils.gameYToPlatformY = getGameYToWebY({
       canvasOffsetTop: canvas.offsetTop,
-      height: deviceSize.height,
-      heightMargin: deviceSize.heightMargin,
+      height: mutDevice.size.height,
+      heightMargin: mutDevice.size.heightMargin,
       scale,
     });
 
@@ -259,23 +259,23 @@ export function renderCanvas<S>(
     const getX = clientXToGameX({
       canvasOffsetLeft: canvas.offsetLeft,
       scrollX: window.scrollX,
-      width: deviceSize.width,
-      widthMargin: deviceSize.widthMargin,
+      width: mutDevice.size.width,
+      widthMargin: mutDevice.size.widthMargin,
       scale,
     });
     const getY = clientYToGameY({
       canvasOffsetTop: canvas.offsetTop,
       scrollY: window.scrollY,
-      height: deviceSize.height,
-      heightMargin: deviceSize.heightMargin,
+      height: mutDevice.size.height,
+      heightMargin: mutDevice.size.heightMargin,
       scale,
     });
 
     const isPointerOutsideGame = (x: number, y: number) =>
-      x > deviceSize.width / 2 + deviceSize.widthMargin ||
-      x < -deviceSize.width / 2 - deviceSize.widthMargin ||
-      y > deviceSize.height / 2 + deviceSize.heightMargin ||
-      y < -deviceSize.height / 2 - deviceSize.heightMargin;
+      x > mutDevice.size.width / 2 + mutDevice.size.widthMargin ||
+      x < -mutDevice.size.width / 2 - mutDevice.size.widthMargin ||
+      y > mutDevice.size.height / 2 + mutDevice.size.heightMargin ||
+      y < -mutDevice.size.height / 2 - mutDevice.size.heightMargin;
 
     pointerDown = (e: PointerEvent | TouchEvent) => {
       if ("changedTouches" in e) {
@@ -360,7 +360,7 @@ export function renderCanvas<S>(
     document.addEventListener(pointerUpEv, pointerUp, false);
     document.addEventListener(pointerCancelEv, pointerCancel, false);
 
-    prevDeviceSize = deviceSize;
+    prevDeviceSize = mutDevice.size;
   }
 
   const audioElements: AssetMap<AudioData> = {};
@@ -407,22 +407,24 @@ export function renderCanvas<S>(
     renderTexture: () => null,
   };
 
-  const domPlatform: ReplayPlatform<Inputs> = {
-    getGetDevice: deviceCreator(
-      audioContext,
-      calculateDeviceSize(
-        windowSize?.width || window.innerWidth,
-        windowSize?.height || window.innerHeight,
-        dimensions,
-        gameSprite.props.size
-      ),
-      assetUtils,
-      platformOptions?.storage || getStorage(),
-      platformOptions?.clipboard || getClipboard()
+  const mutDevice = mutDeviceCreator(
+    audioContext,
+    calculateDeviceSize(
+      windowSize?.width || window.innerWidth,
+      windowSize?.height || window.innerHeight,
+      dimensions,
+      gameSprite.props.size
     ),
+    assetUtils,
+    platformOptions?.storage || getStorage(),
+    platformOptions?.clipboard || getClipboard()
+  );
+
+  const domPlatform: ReplayPlatform<Inputs> = {
+    mutDevice,
+    getInputs,
     render: mutRender,
   };
-
   updateDeviceSize();
 
   let isCleanedUp = false;
@@ -513,15 +515,14 @@ export function renderCanvas<S>(
   };
 }
 
-function deviceCreator(
+function mutDeviceCreator(
   audioContext: AudioContext,
-  defaultSize: DeviceSize,
+  size: DeviceSize,
   assetUtils: AssetUtils<AudioData, ImageFileData>,
-  storage: Device<{}>["storage"],
-  clipboard: Device<{}>["clipboard"]
-): ReplayPlatform<Inputs>["getGetDevice"] {
-  // called once
-  const initDevice: Omit<Device<Inputs>, "inputs" | "size" | "now"> = {
+  storage: Device["storage"],
+  clipboard: Device["clipboard"]
+): Device {
+  return {
     isTouchScreen: isTouchDevice(),
     log: console.log,
     random: Math.random,
@@ -541,20 +542,7 @@ function deviceCreator(
       },
     },
     clipboard,
-  };
-
-  return () => {
-    // called every frame
-    const device: Omit<Device<Inputs>, "inputs"> = {
-      ...initDevice,
-      size: getDeviceSize() || defaultSize,
-      now: () => new Date(),
-    };
-
-    // called individually by each Sprite to get inputs relative to position
-    return (getLocalCoords) => ({
-      ...device,
-      inputs: getInputs(getLocalCoords),
-    });
+    size,
+    now: () => new Date(),
   };
 }

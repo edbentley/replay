@@ -3,12 +3,13 @@ id: device
 title: Device
 ---
 
-The `device` parameter of the Sprite methods can be used to interact with the platform, like reading inputs and playing sound effects.
+The `device` and `getInputs` parameters of the Sprite methods can be used to interact with the platform, like getting mouse coordinates and playing sound effects.
 
 ```js
-  loop({ device }) {
+  loop({ device, getInputs }) {
+    const inputs = getInputs();
+
     const {
-      inputs,
       size,
       log,
       random,
@@ -30,9 +31,9 @@ The `device` parameter of the Sprite methods can be used to interact with the pl
 Functions like `log` and `random` replace `console.log` and `Math.random`. Using these ensures the game works across all platforms and tests (plus it keeps your Sprite methods pure).
 :::
 
-### `inputs`
+### `getInputs`
 
-An object of the device's input state. **The value depends on the platform your game is running on**. See [Platforms](web.md) for the values available.
+A function which returns an object of the device's input state. **The value depends on the platform your game is running on**. See [Platforms](web.md) for the values available.
 
 Platforms share similar input object shapes. For example, both the web and iOS platforms have a `pointer` field (relative to the Sprite's position):
 

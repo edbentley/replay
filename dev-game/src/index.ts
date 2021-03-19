@@ -104,8 +104,8 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
     return { ...initState, highScore: 0 };
   },
 
-  loop({ state, device }) {
-    const { inputs } = device;
+  loop({ state, device, getInputs }) {
+    const inputs = getInputs();
     const { stage } = state;
 
     // stage

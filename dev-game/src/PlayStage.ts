@@ -80,11 +80,12 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
     };
   },
 
-  loop({ state, device, props: { bulletSpeed, gameOver } }) {
+  loop({ state, device, getInputs, props: { bulletSpeed, gameOver } }) {
     if (state.paused || state.loading) return state;
 
+    const inputs = getInputs();
+
     const {
-      inputs,
       size: { width, height, heightMargin, widthMargin },
     } = device;
     const fullWidth = width + widthMargin * 2;
@@ -146,8 +147,8 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
       bullets,
       enemies,
       pointer: {
-        x: device.inputs.pointer.x,
-        y: device.inputs.pointer.y,
+        x: inputs.pointer.x,
+        y: inputs.pointer.y,
       },
       score,
       spawnEnemyTimerId: state.spawnEnemyTimerId,
