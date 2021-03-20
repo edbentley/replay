@@ -161,8 +161,8 @@ export function runRemovedSprites(arg: SuiteArg) {
       return { x: 0 };
     },
 
-    loop({ state, device }) {
-      if (device.inputs.clicked) {
+    loop({ state, getInputs }) {
+      if (getInputs().clicked) {
         return state;
       }
       return { ...state, x: state.x + 1 };
