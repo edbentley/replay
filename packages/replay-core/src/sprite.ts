@@ -34,11 +34,13 @@ export function makeSprite<
 >(
   spriteObj: SpriteObj<P, S, I>
 ): (props: CustomSpriteProps<P>) => CustomSprite<P, S, I> {
-  return (props) => ({
-    type: "custom",
-    spriteObj,
-    props,
-  });
+  return function makeSpriteCallback(props) {
+    return {
+      type: "custom",
+      spriteObj,
+      props,
+    };
+  };
 }
 
 export interface CustomSprite<P, S, I> {
@@ -182,11 +184,13 @@ export type PureCustomSprite<P> = {
 export function makePureSprite<P extends ExcludeSpriteBaseProps<P>>(
   spriteObj: PureSpriteObj<P>
 ): (props: CustomSpriteProps<P>) => PureCustomSprite<P> {
-  return (props) => ({
-    type: "pure",
-    spriteObj,
-    props,
-  });
+  return function makePureSpriteCallback(props) {
+    return {
+      type: "pure",
+      spriteObj,
+      props,
+    };
+  };
 }
 
 type PureSpriteObj<P> = {
