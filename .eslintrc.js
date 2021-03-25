@@ -39,7 +39,7 @@ module.exports = {
       },
     },
     {
-      files: ["**/__tests__/*.ts"],
+      files: ["**/__tests__/*.ts", "**/__benchmarks__/*.ts"],
       rules: {
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-non-null-assertion": "off",

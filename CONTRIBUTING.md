@@ -27,6 +27,11 @@ npm run test
 npm run test:watch
 ```
 
+## Performance
+
+Test the impact of your changes on the performance of replay-core using
+[replay-benchmarks](https://github.com/edbentley/replay-benchmarks).
+
 ## Publish
 
 All packages should be published at the same version. Public APIs should follow

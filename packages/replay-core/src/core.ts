@@ -224,7 +224,7 @@ function traverseCustomSpriteContainer<P, I>(
     throw Error(`Duplicate Sprite id ${duplicate}`);
   }
 
-  const textures = sprites
+  const textures: any[] = sprites
     .map(function mapTextures(sprite) {
       if (!sprite) return sprite;
 
@@ -665,7 +665,7 @@ function traversePureCustomSpriteContainer<P>(
   const unusedChildIds = new Set(customSpriteContainer.prevChildIds);
   const childIds: string[] = [];
 
-  const textures = sprites
+  const textures: any[] = sprites
     .map(function mapPureTextures(sprite) {
       if (!sprite) return sprite;
 
