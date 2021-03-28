@@ -48,6 +48,10 @@ interface TestPlatformInputs {
       playOverwrite: boolean;
       pause: boolean;
       getPosition: boolean;
+      getStatus: boolean;
+      getVolume: boolean;
+      setVolume: boolean;
+      getDuration: boolean;
     };
     network: {
       get: boolean;
@@ -90,6 +94,10 @@ function getInitTestPlatformInputs(): TestPlatformInputs {
         playOverwrite: false,
         pause: false,
         getPosition: false,
+        getStatus: false,
+        getVolume: false,
+        setVolume: false,
+        getDuration: false,
       },
       network: {
         get: false,
@@ -118,6 +126,10 @@ export function getTestPlatform(customSize?: DeviceSize) {
     getPosition: jest.fn(() => 50),
     play: jest.fn(),
     pause: jest.fn(),
+    getStatus: jest.fn(() => "playing" as const),
+    setVolume: jest.fn(),
+    getVolume: jest.fn(() => 1),
+    getDuration: jest.fn(() => 100),
   };
   const network = {
     get: jest.fn((url: string, callback: (data: unknown) => void) => {
@@ -504,6 +516,18 @@ export const FullTestGame = makeSprite<
     }
     if (inputs.buttonPressed.sound.getPosition) {
       device.log(device.audio("filename").getPosition());
+    }
+    if (inputs.buttonPressed.sound.setVolume) {
+      device.audio("filename").setVolume(1);
+    }
+    if (inputs.buttonPressed.sound.getVolume) {
+      device.log(device.audio("filename").getVolume());
+    }
+    if (inputs.buttonPressed.sound.getStatus) {
+      device.log(device.audio("filename").getStatus());
+    }
+    if (inputs.buttonPressed.sound.getDuration) {
+      device.log(device.audio("filename").getDuration());
     }
 
     // Network

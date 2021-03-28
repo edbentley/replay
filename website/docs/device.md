@@ -167,6 +167,39 @@ Get the current play position of the sound in seconds.
 mySound.getPosition();
 ```
 
+#### `getStatus`
+
+Get current status of the sound (as a string): `playing` or `paused`.
+
+```js
+const status = mySound.getStatus();
+const isPlaying = status === "playing";
+```
+
+#### `getDuration`
+
+Get the total duration of the sound in seconds.
+
+```js
+mySound.getDuration();
+```
+
+#### `setVolume`
+
+Set the volume of the sound. 1 is maximum (default), 0 is muted. Resets when sound finishes playing.
+
+```js
+mySound.setVolume(0);
+```
+
+#### `getVolume`
+
+Get the volume of the sound. 1 is maximum, 0 is muted.
+
+```js
+const volume = mySound.getVolume();
+```
+
 ### `network`
 
 Make platform-independent networks calls. Returns and sends data as a JSON object.

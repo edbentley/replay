@@ -42,6 +42,12 @@ Object.defineProperty(window, "AudioContext", {
       onended: jest.fn(),
     })),
     destination: {},
+    createGain: jest.fn().mockImplementation(() => ({
+      connect: jest.fn,
+      gain: {
+        value: 1,
+      },
+    })),
   })),
 });
 Object.defineProperty(window, "AudioBuffer", {

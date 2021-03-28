@@ -390,6 +390,43 @@ test("audio", async () => {
   expect(log).toBeCalledWith(120);
 });
 
+test("audio additional features", async () => {
+  const { nextFrame, audio, updateInputs, resolvePromises } = testSprite(
+    Game(gameProps),
+    gameProps,
+    {
+      initInputs: {
+        testInput: "audioGetStatus",
+      },
+    }
+  );
+
+  await resolvePromises();
+
+  /*
+    getStatus: () => "paused" | "playing";
+    getVolume: () => number;
+    setVolume: (volume: number) => void;
+    getDuration: () => number;
+  */
+
+  nextFrame();
+  expect(audio.play).toBeCalledWith("sound.wav");
+  expect(audio.getStatus).toBeCalledWith("sound.wav");
+
+  updateInputs({
+    testInput: "audioSetVolume",
+  });
+  nextFrame();
+  expect(audio.setVolume).toBeCalledWith("sound.wav", 0.25);
+
+  updateInputs({
+    testInput: "audioGetDuration",
+  });
+  nextFrame();
+  expect(audio.getDuration).toBeCalledWith("sound.wav");
+});
+
 test("network", () => {
   const { nextFrame, network, log, updateInputs } = testSprite(
     Game(gameProps),
@@ -722,6 +759,16 @@ const Game = makeSprite<GameProps, State, Inputs>({
         break;
       case "logAudioPosition":
         device.log(device.audio("sound.wav").getPosition());
+        break;
+      case "audioGetStatus":
+        device.audio("sound.wav").play();
+        device.audio("sound.wav").getStatus();
+        break;
+      case "audioSetVolume":
+        device.audio("sound.wav").setVolume(0.25);
+        break;
+      case "audioGetDuration":
+        device.audio("sound.wav").getDuration();
         break;
       case "networkGET":
         device.network.get("/test-get", (response) => {

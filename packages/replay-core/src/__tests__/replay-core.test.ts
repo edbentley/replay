@@ -504,6 +504,10 @@ test("supports playing audio", () => {
     play: jest.spyOn(audio, "play"),
     getPosition: jest.spyOn(audio, "getPosition"),
     pause: jest.spyOn(audio, "pause"),
+    getVolume: jest.spyOn(audio, "getVolume"),
+    setVolume: jest.spyOn(audio, "setVolume"),
+    getStatus: jest.spyOn(audio, "getStatus"),
+    getDuration: jest.spyOn(audio, "getDuration"),
   };
 
   const { runNextFrame } = replayCore(
@@ -542,6 +546,25 @@ test("supports playing audio", () => {
   nextFrame();
   expect(audioSpy.getPosition).toBeCalledWith();
   expect(logSpy).toBeCalledWith(50);
+
+  mutInputs.ref.buttonPressed.sound.getVolume = true;
+  nextFrame();
+  expect(audioSpy.getVolume).toBeCalledWith();
+  expect(logSpy).toBeCalledWith(1);
+
+  mutInputs.ref.buttonPressed.sound.setVolume = true;
+  nextFrame();
+  expect(audioSpy.setVolume).toBeCalledWith(1);
+
+  mutInputs.ref.buttonPressed.sound.getStatus = true;
+  nextFrame();
+  expect(audioSpy.getStatus).toBeCalledWith();
+  expect(logSpy).toBeCalledWith("playing");
+
+  mutInputs.ref.buttonPressed.sound.getDuration = true;
+  nextFrame();
+  expect(audioSpy.getDuration).toBeCalledWith();
+  expect(logSpy).toBeCalledWith(100);
 });
 
 test("supports network calls", () => {

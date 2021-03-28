@@ -100,6 +100,10 @@ interface TestSpriteUtils<I> {
     getPosition: jest.Mock<number>;
     play: jest.Mock<any, any>;
     pause: jest.Mock<any, any>;
+    getStatus: jest.Mock<string>;
+    getVolume: jest.Mock<number>;
+    setVolume: jest.Mock<any, [string, number]>;
+    getDuration: jest.Mock<number>;
   };
   network: {
     get: jest.Mock<any, [string, (data: unknown) => void]>;
@@ -166,6 +170,10 @@ export function testSprite<P, S, I>(
     getPosition: jest.fn((_filename: string) => 120),
     play: jest.fn(),
     pause: jest.fn(),
+    getStatus: jest.fn((_filename: string) => "playing" as const),
+    getVolume: jest.fn(),
+    setVolume: jest.fn(),
+    getDuration: jest.fn(),
   };
 
   /**
@@ -288,6 +296,10 @@ export function testSprite<P, S, I>(
         }
       },
       pause: () => audio.pause(filename),
+      getStatus: () => audio.getStatus(filename),
+      getVolume: () => audio.getVolume(filename),
+      setVolume: (volume: number) => audio.setVolume(filename, volume),
+      getDuration: () => audio.getDuration(filename),
     };
   };
 

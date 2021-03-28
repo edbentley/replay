@@ -71,6 +71,10 @@ export interface Device {
           }
     ) => void;
     pause: () => void;
+    getStatus: () => "paused" | "playing";
+    getVolume: () => number;
+    setVolume: (volume: number) => void;
+    getDuration: () => number;
   };
 
   /**
