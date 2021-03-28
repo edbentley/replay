@@ -20,7 +20,7 @@ export function runGame(
 ) {
   const platform = getBenchmarkPlatform();
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     getNativeSpriteSettings(),
     Game(gameProps)
@@ -32,7 +32,7 @@ export function runGame(
   // Run 1000 frames
   for (let i = 1; i <= 1000; i++) {
     arg.onFrameStart(i);
-    getNextFrameTextures(i * oneFrameMs, resetInputs);
+    runNextFrame(i * oneFrameMs, resetInputs);
     arg.onFrameEnd(i);
   }
 }
@@ -58,8 +58,7 @@ function getBenchmarkPlatform() {
     clicked: false,
   };
 
-  const mutableTestDevice: Device<Inputs> = {
-    inputs,
+  const mutableTestDevice: Device = {
     isTouchScreen: false,
     size: {
       width: 300,
@@ -128,14 +127,16 @@ function getBenchmarkPlatform() {
   };
 
   const platform: ReplayPlatform<Inputs> = {
-    getGetDevice: () => {
-      return (getLocalCoords) => {
-        const local = getLocalCoords(inputs);
-        return {
-          ...mutableTestDevice,
-          inputs: { ...inputs, x: local.x, y: local.y },
-        };
-      };
+    getInputs: (globalToLocalCoords) => {
+      const local = globalToLocalCoords(inputs);
+      return { ...inputs, x: local.x, y: local.y };
+    },
+    mutDevice: mutableTestDevice,
+    render: {
+      newFrame: () => null,
+      startRenderSprite: () => null,
+      endRenderSprite: () => null,
+      renderTexture: () => null,
     },
   };
 

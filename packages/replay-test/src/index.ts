@@ -2,11 +2,7 @@
 
 import { GameProps, Texture, Device, DeviceSize } from "@replay/core";
 import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
-import {
-  CustomSprite,
-  makeSprite,
-  SpriteTextures,
-} from "@replay/core/dist/sprite";
+import { CustomSprite, makeSprite } from "@replay/core/dist/sprite";
 import { TextTexture } from "@replay/core/dist/t";
 import { getParentCoordsForSprite } from "./coords";
 import { NativeSpriteMock } from "./nativeSpriteMock";
@@ -233,17 +229,6 @@ export function testSprite<P, S, I>(
   };
 
   let inputs: I = { ...initInputs };
-  function getInputs(
-    globalToLocalCoords: (globalCoords: {
-      x: number;
-      y: number;
-    }) => {
-      x: number;
-      y: number;
-    }
-  ) {
-    return mapInputCoordinates(globalToLocalCoords, inputs);
-  }
   /**
    * Update the current input state in the game.
    */
@@ -280,7 +265,7 @@ export function testSprite<P, S, I>(
     return randomNumber;
   };
 
-  const audioFn: Device<I>["audio"] = (filename) => {
+  const audioFn: Device["audio"] = (filename) => {
     if (throwAssetErrors) {
       const audioElement = audioElements[filename];
       if (!audioElement) {
@@ -306,7 +291,7 @@ export function testSprite<P, S, I>(
     };
   };
 
-  const timer: Device<I>["timer"] = {
+  const timer: Device["timer"] = {
     start: (callback, ms) => {
       // Get a unique ID
       let id = "";
@@ -344,7 +329,7 @@ export function testSprite<P, S, I>(
   };
 
   const store = { ...initStore };
-  const storage: Device<I>["storage"] = {
+  const storage: Device["storage"] = {
     getItem(key) {
       return Promise.resolve(store[key] ?? null);
     },
@@ -371,42 +356,94 @@ export function testSprite<P, S, I>(
   const audioElements: AssetMap<string> = {};
   const imageElements: AssetMap<string> = {};
 
+  type Pos = { x: number; y: number; rotation: number };
+  /**
+   * Keep a stack of functions mapping local to global coords
+   */
+  const getPosStack: ((localCoords: Pos) => Pos)[] = [];
+
   const testPlatform: ReplayPlatform<I> = {
-    getGetDevice: () => {
-      const now = () => {
-        return new Date(Date.UTC(2000, 1, 1));
-      };
-      // called individually by each Sprite
-      return (globalToLocalCoords) => ({
-        inputs: getInputs(globalToLocalCoords),
-        isTouchScreen,
-        size,
-        log,
-        random,
-        timer,
-        now,
-        audio: audioFn,
-        assetUtils: {
-          audioElements,
-          imageElements,
-          loadAudioFile: (fileName) => {
-            return Promise.resolve().then(() => {
-              return `audioData-${fileName}`;
-            });
-          },
-          loadImageFile: (fileName) => {
-            return Promise.resolve().then(() => {
-              return `imageData-${fileName}`;
-            });
-          },
-          cleanupAudioFile: () => null,
-          cleanupImageFile: () => null,
+    getInputs: (globalToLocalCoords) =>
+      mapInputCoordinates(globalToLocalCoords, inputs),
+    mutDevice: {
+      isTouchScreen,
+      size,
+      log,
+      random,
+      timer,
+      now: () => new Date(Date.UTC(2000, 1, 1)),
+      audio: audioFn,
+      assetUtils: {
+        audioElements,
+        imageElements,
+        loadAudioFile: (fileName) => {
+          return Promise.resolve().then(() => {
+            return `audioData-${fileName}`;
+          });
         },
-        network,
-        storage,
-        alert,
-        clipboard,
-      });
+        loadImageFile: (fileName) => {
+          return Promise.resolve().then(() => {
+            return `imageData-${fileName}`;
+          });
+        },
+        cleanupAudioFile: () => null,
+        cleanupImageFile: () => null,
+      },
+      network,
+      storage,
+      alert,
+      clipboard,
+    },
+    render: {
+      newFrame: () => {
+        textures.length = 0;
+      },
+      startRenderSprite: (baseProps) => {
+        const getParentCoords = getParentCoordsForSprite(baseProps);
+
+        const getParentPos = ({ x, y, rotation }: Pos) => ({
+          ...getParentCoords({ x, y }),
+          rotation: rotation + baseProps.rotation,
+        });
+
+        getPosStack.unshift(getParentPos);
+      },
+      endRenderSprite: () => {
+        getPosStack.shift();
+      },
+      renderTexture: (texture) => {
+        if (
+          throwAssetErrors &&
+          (texture.type === "image" || texture.type === "spriteSheet")
+        ) {
+          const fileName = texture.props.fileName;
+          const imageElement = imageElements[fileName];
+          if (!imageElement) {
+            throw Error(`Image file "${fileName}" was not preloaded`);
+          }
+          if (typeof imageElement.data === "object") {
+            throw Error(
+              `Image file "${fileName}" did not finish loading before it was used`
+            );
+          }
+        }
+
+        // Go through all functions mapping position
+        const { x, y, rotation } = getPosStack.reduce(
+          (pos, posFn) => posFn(pos),
+          texture.props as Pos
+        );
+
+        textures.push({
+          ...texture,
+          props: {
+            ...texture.props,
+            x: Math.round(x),
+            y: Math.round(y),
+            rotation: Math.round(rotation),
+          },
+        } as Texture);
+      },
     },
   };
 
@@ -416,7 +453,7 @@ export function testSprite<P, S, I>(
     },
   });
 
-  const { initTextures, getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     testPlatform,
     {
       // Mock the Native Sprites passed in to avoid errors when looked up
@@ -452,73 +489,13 @@ export function testSprite<P, S, I>(
     });
   }
 
-  function render(newTextures: SpriteTextures) {
-    // Mutably replace textures with new textures
-    textures.length = 0;
-
-    type Pos = { x: number; y: number; rotation: number };
-
-    const traverseSpriteTextures = (
-      spriteTextures: SpriteTextures | Texture,
-      getParentGlobalPos: (localCoords: Pos) => Pos
-    ) => {
-      if ("type" in spriteTextures) {
-        // is a Texture
-        const { x, y, rotation } = getParentGlobalPos(spriteTextures.props);
-
-        // Output textures with global coordinates and rotation
-        textures.push({
-          ...spriteTextures,
-          props: {
-            ...spriteTextures.props,
-            x: Math.round(x),
-            y: Math.round(y),
-            rotation: Math.round(rotation),
-          },
-        } as Texture);
-
-        if (
-          throwAssetErrors &&
-          (spriteTextures.type === "image" ||
-            spriteTextures.type === "spriteSheet")
-        ) {
-          const fileName = spriteTextures.props.fileName;
-          const imageElement = imageElements[fileName];
-          if (!imageElement) {
-            throw Error(`Image file "${fileName}" was not preloaded`);
-          }
-          if (typeof imageElement.data === "object") {
-            throw Error(
-              `Image file "${fileName}" did not finish loading before it was used`
-            );
-          }
-        }
-
-        return;
-      }
-
-      const { baseProps } = spriteTextures;
-      const getParentCoords = getParentCoordsForSprite(baseProps);
-      const getGlobalPos = ({ x, y, rotation }: Pos) =>
-        getParentGlobalPos({
-          ...getParentCoords({ x, y }),
-          rotation: rotation + baseProps.rotation,
-        });
-
-      spriteTextures.textures.forEach((childSpriteTextures) => {
-        traverseSpriteTextures(childSpriteTextures, getGlobalPos);
-      });
-    };
-    traverseSpriteTextures(newTextures, (pos) => pos);
-  }
-
   /**
    * Synchronously progress to the next frame of the game.
    */
   function nextFrame() {
     gameTime += 1000 / 60;
     checkTimers();
-    render(getNextFrameTextures(gameTime, jest.fn()));
+    runNextFrame(gameTime, jest.fn());
   }
 
   /**
@@ -623,9 +600,6 @@ export function testSprite<P, S, I>(
         texture.props.text.toLowerCase().includes(text.toLowerCase())
       );
   }
-
-  // Init render
-  render(initTextures);
 
   return {
     nextFrame,

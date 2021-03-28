@@ -25,66 +25,52 @@ import {
   AssetsGame,
   DuplicateSpriteIdsGame,
 } from "./utils";
-import { SpriteTextures, NativeSpriteUtils } from "../sprite";
-import { TextTexture, CircleTexture, RectangleTexture } from "../t";
+import { NativeSpriteUtils } from "../sprite";
+import { TextTexture, CircleTexture } from "../t";
 
-test("can render simple game and getNextFrameTextures", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+test("can render simple game and runNextFrame", () => {
+  const { platform, mutInputs, textures } = getTestPlatform();
   const platformSpy = {
-    getDevice: jest.spyOn(platform, "getGetDevice"),
+    getInputs: jest.spyOn(platform, "getInputs"),
   };
 
-  mutableTestDevice.inputs.buttonPressed.move = true;
+  mutInputs.ref.buttonPressed.move = true;
 
-  const { initTextures, getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     TestGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
-  expect(platformSpy.getDevice).toBeCalledTimes(1);
-  expect(initTextures).toEqual({
-    id: "Game",
-    baseProps: {
-      opacity: 1,
-      x: 0,
-      y: 0,
-      rotation: 0,
-      scaleX: 1,
-      scaleY: 1,
-      anchorX: 0,
-      anchorY: 0,
-      mask: null,
-    },
-    textures: [
-      {
-        type: "circle",
-        props: {
-          x: 5,
-          y: 50,
-          opacity: 1,
-          rotation: 0,
-          radius: 10,
-          color: "#0095DD",
-          scaleX: 5,
-          scaleY: 1,
-          anchorX: 0,
-          anchorY: 0,
-          mask: null,
-        },
+  expect(platformSpy.getInputs).toBeCalledTimes(0);
+  expect(textures).toEqual([
+    {
+      type: "circle",
+      props: {
+        x: 5,
+        y: 50,
+        opacity: 1,
+        rotation: 0,
+        radius: 10,
+        color: "#0095DD",
+        scaleX: 5,
+        scaleY: 1,
+        anchorX: 0,
+        anchorY: 0,
+        mask: null,
       },
-    ],
-  });
+    },
+  ]);
 
-  let { textures } = getNextFrameTexturesOverTime();
+  nextFrame();
 
-  expect(platformSpy.getDevice).toBeCalledTimes(2);
+  expect(platformSpy.getInputs).toBeCalledTimes(1);
   expect(textures[0]).toEqual({
     type: "circle",
     props: {
@@ -102,10 +88,10 @@ test("can render simple game and getNextFrameTextures", () => {
     },
   });
 
-  mutableTestDevice.inputs.buttonPressed.move = true;
-  textures = getNextFrameTexturesOverTime().textures;
+  mutInputs.ref.buttonPressed.move = true;
+  nextFrame();
 
-  expect(platformSpy.getDevice).toBeCalledTimes(3);
+  expect(platformSpy.getInputs).toBeCalledTimes(2);
   expect(textures[0]).toEqual({
     type: "circle",
     props: {
@@ -125,67 +111,49 @@ test("can render simple game and getNextFrameTextures", () => {
 });
 
 test("can render simple game with sprites", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutInputs, textures } = getTestPlatform();
   const platformSpy = {
-    getDevice: jest.spyOn(platform, "getGetDevice"),
+    getInputs: jest.spyOn(platform, "getInputs"),
   };
 
-  mutableTestDevice.inputs.buttonPressed.move = true;
+  mutInputs.ref.buttonPressed.move = true;
 
-  const { initTextures, getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     TestGameWithSprites(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
-  expect(platformSpy.getDevice).toBeCalledTimes(1);
+  expect(platformSpy.getInputs).toBeCalledTimes(1);
 
-  const initSpriteTextures = initTextures.textures[0] as SpriteTextures;
-  expect(initSpriteTextures).toEqual({
-    id: "test",
-    baseProps: {
+  expect(textures[0]).toEqual({
+    type: "circle",
+    props: {
+      x: 50,
+      y: 50,
+      rotation: 10,
+      color: "#0095DD",
+      radius: 10,
+      opacity: 1,
       anchorX: 0,
-      anchorY: 1,
-      opacity: 0.5,
-      rotation: 0,
-      scaleX: 5,
+      anchorY: 0,
+      scaleX: 1,
       scaleY: 1,
       mask: null,
-      x: 50,
-      y: 0,
     },
-    textures: [
-      {
-        type: "circle",
-        props: {
-          x: 50,
-          y: 50,
-          rotation: 10,
-          color: "#0095DD",
-          radius: 10,
-          opacity: 1,
-          anchorX: 0,
-          anchorY: 0,
-          scaleX: 1,
-          scaleY: 1,
-          mask: null,
-        },
-      },
-    ],
   });
 
-  let { textures } = getNextFrameTexturesOverTime();
-  let spriteTextures = (textures[0] as SpriteTextures).textures;
+  nextFrame();
 
-  expect(platformSpy.getDevice).toBeCalledTimes(2);
+  expect(platformSpy.getInputs).toBeCalledTimes(2);
 
-  expect(spriteTextures[0]).toEqual({
+  expect(textures[0]).toEqual({
     type: "circle",
     props: {
       x: 51,
@@ -202,19 +170,18 @@ test("can render simple game with sprites", () => {
     },
   });
 
-  mutableTestDevice.inputs.buttonPressed.show = false;
+  mutInputs.ref.buttonPressed.show = false;
 
-  textures = getNextFrameTexturesOverTime().textures;
+  nextFrame();
 
   expect(textures).toEqual([]);
 
-  mutableTestDevice.inputs.buttonPressed.show = true;
+  mutInputs.ref.buttonPressed.show = true;
 
-  textures = getNextFrameTexturesOverTime().textures;
-  spriteTextures = (textures[0] as SpriteTextures).textures;
+  nextFrame();
 
   // sprite state reset after removed
-  expect(spriteTextures[0]).toEqual({
+  expect(textures[0]).toEqual({
     type: "circle",
     props: {
       x: 50,
@@ -233,7 +200,7 @@ test("can render simple game with sprites", () => {
 });
 
 test("Can render simple game with sprites in landscape", () => {
-  const { platform } = getTestPlatform({
+  const { platform, textures } = getTestPlatform({
     width: 500,
     height: 300,
     widthMargin: 0,
@@ -242,19 +209,14 @@ test("Can render simple game with sprites in landscape", () => {
     deviceHeight: 300,
   });
 
-  const { initTextures } = replayCore(
-    platform,
-    nativeSpriteSettings,
-    TestGameWithSprites(gameProps)
-  );
+  replayCore(platform, nativeSpriteSettings, TestGameWithSprites(gameProps));
 
-  const { text } = ((initTextures.textures[1] as SpriteTextures)
-    .textures[0] as TextTexture).props;
+  const { text } = (textures[1] as TextTexture).props;
   expect(text).toBe("this is landscape");
 });
 
 test("Can render simple game with sprites in portrait", () => {
-  const { platform } = getTestPlatform({
+  const { platform, textures } = getTestPlatform({
     width: 300,
     height: 500,
     widthMargin: 0,
@@ -263,19 +225,14 @@ test("Can render simple game with sprites in portrait", () => {
     deviceHeight: 500,
   });
 
-  const { initTextures } = replayCore(
-    platform,
-    nativeSpriteSettings,
-    TestGameWithSprites(gameProps)
-  );
+  replayCore(platform, nativeSpriteSettings, TestGameWithSprites(gameProps));
 
-  const { text } = ((initTextures.textures[1] as SpriteTextures)
-    .textures[0] as TextTexture).props;
+  const { text } = (textures[1] as TextTexture).props;
   expect(text).toBe("this is portrait");
 });
 
 test("Can render simple game with sprites in XL landscape", () => {
-  const { platform } = getTestPlatform({
+  const { platform, textures } = getTestPlatform({
     width: 500,
     height: 300,
     widthMargin: 0,
@@ -284,19 +241,14 @@ test("Can render simple game with sprites in XL landscape", () => {
     deviceHeight: 900,
   });
 
-  const { initTextures } = replayCore(
-    platform,
-    nativeSpriteSettings,
-    TestGameWithSprites(gameProps)
-  );
+  replayCore(platform, nativeSpriteSettings, TestGameWithSprites(gameProps));
 
-  const { text } = ((initTextures.textures[1] as SpriteTextures)
-    .textures[0] as TextTexture).props;
+  const { text } = (textures[1] as TextTexture).props;
   expect(text).toBe("this is XL landscape");
 });
 
 test("Can render simple game with sprites in XL portrait", () => {
-  const { platform } = getTestPlatform({
+  const { platform, textures } = getTestPlatform({
     width: 300,
     height: 500,
     widthMargin: 0,
@@ -305,147 +257,142 @@ test("Can render simple game with sprites in XL portrait", () => {
     deviceHeight: 1500,
   });
 
-  const { initTextures } = replayCore(
-    platform,
-    nativeSpriteSettings,
-    TestGameWithSprites(gameProps)
-  );
+  replayCore(platform, nativeSpriteSettings, TestGameWithSprites(gameProps));
 
-  const { text } = ((initTextures.textures[1] as SpriteTextures)
-    .textures[0] as TextTexture).props;
+  const { text } = (textures[1] as TextTexture).props;
   expect(text).toBe("this is XL portrait");
 });
 
 test("can log", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.log = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.log = true;
+  nextFrame();
 
   expect(logSpy).toBeCalledWith("Log Message");
 });
 
 test("can provide a random number", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const randomSpy = jest.spyOn(mutableTestDevice, "random");
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
-  mutableTestDevice.inputs.buttonPressed.setRandom = true;
-  getNextFrameTextures(1000 * (1 / 60) + 1, jest.fn());
+  mutInputs.ref.buttonPressed.setRandom = true;
+  runNextFrame(1000 * (1 / 60) + 1, jest.fn());
 
   expect(logSpy).toBeCalledWith(0.5);
   expect(randomSpy).toBeCalledTimes(1);
 });
 
 test("supports timer", async () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const startSpy = jest.spyOn(mutableTestDevice.timer, "start");
   const cancelSpy = jest.spyOn(mutableTestDevice.timer, "cancel");
   const pauseSpy = jest.spyOn(mutableTestDevice.timer, "pause");
   const resumeSpy = jest.spyOn(mutableTestDevice.timer, "resume");
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.timer.start = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.timer.start = true;
+  nextFrame();
 
   await waitFrame();
 
   expect(logSpy).toBeCalledWith("timeout complete");
   expect(startSpy).toBeCalledTimes(2); // once in init
 
-  mutableTestDevice.inputs.buttonPressed.timer.start = false;
-  mutableTestDevice.inputs.buttonPressed.timer.pause = "abc";
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.timer.start = false;
+  mutInputs.ref.buttonPressed.timer.pause = "abc";
+  nextFrame();
   expect(pauseSpy).toBeCalledTimes(1);
   expect(pauseSpy).toBeCalledWith("abc");
 
-  mutableTestDevice.inputs.buttonPressed.timer.pause = "";
-  mutableTestDevice.inputs.buttonPressed.timer.resume = "abc";
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.timer.pause = "";
+  mutInputs.ref.buttonPressed.timer.resume = "abc";
+  nextFrame();
   expect(resumeSpy).toBeCalledTimes(1);
   expect(resumeSpy).toBeCalledWith("abc");
 
-  mutableTestDevice.inputs.buttonPressed.timer.resume = "";
-  mutableTestDevice.inputs.buttonPressed.timer.cancel = "abc";
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.timer.resume = "";
+  mutInputs.ref.buttonPressed.timer.cancel = "abc";
+  nextFrame();
   expect(cancelSpy).toBeCalledTimes(1);
   expect(cancelSpy).toBeCalledWith("abc");
 });
 
 test("supports getting date now", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const setDateSpy = jest.spyOn(mutableTestDevice, "now");
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
-  mutableTestDevice.inputs.buttonPressed.setDate = true;
-  getNextFrameTextures(1000 * (1 / 60) + 1, jest.fn());
+  mutInputs.ref.buttonPressed.setDate = true;
+  runNextFrame(1000 * (1 / 60) + 1, jest.fn());
 
   expect(logSpy).toBeCalledWith("1996-01-17T03:24:00.000Z");
   expect(setDateSpy).toBeCalledTimes(1);
 });
 
 test("supports updateState", async () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
   await waitFrame();
 
-  getNextFrameTexturesOverTime();
+  nextFrame();
   expect(logSpy).toBeCalledWith("initialised");
 
-  mutableTestDevice.inputs.buttonPressed.action = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.action = true;
+  nextFrame();
   await waitFrame();
-  getNextFrameTexturesOverTime(); // log called on state change in next loop
+  nextFrame(); // log called on state change in next loop
 
   expect(logSpy).toBeCalledWith("render time: 1996-01-17T03:24:00.000Z");
   expect(logSpy).toBeCalledWith("render time 2: 1996-01-17T03:24:00.000Z");
@@ -453,56 +400,61 @@ test("supports updateState", async () => {
 });
 
 test("updateState in loop will update state in next render", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutInputs, textures } = getTestPlatform();
 
-  const { initTextures, getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
-  expect((initTextures.textures[0] as CircleTexture).props.x).toEqual(5);
+  expect((textures[0] as CircleTexture).props.x).toEqual(5);
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.move = true;
-  mutableTestDevice.inputs.buttonPressed.moveWithUpdateState = true;
+  mutInputs.ref.buttonPressed.move = true;
+  mutInputs.ref.buttonPressed.moveWithUpdateState = true;
 
-  const spriteTextures = getNextFrameTexturesOverTime();
+  nextFrame();
 
   // An extra 5 was added in sync
-  expect((spriteTextures.textures[0] as CircleTexture).props.x).toEqual(11);
+  expect((textures[0] as CircleTexture).props.x).toEqual(11);
 });
 
 test("can call updateState within an updateState", async () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const {
+    platform,
+    mutableTestDevice,
+    mutInputs,
+    textures,
+  } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  mutableTestDevice.inputs.buttonPressed.action = true;
+  mutInputs.ref.buttonPressed.action = true;
 
-  const { initTextures, getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
-  expect((initTextures.textures[1] as TextTexture).props.text).toBe(
+  expect((textures[1] as TextTexture).props.text).toBe(
     "updateState Counter: 0"
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
-  const spriteTextures = getNextFrameTexturesOverTime();
+  nextFrame();
 
-  expect((spriteTextures.textures[1] as TextTexture).props.text).toBe(
+  expect((textures[1] as TextTexture).props.text).toBe(
     "updateState Counter: 3"
   );
 
@@ -512,24 +464,24 @@ test("can call updateState within an updateState", async () => {
 });
 
 test("supports getState", async () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
-  mutableTestDevice.inputs.buttonPressed.move = true;
+  mutInputs.ref.buttonPressed.move = true;
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
-  getNextFrameTexturesOverTime();
+  nextFrame();
   await waitFrame();
 
   expect(logSpy).toBeCalledWith("getState position: 6");
@@ -544,7 +496,7 @@ test("getState will throw error if called synchronously", () => {
 });
 
 test("supports playing audio", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const audio = mutableTestDevice.audio("filename");
@@ -554,46 +506,46 @@ test("supports playing audio", () => {
     pause: jest.spyOn(audio, "pause"),
   };
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.sound.play = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.sound.play = true;
+  nextFrame();
   expect(audioSpy.play).toBeCalledWith();
 
-  mutableTestDevice.inputs.buttonPressed.sound.playFromPosition = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.sound.playFromPosition = true;
+  nextFrame();
   expect(audioSpy.play).toBeCalledWith(100);
 
-  mutableTestDevice.inputs.buttonPressed.sound.playLoop = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.sound.playLoop = true;
+  nextFrame();
   expect(audioSpy.play).toBeCalledWith({ fromPosition: 0, loop: true });
 
-  mutableTestDevice.inputs.buttonPressed.sound.playOverwrite = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.sound.playOverwrite = true;
+  nextFrame();
   expect(audioSpy.play).toBeCalledWith({ overwrite: true });
 
-  mutableTestDevice.inputs.buttonPressed.sound.pause = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.sound.pause = true;
+  nextFrame();
   expect(audioSpy.pause).toBeCalledWith();
 
-  mutableTestDevice.inputs.buttonPressed.sound.getPosition = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.sound.getPosition = true;
+  nextFrame();
   expect(audioSpy.getPosition).toBeCalledWith();
   expect(logSpy).toBeCalledWith(50);
 });
 
 test("supports network calls", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const { network } = mutableTestDevice;
@@ -604,41 +556,41 @@ test("supports network calls", () => {
     delete: jest.spyOn(network, "delete"),
   };
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.network.get = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.network.get = true;
+  nextFrame();
   expect(networkSpy.get).toBeCalled();
   expect(logSpy).toBeCalledWith("GET-/test");
 
-  mutableTestDevice.inputs.buttonPressed.network.put = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.network.put = true;
+  nextFrame();
   expect(networkSpy.put).toBeCalled();
   expect(logSpy).toBeCalledWith("PUT-/test-PUT_BODY");
 
-  mutableTestDevice.inputs.buttonPressed.network.post = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.network.post = true;
+  nextFrame();
   expect(networkSpy.post).toBeCalled();
   expect(logSpy).toBeCalledWith("POST-/test-POST_BODY");
 
-  mutableTestDevice.inputs.buttonPressed.network.delete = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.network.delete = true;
+  nextFrame();
   expect(networkSpy.delete).toBeCalled();
   expect(logSpy).toBeCalledWith("DELETE-/test");
 });
 
 test("supports local storage", async () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, textures } = getTestPlatform();
 
   const { storage } = mutableTestDevice;
   const storageSpy = {
@@ -646,7 +598,7 @@ test("supports local storage", async () => {
     setItem: jest.spyOn(storage, "setItem"),
   };
 
-  const { initTextures, getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     LocalStorageGame(gameProps)
@@ -654,14 +606,14 @@ test("supports local storage", async () => {
   expect(storageSpy.getItem).toBeCalledWith("text1");
   expect(storageSpy.getItem).toBeCalledWith("text2");
 
-  expect(initTextures.textures).toEqual([]);
+  expect(textures).toEqual([]);
 
   // Wait for promises to resolve
   await waitFrame();
 
-  const spriteTextures = getNextFrameTextures(1000 * (1 / 60) + 1, jest.fn());
+  runNextFrame(1000 * (1 / 60) + 1, jest.fn());
 
-  expect(spriteTextures.textures).toEqual([
+  expect(textures).toEqual([
     {
       type: "text",
       props: {
@@ -701,7 +653,7 @@ test("supports local storage", async () => {
 });
 
 test("supports alerts", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const { alert } = mutableTestDevice;
@@ -710,31 +662,31 @@ test("supports alerts", () => {
     okCancel: jest.spyOn(alert, "okCancel"),
   };
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
-  mutableTestDevice.inputs.buttonPressed.alert.ok = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.alert.ok = true;
+  nextFrame();
   expect(alertSpy.ok).toBeCalled();
   expect(logSpy).toBeCalledWith("Hit ok");
 
-  mutableTestDevice.inputs.buttonPressed.alert.okCancel = true;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.alert.okCancel = true;
+  nextFrame();
   expect(alertSpy.okCancel).toBeCalled();
   expect(logSpy).toBeCalledWith("Was ok: true");
 });
 
 test("can copy to clipboard", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
   const { clipboard } = mutableTestDevice;
@@ -742,31 +694,30 @@ test("can copy to clipboard", () => {
     copy: jest.spyOn(clipboard, "copy"),
   };
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     FullTestGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
   expect(clipboardSpy.copy).not.toHaveBeenCalled();
 
-  mutableTestDevice.inputs.buttonPressed.clipboard.copyMessage =
-    "Hello clipboard";
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.clipboard.copyMessage = "Hello clipboard";
+  nextFrame();
   expect(clipboardSpy.copy).toBeCalledWith(
     "Hello clipboard",
     expect.any(Function)
   );
   expect(logSpy).toBeCalledWith("Copied");
 
-  mutableTestDevice.inputs.buttonPressed.clipboard.copyMessage = "Error";
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.clipboard.copyMessage = "Error";
+  nextFrame();
   expect(clipboardSpy.copy).toBeCalledWith("Error", expect.any(Function));
   expect(logSpy).toBeCalledWith("Error copying: !");
 });
@@ -820,39 +771,34 @@ test("can define various texture shapes", () => {
 });
 
 test("supports masks on Sprites", () => {
-  const { initTextures } = replayCore(
-    getTestPlatform().platform,
-    nativeSpriteSettings,
-    MaskGame(gameProps)
-  );
+  const { platform, masks } = getTestPlatform();
+  replayCore(platform, nativeSpriteSettings, MaskGame(gameProps));
 
-  const initSpriteTextures = initTextures.textures[0] as SpriteTextures;
-
-  expect(initSpriteTextures.baseProps.mask).toEqual({
+  expect(masks[0]).toEqual({
     type: "circleMask",
     x: 5,
     y: -5,
     radius: 10,
   });
 
-  const circleMaskRect = initSpriteTextures.textures[0] as RectangleTexture;
-  const rectMaskRect = initSpriteTextures.textures[1] as RectangleTexture;
-  const lineMaskRect = initSpriteTextures.textures[2] as RectangleTexture;
+  const circleMask = masks[1];
+  const rectMask = masks[2];
+  const lineMask = masks[3];
 
-  expect(circleMaskRect.props.mask).toEqual({
+  expect(circleMask).toEqual({
     type: "circleMask",
     x: 10,
     y: 0,
     radius: 5,
   });
-  expect(rectMaskRect.props.mask).toEqual({
+  expect(rectMask).toEqual({
     type: "rectangleMask",
     x: 0,
     y: 10,
     width: 5,
     height: 5,
   });
-  expect(lineMaskRect.props.mask).toEqual({
+  expect(lineMask).toEqual({
     type: "lineMask",
     path: [
       [0, 0],
@@ -862,57 +808,32 @@ test("supports masks on Sprites", () => {
   });
 });
 
-test("deeply nested sprites and input position", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+test("deeply nested input position", () => {
+  // Note: deeply nested sprite positions are handled by the platforms (there's
+  // a test case for this in replay-test)
+
+  const {
+    platform,
+    mutableTestDevice,
+    mutInputs,
+    textures,
+  } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  mutableTestDevice.inputs.x = 50;
-  mutableTestDevice.inputs.y = 50;
+  mutInputs.ref.x = 50;
+  mutInputs.ref.y = 50;
 
-  const { initTextures } = replayCore(
-    platform,
-    nativeSpriteSettings,
-    NestedSpriteGame(gameProps)
-  );
+  replayCore(platform, nativeSpriteSettings, NestedSpriteGame(gameProps));
 
   // Sprite positions local
 
-  const nestedSpriteGame = initTextures;
-  const nestedFirstSprite = initTextures.textures[0] as SpriteTextures;
-  const nestedSecondSprite = nestedFirstSprite.textures[0] as SpriteTextures;
-  const textTexture = nestedSecondSprite.textures[0] as TextTexture;
+  const nested = textures[0];
 
-  expect(nestedSpriteGame.id).toBe("Game");
-
-  expect(nestedFirstSprite.id).toBe("first");
-  expect(nestedFirstSprite.baseProps.x).toBe(20);
-  expect(nestedFirstSprite.baseProps.y).toBe(20);
-  expect(nestedFirstSprite.baseProps.rotation).toBe(-90);
-  expect(nestedFirstSprite.baseProps.opacity).toBe(0.8);
-
-  expect(nestedSecondSprite.id).toBe("second");
-  expect(nestedSecondSprite.baseProps.x).toBe(50);
-  expect(nestedSecondSprite.baseProps.y).toBe(20);
-  expect(nestedSecondSprite.baseProps.rotation).toBe(-90);
-  expect(nestedSecondSprite.baseProps.opacity).toBeCloseTo(0.64);
-
-  expect(textTexture).toEqual({
-    type: "text",
-    props: {
-      x: 10,
-      y: 20,
-      rotation: 180,
-      text: "nested",
-      color: "black",
-      opacity: 0.8, // texture opacity is multiplied on platform side
-      anchorX: 0,
-      anchorY: 0,
-      scaleX: 1,
-      scaleY: 1,
-      mask: null,
-      font: undefined,
-    },
-  });
+  // These props are local to sprite and calculated on platform side
+  expect(nested.props.x).toBe(10);
+  expect(nested.props.y).toBe(20);
+  expect(nested.props.rotation).toBe(180);
+  expect(nested.props.opacity).toBe(0.8);
 
   // Pointer positions global
 
@@ -922,11 +843,11 @@ test("deeply nested sprites and input position", () => {
 });
 
 test("nested sprites and input position with scale", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const logSpy = jest.spyOn(mutableTestDevice, "log");
 
-  mutableTestDevice.inputs.x = 10;
-  mutableTestDevice.inputs.y = 10;
+  mutInputs.ref.x = 10;
+  mutInputs.ref.y = 10;
 
   replayCore(platform, nativeSpriteSettings, NestedSpriteGame2(gameProps));
 
@@ -937,36 +858,36 @@ test("loop and render order for callback prop change on low render FPS", () => {
   const { platform, mutableTestDevice } = getTestPlatform();
   const resetInputs = jest.fn();
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     CallbackPropGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     // note time skips 3 frames here
     time += 1000 * (3 / 60);
-    return getNextFrameTextures(time, resetInputs);
+    runNextFrame(time, resetInputs);
   };
 
   expect(mutableTestDevice.log).not.toHaveBeenCalled();
 
-  getNextFrameTexturesOverTime();
+  nextFrame();
   expect(mutableTestDevice.log).toBeCalledTimes(3); // loop called 3 times
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(1, 1);
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(2, 2);
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(3, 3);
   expect(resetInputs).toBeCalledTimes(3);
 
-  getNextFrameTexturesOverTime();
+  nextFrame();
   expect(mutableTestDevice.log).toBeCalledTimes(6);
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(4, 4);
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(5, 5);
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(6, 6);
   expect(resetInputs).toBeCalledTimes(6);
 
-  getNextFrameTexturesOverTime();
+  nextFrame();
   expect(mutableTestDevice.log).toBeCalledTimes(9);
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(7, 7);
   expect(mutableTestDevice.log).toHaveBeenNthCalledWith(8, 8);
@@ -975,23 +896,28 @@ test("loop and render order for callback prop change on low render FPS", () => {
 });
 
 test("can preload and clear file assets", async () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const {
+    platform,
+    mutableTestDevice,
+    mutInputs,
+    textures,
+  } = getTestPlatform();
   const resetInputs = jest.fn();
 
-  const { initTextures, getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     AssetsGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, resetInputs);
+    runNextFrame(time, resetInputs);
   };
 
-  expect(initTextures.textures.length).toBe(1);
-  expect((initTextures.textures[0] as TextTexture).props.text).toBe("Loading");
+  expect(textures.length).toBe(1);
+  expect((textures[0] as TextTexture).props.text).toBe("Loading");
 
   expect(mutableTestDevice.assetUtils.loadAudioFile).toHaveBeenCalledTimes(1);
   expect(mutableTestDevice.assetUtils.loadAudioFile).toHaveBeenCalledWith(
@@ -1033,10 +959,12 @@ test("can preload and clear file assets", async () => {
     },
   });
 
-  const textures = getNextFrameTexturesOverTime();
+  nextFrame();
 
   // No longer loading
-  expect((textures.textures[0] as any).type).not.toBe("text");
+  expect(
+    textures[0].type !== "text" || textures[0].props.text !== "Loading"
+  ).toBe(true);
 
   // Sprite & nested sprite start loading - but no duplicate parallel loads
   // (called 2 not 3 times)
@@ -1060,8 +988,8 @@ test("can preload and clear file assets", async () => {
   });
 
   // Unmount Sprites
-  mutableTestDevice.inputs.buttonPressed.show = false;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.show = false;
+  nextFrame();
 
   // Need resolved promise to be called
   await waitFrame();
@@ -1074,31 +1002,31 @@ test("can preload and clear file assets", async () => {
 });
 
 test("Sprite unmounted before it loads", async () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
   const resetInputs = jest.fn();
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     AssetsGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, resetInputs);
+    runNextFrame(time, resetInputs);
   };
 
   // Load initial assets
   await waitFrame();
-  getNextFrameTexturesOverTime();
+  nextFrame();
 
   // Sprites have started loading
   expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(2);
 
   // Unmount Sprites before they finish loading
-  mutableTestDevice.inputs.buttonPressed.show = false;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.show = false;
+  nextFrame();
 
   // Wait for promises to load
   await waitFrame();
@@ -1110,44 +1038,44 @@ test("Sprite unmounted before it loads", async () => {
 test("throws error on duplicate Sprites", () => {
   const { platform } = getTestPlatform();
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     DuplicateSpriteIdsGame(gameProps)
   );
 
   expect(() => {
-    getNextFrameTextures(1000 / 60, jest.fn());
+    runNextFrame(1000 / 60, jest.fn());
   }).toThrowError("Duplicate Sprite id TestSprite");
 });
 
 test("supports Pure Sprites", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutInputs } = getTestPlatform();
 
-  const { getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     nativeSpriteSettings,
     PureSpriteGame(gameProps)
   );
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
   expect(pureSpriteAlwaysRendersFn).toBeCalledTimes(1);
   expect(pureSpriteNeverRendersFn).toBeCalledTimes(1);
   expect(pureSpriteConditionalRendersFn).toBeCalledTimes(1);
 
-  getNextFrameTexturesOverTime();
+  nextFrame();
 
   expect(pureSpriteAlwaysRendersFn).toBeCalledTimes(2);
   expect(pureSpriteNeverRendersFn).toBeCalledTimes(1);
   expect(pureSpriteConditionalRendersFn).toBeCalledTimes(1);
 
-  mutableTestDevice.inputs.buttonPressed.show = false;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.buttonPressed.show = false;
+  nextFrame();
 
   expect(pureSpriteAlwaysRendersFn).toBeCalledTimes(3);
   expect(pureSpriteNeverRendersFn).toBeCalledTimes(1);
@@ -1155,7 +1083,7 @@ test("supports Pure Sprites", () => {
 });
 
 test("supports Native Sprites", () => {
-  const { platform, mutableTestDevice } = getTestPlatform();
+  const { platform, mutInputs, textures } = getTestPlatform();
 
   const mutableNativeSpriteUtils: NativeSpriteUtils = {
     didResize: false,
@@ -1164,7 +1092,7 @@ test("supports Native Sprites", () => {
     gameYToPlatformY: (y) => y - 10,
   };
 
-  const { initTextures, getNextFrameTextures } = replayCore(
+  const { runNextFrame } = replayCore(
     platform,
     {
       nativeSpriteUtils: mutableNativeSpriteUtils,
@@ -1174,7 +1102,7 @@ test("supports Native Sprites", () => {
   );
 
   // No Textures rendered
-  expect((initTextures.textures[0] as SpriteTextures).textures.length).toBe(0);
+  expect(textures.length).toBe(0);
 
   expect(widgetState).toEqual({
     // test props
@@ -1189,26 +1117,26 @@ test("supports Native Sprites", () => {
   });
 
   let time = 1;
-  const getNextFrameTexturesOverTime = () => {
+  const nextFrame = () => {
     time += 1000 * (1 / 60);
-    return getNextFrameTextures(time, jest.fn());
+    runNextFrame(time, jest.fn());
   };
 
-  getNextFrameTexturesOverTime();
+  nextFrame();
 
   // test loop and didResize doubles width
   mutableNativeSpriteUtils.didResize = true;
-  getNextFrameTexturesOverTime();
+  nextFrame();
   expect(widgetState.width).toBe(300); // scale x3
   mutableNativeSpriteUtils.didResize = false;
 
   // test getState and updateState in callback
   widgetCallback();
-  getNextFrameTexturesOverTime();
+  nextFrame();
   expect(widgetState.x).toBe(20);
 
   // test cleanup
-  mutableTestDevice.inputs.x = 100;
-  getNextFrameTexturesOverTime();
+  mutInputs.ref.x = 100;
+  nextFrame();
   expect(widgetState.text).toBe("");
 });

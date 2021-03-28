@@ -33,7 +33,7 @@ export type ImageFileData = HTMLImageElement;
 export function getAudio(
   audioContext: AudioContext,
   audioElements: AssetMap<AudioData>
-): Device<{}>["audio"] {
+): Device["audio"] {
   return (fileName) => {
     const audioElement = audioElements[fileName];
     if (!audioElement) {
@@ -137,7 +137,7 @@ function getAudioPosition(
   return 0;
 }
 
-export function getNetwork(): Device<{}>["network"] {
+export function getNetwork(): Device["network"] {
   return {
     get: (url, callback) => {
       fetch(url)
@@ -170,7 +170,7 @@ export function getNetwork(): Device<{}>["network"] {
   };
 }
 
-export function getStorage(): Device<{}>["storage"] {
+export function getStorage(): Device["storage"] {
   return {
     getItem: async (key) => {
       return localStorage.getItem(key);
@@ -185,7 +185,7 @@ export function getStorage(): Device<{}>["storage"] {
   };
 }
 
-export function getClipboard(): Device<{}>["clipboard"] {
+export function getClipboard(): Device["clipboard"] {
   return {
     copy: (text, onComplete) => {
       if (!navigator.clipboard) {

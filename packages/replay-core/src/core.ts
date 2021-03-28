@@ -3,14 +3,13 @@ import {
   CustomSprite,
   Sprite,
   CustomSpriteProps,
-  SpriteTextures,
   NativeSpriteImplementation,
   NativeSpriteUtils,
   PureSprite,
   PureCustomSprite,
 } from "./sprite";
 import { Device, DeviceSize, preloadFiles, cleanupFiles } from "./device";
-import { SpriteBaseProps, getDefaultProps } from "./props";
+import { SpriteBaseProps, getDefaultProps, mutateBaseProps } from "./props";
 
 /**
  * The props type a game should take.
@@ -66,19 +65,30 @@ export interface GameOrientationSize {
  */
 export interface ReplayPlatform<I> {
   /**
-   * This returns `getDevice`, which is a callback that can be shared every
-   * frame.
-   *
-   * `getDevice` can then be called individually by each Sprite to get inputs
-   * relative to its position
+   * Get the inputs for an individual sprite
    */
-  getGetDevice: () => (
+  getInputs: (
     getLocalCoords: (globalCoords: {
       x: number;
       y: number;
     }) => { x: number; y: number }
-  ) => Device<I>;
+  ) => I;
+
+  /**
+   * Returns a device instance that's shared between all Sprites and mutated by
+   * the platform to update it
+   */
+  mutDevice: Device;
+
+  render: PlatformRender;
 }
+
+export type PlatformRender = {
+  newFrame: () => void;
+  startRenderSprite: (baseProps: SpriteBaseProps) => void;
+  endRenderSprite: () => void;
+  renderTexture: (texture: Texture) => void;
+};
 
 export type NativeSpriteMap = Record<
   string,
@@ -96,74 +106,85 @@ export function replayCore<S, I>(
    */
   gameSizeArg?: GameSize
 ): {
-  initTextures: SpriteTextures;
-  getNextFrameTextures: (
-    time: number,
-    resetInputs: () => void
-  ) => SpriteTextures;
+  runNextFrame: (time: number, resetInputs: () => void) => void;
 } {
   const globalToGameCoords = ({ x, y }: { x: number; y: number }) => ({ x, y });
 
-  const getInitDevice = platform.getGetDevice();
-  const initDevice = getInitDevice(globalToGameCoords);
+  const { mutDevice, getInputs: getInputsPlatform } = platform;
+
   const gameContainer = createCustomSpriteContainer(
     gameSprite,
-    getInitDevice(globalToGameCoords),
+    mutDevice,
+    () => getInputsPlatform(globalToGameCoords),
     0,
     gameSprite.props.id
   );
   const gameSize = gameSizeArg || gameSprite.props.size;
 
-  const initRenderMethod = getRenderMethod(initDevice.size, gameSize);
+  const initRenderMethod = getRenderMethod(mutDevice.size, gameSize);
 
   let prevTime = 0;
   let currentLag = 0;
 
-  let textures = traverseCustomSpriteContainer<GameProps, I>(
+  traverseCustomSpriteContainer<GameProps, I>(
     gameContainer,
     gameSprite.props,
-    getInitDevice,
+    mutDevice,
+    getInputsPlatform,
     globalToGameCoords,
     true,
     initRenderMethod,
     0,
-    1,
     gameSprite.props.id,
-    nativeSpriteSettings
+    nativeSpriteSettings,
+    platform.render
   );
 
+  const emptyRender: PlatformRender = {
+    newFrame: () => null,
+    startRenderSprite: () => null,
+    endRenderSprite: () => null,
+    renderTexture: () => null,
+  };
+
   return {
-    initTextures: textures,
-    getNextFrameTextures(time, resetInputs) {
+    runNextFrame(time, resetInputs) {
       const timeSinceLastCall = time - prevTime;
       prevTime = time;
       currentLag += timeSinceLastCall;
 
-      while (currentLag >= REPLAY_TIME_PER_UPDATE_MS) {
+      let framesToCatchup = Math.floor(currentLag / REPLAY_TIME_PER_UPDATE_MS);
+
+      while (framesToCatchup > 0) {
         currentLag -= REPLAY_TIME_PER_UPDATE_MS;
+        framesToCatchup--;
+
         const extrapolateFactor = currentLag / REPLAY_TIME_PER_UPDATE_MS;
 
-        const getDevice = platform.getGetDevice();
-        const device = getDevice(globalToGameCoords);
-        const renderMethod = getRenderMethod(device.size, gameSize);
+        const renderMethod = getRenderMethod(mutDevice.size, gameSize);
 
-        textures = traverseCustomSpriteContainer<GameProps, I>(
+        // Only draw on last frame
+        const platformRender =
+          framesToCatchup === 0 ? platform.render : emptyRender;
+
+        platformRender.newFrame();
+
+        traverseCustomSpriteContainer<GameProps, I>(
           gameContainer,
           gameSprite.props,
-          getDevice,
+          mutDevice,
+          getInputsPlatform,
           globalToGameCoords,
           false,
           renderMethod,
           extrapolateFactor,
-          1,
           gameSprite.props.id,
-          nativeSpriteSettings
+          nativeSpriteSettings,
+          platformRender
         );
         // reset inputs after each update
         resetInputs();
       }
-
-      return textures;
     },
   };
 }
@@ -176,12 +197,8 @@ export function replayCore<S, I>(
 function traverseCustomSpriteContainer<P, I>(
   customSpriteContainer: CustomSpriteContainer<P, unknown, I>,
   spriteProps: CustomSpriteProps<P>,
-  getDeviceGlobal: (
-    getLocalCoords: (globalCoords: {
-      x: number;
-      y: number;
-    }) => { x: number; y: number }
-  ) => Device<I>,
+  mutDevice: Device,
+  getInputsPlatform: ReplayPlatform<I>["getInputs"],
   getParentCoords: (globalCoords: {
     x: number;
     y: number;
@@ -189,12 +206,12 @@ function traverseCustomSpriteContainer<P, I>(
   initCreation: boolean,
   renderMethod: RenderMethod,
   extrapolateFactor: number,
-  parentOpacity: number,
   parentGlobalId: string,
-  nativeSpriteSettings: NativeSpriteSettings
-): SpriteTextures {
-  const baseProps = getDefaultProps(spriteProps);
-  baseProps.opacity *= parentOpacity;
+  nativeSpriteSettings: NativeSpriteSettings,
+  platformRender: PlatformRender
+) {
+  const { baseProps } = customSpriteContainer;
+  mutateBaseProps(baseProps, spriteProps);
 
   const { nativeSpriteMap, nativeSpriteUtils } = nativeSpriteSettings;
 
@@ -203,18 +220,25 @@ function traverseCustomSpriteContainer<P, I>(
     const getParentToLocalCoords = getLocalCoordsForSprite(baseProps);
     return getParentToLocalCoords(parentCoords);
   };
-  const device = getDeviceGlobal(getLocalCoords);
+
+  // Cache in case called in multiple sprite methods
+  let cachedInputs: I | null = null;
+  const getInputs = () => {
+    if (!cachedInputs) {
+      cachedInputs = getInputsPlatform(getLocalCoords);
+    }
+    return cachedInputs;
+  };
 
   const sprites = customSpriteContainer.getSprites(
     spriteProps,
-    device,
+    getInputs,
     initCreation,
     renderMethod,
     extrapolateFactor
   );
 
   const unusedChildIds = new Set(customSpriteContainer.prevChildIds);
-  const childIds: string[] = [];
 
   if (unusedChildIds.size < customSpriteContainer.prevChildIds.length) {
     const duplicate = customSpriteContainer.prevChildIds.find(
@@ -224,131 +248,143 @@ function traverseCustomSpriteContainer<P, I>(
     throw Error(`Duplicate Sprite id ${duplicate}`);
   }
 
-  const textures: any[] = sprites
-    .map(function mapTextures(sprite) {
-      if (!sprite) return sprite;
+  // Reuse original array to reduce GC
+  const childIds = customSpriteContainer.prevChildIds;
+  let childIdIndex = 0;
 
-      if (sprite.type === "native") {
-        childIds.push(sprite.props.id);
-        unusedChildIds.delete(sprite.props.id);
+  platformRender.startRenderSprite(baseProps);
 
-        const nativeSpriteImplementation = nativeSpriteMap[sprite.name];
-        if (!nativeSpriteImplementation) {
-          throw Error(`Cannot find Native Sprite "${sprite.name}"`);
-        }
+  for (let i = 0; i < sprites.length; i++) {
+    const sprite = sprites[i];
 
-        let lookupNativeSpriteContainer =
-          customSpriteContainer.childContainers[sprite.props.id];
+    if (!sprite) continue;
 
-        if (
-          !lookupNativeSpriteContainer ||
-          lookupNativeSpriteContainer.type !== "native"
-        ) {
-          // Create a native container
-          const newContainer: NativeSpriteContainer<UnknownObject> = {
-            type: "native",
-            state: nativeSpriteImplementation.create({
-              props: sprite.props,
-              parentGlobalId,
-              getState: () => newContainer.state,
-              updateState: (mergeState) => {
-                newContainer.state = {
-                  ...newContainer.state,
-                  ...mergeState,
-                };
-              },
-              utils: nativeSpriteUtils,
-            }),
-            cleanup: nativeSpriteImplementation.cleanup,
-          };
-          customSpriteContainer.childContainers[sprite.props.id] = newContainer;
-          lookupNativeSpriteContainer = newContainer;
-        }
+    if (sprite.type === "native") {
+      childIds[childIdIndex] = sprite.props.id;
+      childIdIndex++;
 
-        lookupNativeSpriteContainer.state = nativeSpriteImplementation.loop({
-          props: sprite.props,
-          state: lookupNativeSpriteContainer.state,
-          parentGlobalId,
-          utils: nativeSpriteUtils,
-        });
+      unusedChildIds.delete(sprite.props.id);
 
-        return null;
+      const nativeSpriteImplementation = nativeSpriteMap[sprite.name];
+      if (!nativeSpriteImplementation) {
+        throw Error(`Cannot find Native Sprite "${sprite.name}"`);
       }
 
-      if (sprite.type === "pure") {
-        childIds.push(sprite.props.id);
-        unusedChildIds.delete(sprite.props.id);
+      let lookupNativeSpriteContainer =
+        customSpriteContainer.childContainers[sprite.props.id];
 
-        let lookupPureCustomSpriteContainer =
-          customSpriteContainer.childContainers[sprite.props.id];
+      if (
+        !lookupNativeSpriteContainer ||
+        lookupNativeSpriteContainer.type !== "native"
+      ) {
+        // Create a native container
+        const newContainer: NativeSpriteContainer<UnknownObject> = {
+          type: "native",
+          state: nativeSpriteImplementation.create({
+            props: sprite.props,
+            parentGlobalId,
+            getState: () => newContainer.state,
+            updateState: (mergeState) => {
+              newContainer.state = {
+                ...newContainer.state,
+                ...mergeState,
+              };
+            },
+            utils: nativeSpriteUtils,
+          }),
+          cleanup: nativeSpriteImplementation.cleanup,
+        };
+        customSpriteContainer.childContainers[sprite.props.id] = newContainer;
+        lookupNativeSpriteContainer = newContainer;
+      }
 
-        if (
-          !lookupPureCustomSpriteContainer ||
-          lookupPureCustomSpriteContainer.type !== "pure"
-        ) {
-          lookupPureCustomSpriteContainer = createPureCustomSpriteContainer(
-            sprite
-          );
-          customSpriteContainer.childContainers[
-            sprite.props.id
-          ] = lookupPureCustomSpriteContainer;
-        }
+      lookupNativeSpriteContainer.state = nativeSpriteImplementation.loop({
+        props: sprite.props,
+        state: lookupNativeSpriteContainer.state,
+        parentGlobalId,
+        utils: nativeSpriteUtils,
+      });
+    } else if (sprite.type === "pure") {
+      childIds[childIdIndex] = sprite.props.id;
+      childIdIndex++;
+      unusedChildIds.delete(sprite.props.id);
 
-        return traversePureCustomSpriteContainer(
-          lookupPureCustomSpriteContainer,
-          sprite.props,
-          device.size,
-          nativeSpriteUtils.didResize, // conveniently get this from native utils
-          renderMethod,
-          baseProps.opacity
+      let lookupPureCustomSpriteContainer =
+        customSpriteContainer.childContainers[sprite.props.id];
+
+      if (
+        !lookupPureCustomSpriteContainer ||
+        lookupPureCustomSpriteContainer.type !== "pure"
+      ) {
+        lookupPureCustomSpriteContainer = createPureCustomSpriteContainer(
+          sprite
         );
+        customSpriteContainer.childContainers[
+          sprite.props.id
+        ] = lookupPureCustomSpriteContainer;
       }
 
-      if (sprite.type === "custom") {
-        childIds.push(sprite.props.id);
-        unusedChildIds.delete(sprite.props.id);
-        let spriteInitCreation = false;
+      traversePureCustomSpriteContainer(
+        lookupPureCustomSpriteContainer,
+        sprite.props,
+        mutDevice.size,
+        nativeSpriteUtils.didResize, // conveniently get this from native utils
+        renderMethod,
+        platformRender
+      );
+    } else if (sprite.type === "custom") {
+      childIds[childIdIndex] = sprite.props.id;
+      childIdIndex++;
+      unusedChildIds.delete(sprite.props.id);
 
-        let lookupCustomSpriteContainer =
-          customSpriteContainer.childContainers[sprite.props.id];
+      let spriteInitCreation = false;
 
-        const globalId = `${parentGlobalId}--${sprite.props.id}`;
+      let lookupCustomSpriteContainer =
+        customSpriteContainer.childContainers[sprite.props.id];
 
-        if (
-          !lookupCustomSpriteContainer ||
-          lookupCustomSpriteContainer.type !== "custom"
-        ) {
-          spriteInitCreation = true;
-          lookupCustomSpriteContainer = createCustomSpriteContainer(
-            sprite,
-            device,
-            customSpriteContainer.prevTime,
-            globalId
-          );
-          customSpriteContainer.childContainers[
-            sprite.props.id
-          ] = lookupCustomSpriteContainer;
-        }
+      const globalId = `${parentGlobalId}--${sprite.props.id}`;
 
-        return traverseCustomSpriteContainer(
-          lookupCustomSpriteContainer,
-          sprite.props,
-          getDeviceGlobal,
-          getLocalCoords,
-          spriteInitCreation,
-          renderMethod,
-          extrapolateFactor,
-          baseProps.opacity,
-          globalId,
-          nativeSpriteSettings
+      if (
+        !lookupCustomSpriteContainer ||
+        lookupCustomSpriteContainer.type !== "custom"
+      ) {
+        spriteInitCreation = true;
+        lookupCustomSpriteContainer = createCustomSpriteContainer(
+          sprite,
+          mutDevice,
+          getInputs,
+          customSpriteContainer.prevTime,
+          globalId
         );
+        customSpriteContainer.childContainers[
+          sprite.props.id
+        ] = lookupCustomSpriteContainer;
       }
 
-      return sprite;
-    })
-    .filter(isNotNullOrUndefined);
+      traverseCustomSpriteContainer(
+        lookupCustomSpriteContainer,
+        sprite.props,
+        mutDevice,
+        getInputsPlatform,
+        getLocalCoords,
+        spriteInitCreation,
+        renderMethod,
+        extrapolateFactor,
+        globalId,
+        nativeSpriteSettings,
+        platformRender
+      );
+    } else {
+      platformRender.renderTexture(sprite);
+    }
+  }
+
+  platformRender.endRenderSprite();
 
   nativeSpriteUtils.didResize = false;
+  if (childIdIndex < childIds.length) {
+    childIds.length = childIdIndex;
+  }
 
   unusedChildIds.forEach((id) => {
     // Run cleanup of Sprites on all the removed child containers
@@ -365,7 +401,7 @@ function traverseCustomSpriteContainer<P, I>(
           if (container.loadFilesPromise) {
             container.loadFilesPromise.then(() => {
               // Only cleanup once the initial load is complete
-              cleanupFiles(containerGlobalId, device.assetUtils);
+              cleanupFiles(containerGlobalId, mutDevice.assetUtils);
             });
           }
         } else if (container.type === "native") {
@@ -382,14 +418,6 @@ function traverseCustomSpriteContainer<P, I>(
 
     delete customSpriteContainer.childContainers[id];
   });
-
-  customSpriteContainer.prevChildIds = childIds;
-
-  return {
-    id: spriteProps.id,
-    baseProps,
-    textures,
-  };
 }
 
 /**
@@ -403,7 +431,8 @@ const REPLAY_TIME_PER_UPDATE_MS = 1000 * (1 / 60);
  */
 function createCustomSpriteContainer<P, S, I>(
   sprite: CustomSprite<P, S, I>,
-  initDevice: Device<I>,
+  mutDevice: Device,
+  getInitInputs: () => I,
   currentTime: number,
   globalId: string
 ): CustomSpriteContainer<P, S, I> {
@@ -428,10 +457,11 @@ function createCustomSpriteContainer<P, S, I>(
         }
         return spriteContainer.state;
       },
-      device: initDevice,
+      device: mutDevice,
+      getInputs: getInitInputs,
       updateState,
       preloadFiles: async (assets) => {
-        const loadFiles = preloadFiles(globalId, assets, initDevice.assetUtils);
+        const loadFiles = preloadFiles(globalId, assets, mutDevice.assetUtils);
         if (spriteContainer) {
           spriteContainer.loadFilesPromise = loadFiles;
         } else {
@@ -443,34 +473,43 @@ function createCustomSpriteContainer<P, S, I>(
     });
   }
 
+  const runUpdateStateCallbacks = () => {
+    let queueIndex = 0;
+
+    // Use a while loop in case nested updateStates add to the array during
+    // loop
+    while (queueIndex < updateStateQueue.length) {
+      const update = updateStateQueue[queueIndex];
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      spriteContainer!.state = update(spriteContainer!.state);
+
+      queueIndex++;
+    }
+    updateStateQueue.length = 0;
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const getState = () => spriteContainer!.state;
+
   spriteContainer = {
     type: "custom",
     // WARNING: types are a bit tricky here, need to cast.
     // If a sprite does not set an init state, this will simply pass undefined
     state: initState as S,
+    baseProps: getDefaultProps(initProps),
     childContainers: {},
     prevChildIds: [],
     prevTime: currentTime,
     currentLag: 0,
     loadFilesPromise,
-    getSprites(props, device, initCreation, renderMethod, extrapolateFactor) {
-      const runUpdateStateCallbacks = () => {
-        let queueIndex = 0;
-
-        // Use a while loop in case nested updateStates add to the array during
-        // loop
-        while (queueIndex < updateStateQueue.length) {
-          const update = updateStateQueue[queueIndex];
-
-          this.state = update(this.state);
-
-          queueIndex++;
-        }
-        updateStateQueue.length = 0;
-      };
-
-      const getState = () => this.state;
-
+    getSprites(
+      props,
+      getInputs,
+      initCreation,
+      renderMethod,
+      extrapolateFactor
+    ) {
       // Run any updateState from callbacks in other sprites last render
       runUpdateStateCallbacks();
 
@@ -479,7 +518,8 @@ function createCustomSpriteContainer<P, S, I>(
         this.state = spriteObj.loop({
           props,
           state: this.state,
-          device,
+          device: mutDevice,
+          getInputs,
           updateState,
           getState,
         });
@@ -499,7 +539,8 @@ function createCustomSpriteContainer<P, S, I>(
       const sprites = render({
         props,
         state: this.state,
-        device,
+        device: mutDevice,
+        getInputs,
         updateState,
         getState,
         extrapolateFactor,
@@ -562,13 +603,15 @@ type CustomSpriteContainer<P, S, I> = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [id: string]: SpriteContainer<unknown, any, I>;
   };
+  // stored for memory pooling
+  baseProps: SpriteBaseProps;
   prevChildIds: string[];
   prevTime: number;
   currentLag: number;
   loadFilesPromise: null | Promise<void>;
   getSprites: (
     props: CustomSpriteProps<P>,
-    device: Device<I>,
+    getInputs: () => I,
     initCreation: boolean,
     renderMethod: RenderMethod,
     time: number
@@ -581,16 +624,21 @@ type PureCustomSpriteContainer<P> = {
     [id: string]: PureCustomSpriteContainer<unknown>;
   };
   prevChildIds: string[];
-  cache?: (SpriteTextures | Texture)[];
+  baseProps: SpriteBaseProps;
+  cache?: PureSpriteCache;
   prevProps?: P;
   getSprites: (
     props: CustomSpriteProps<P>,
     size: DeviceSize,
     didResize: boolean,
     renderMethod: RenderMethod
-  ) =>
-    | { type: "pureSprites"; sprites: PureSprite[] }
-    | { type: "cachedTextures"; textures: (SpriteTextures | Texture)[] };
+  ) => { type: "pureSprites"; sprites: PureSprite[] } | PureSpriteCache;
+};
+
+type PureSpriteCache = {
+  type: "cache";
+  baseProps: SpriteBaseProps;
+  items: (PureSpriteCache | Texture)[];
 };
 
 function createPureCustomSpriteContainer<P>(
@@ -602,16 +650,8 @@ function createPureCustomSpriteContainer<P>(
     type: "pure",
     childContainers: {},
     prevChildIds: [],
+    baseProps: getDefaultProps(sprite.props),
     getSprites(props, size, didResize, renderMethod) {
-      let render = spriteObj[renderMethod];
-      if (!render) {
-        // default to other renderXL or render method if not defined by user
-        render =
-          renderMethod === "renderPXL" && spriteObj.renderXL
-            ? spriteObj.renderXL
-            : spriteObj.render;
-      }
-
       if (
         this.prevProps &&
         this.cache &&
@@ -619,7 +659,16 @@ function createPureCustomSpriteContainer<P>(
         !didResize
       ) {
         this.prevProps = props;
-        return { type: "cachedTextures", textures: this.cache };
+        return this.cache;
+      }
+
+      let render = spriteObj[renderMethod];
+      if (!render) {
+        // default to other renderXL or render method if not defined by user
+        render =
+          renderMethod === "renderPXL" && spriteObj.renderXL
+            ? spriteObj.renderXL
+            : spriteObj.render;
       }
 
       // Cache will be updated outside of this function
@@ -636,85 +685,145 @@ function createPureCustomSpriteContainer<P>(
 }
 
 function traversePureCustomSpriteContainer<P>(
-  customSpriteContainer: PureCustomSpriteContainer<P>,
+  pureSpriteContainer: PureCustomSpriteContainer<P>,
   spriteProps: CustomSpriteProps<P>,
   deviceSize: DeviceSize,
   didResize: boolean,
   renderMethod: RenderMethod,
-  parentOpacity: number
-): SpriteTextures {
-  const baseProps = getDefaultProps(spriteProps);
-  baseProps.opacity *= parentOpacity;
+  platformRender: PlatformRender
+): PureSpriteCache {
+  const { baseProps } = pureSpriteContainer;
+  mutateBaseProps(baseProps, spriteProps);
 
-  const spritesResult = customSpriteContainer.getSprites(
+  const spritesResult = pureSpriteContainer.getSprites(
     spriteProps,
     deviceSize,
     didResize,
     renderMethod
   );
 
-  if (spritesResult.type === "cachedTextures") {
-    return {
-      id: spriteProps.id,
-      baseProps,
-      textures: spritesResult.textures,
-    };
+  if (spritesResult.type === "cache") {
+    // Need to traverse to apply base props of nested Sprites
+    traversePureSpriteCache(spritesResult, platformRender);
+
+    return spritesResult;
   }
-  const { sprites } = spritesResult;
 
-  const unusedChildIds = new Set(customSpriteContainer.prevChildIds);
-  const childIds: string[] = [];
+  return traversePureCustomSpriteContainerNotCached(
+    pureSpriteContainer,
+    spritesResult.sprites,
+    deviceSize,
+    didResize,
+    renderMethod,
+    platformRender
+  );
+}
 
-  const textures: any[] = sprites
-    .map(function mapPureTextures(sprite) {
-      if (!sprite) return sprite;
+function traversePureCustomSpriteContainerNotCached<P>(
+  pureSpriteContainer: PureCustomSpriteContainer<P>,
+  sprites: PureSprite<unknown>[],
+  deviceSize: DeviceSize,
+  didResize: boolean,
+  renderMethod: RenderMethod,
+  platformRender: PlatformRender
+): PureSpriteCache {
+  const { baseProps } = pureSpriteContainer;
 
-      if (sprite.type === "pure") {
-        childIds.push(sprite.props.id);
-        unusedChildIds.delete(sprite.props.id);
+  const unusedChildIds = new Set(pureSpriteContainer.prevChildIds);
 
-        let lookupPureCustomSpriteContainer =
-          customSpriteContainer.childContainers[sprite.props.id];
+  // Mutate original to reduce GC
+  const childIds = pureSpriteContainer.prevChildIds;
+  let childIdIndex = 0;
 
-        if (
-          !lookupPureCustomSpriteContainer ||
-          lookupPureCustomSpriteContainer.type !== "pure"
-        ) {
-          lookupPureCustomSpriteContainer = createPureCustomSpriteContainer(
-            sprite
-          );
-          customSpriteContainer.childContainers[
-            sprite.props.id
-          ] = lookupPureCustomSpriteContainer;
-        }
+  platformRender.startRenderSprite(baseProps);
 
-        return traversePureCustomSpriteContainer(
-          lookupPureCustomSpriteContainer,
-          sprite.props,
-          deviceSize,
-          didResize,
-          renderMethod,
-          baseProps.opacity
+  const cacheItems = new Array<PureSpriteCache | Texture>(sprites.length);
+  let cacheItemIndex = 0;
+
+  for (let i = 0; i < sprites.length; i++) {
+    const sprite = sprites[i];
+
+    if (!sprite) continue;
+
+    if (sprite.type === "pure") {
+      childIds[childIdIndex] = sprite.props.id;
+      childIdIndex++;
+
+      unusedChildIds.delete(sprite.props.id);
+
+      let lookupPureCustomSpriteContainer =
+        pureSpriteContainer.childContainers[sprite.props.id];
+
+      if (
+        !lookupPureCustomSpriteContainer ||
+        lookupPureCustomSpriteContainer.type !== "pure"
+      ) {
+        lookupPureCustomSpriteContainer = createPureCustomSpriteContainer(
+          sprite
         );
+        pureSpriteContainer.childContainers[
+          sprite.props.id
+        ] = lookupPureCustomSpriteContainer;
       }
 
-      return sprite;
-    })
-    .filter(isNotNullOrUndefined);
+      cacheItems[cacheItemIndex] = traversePureCustomSpriteContainer(
+        lookupPureCustomSpriteContainer,
+        sprite.props,
+        deviceSize,
+        didResize,
+        renderMethod,
+        platformRender
+      );
+      cacheItemIndex++;
+    } else {
+      platformRender.renderTexture(sprite);
+
+      cacheItems[cacheItemIndex] = sprite;
+      cacheItemIndex++;
+    }
+  }
+  if (cacheItemIndex < cacheItems.length) {
+    cacheItems.length = cacheItemIndex;
+  }
+
+  platformRender.endRenderSprite();
 
   unusedChildIds.forEach((id) => {
-    delete customSpriteContainer.childContainers[id];
+    delete pureSpriteContainer.childContainers[id];
   });
 
-  // Update cache
-  customSpriteContainer.cache = textures;
-  customSpriteContainer.prevChildIds = childIds;
-
-  return {
-    id: spriteProps.id,
+  const cache: PureSpriteCache = {
+    type: "cache",
     baseProps,
-    textures,
+    items: cacheItems,
   };
+
+  // Update cache
+  pureSpriteContainer.cache = cache;
+
+  if (childIdIndex < childIds.length) {
+    childIds.length = childIdIndex;
+  }
+
+  return cache;
+}
+
+function traversePureSpriteCache(
+  cache: PureSpriteCache,
+  platformRender: PlatformRender
+) {
+  platformRender.startRenderSprite(cache.baseProps);
+
+  for (let i = 0; i < cache.items.length; i++) {
+    const item = cache.items[i];
+    if (item.type === "cache") {
+      traversePureSpriteCache(item, platformRender);
+    } else {
+      platformRender.renderTexture(item);
+    }
+  }
+
+  platformRender.endRenderSprite();
 }
 
 type NativeSpriteContainer<S> = {
@@ -730,10 +839,6 @@ export type NativeSpriteSettings = {
   nativeSpriteMap: NativeSpriteMap;
   nativeSpriteUtils: NativeSpriteUtils;
 };
-
-function isNotNullOrUndefined<T>(arg: T | null | undefined): arg is T {
-  return arg !== null && arg !== undefined;
-}
 
 /**
  * A mapping of the parent Sprite's (x, y) coordinate to local Sprite

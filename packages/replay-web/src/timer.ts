@@ -8,7 +8,7 @@ type Timer = {
   isPaused: boolean;
 };
 
-export function getTimer(): Device<{}>["timer"] {
+export function getTimer(): Device["timer"] {
   const timerMap: Record<string, Timer | undefined> = {};
 
   return {

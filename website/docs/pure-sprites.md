@@ -71,7 +71,7 @@ export const Player = makePureSprite<Props>({
 </TabItem>
 </Tabs>
 
-The Sprite object passed into `makePureSprite` must have the methods `render` and `shouldRerender` defined. `render` is similar to a regular Sprite, but with only a `props` and `size` parameter, and **can only return [Textures](textures.md) or other Pure Sprites**. Pure Sprites do not have state or access to the `device` parameter.
+The Sprite object passed into `makePureSprite` must have the methods `render` and `shouldRerender` defined. `render` is similar to a regular Sprite, but with only a `props` and `size` parameter, and **can only return [Textures](textures.md) or other Pure Sprites**. Pure Sprites do not have state or access to the `device` and `getInputs` parameters.
 
 `shouldRerender` is how Replay optimises your Sprite. Based on the last frame's props and the current frame's props, you must return a `boolean` of whether the Sprite needs to be redrawn. In our example above, if the `color` prop doesn't change, we don't need to call `render` again (since the return value will be the same). This caching can save time over many renders and improve your game's performance.
 

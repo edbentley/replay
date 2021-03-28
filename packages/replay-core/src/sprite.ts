@@ -34,11 +34,13 @@ export function makeSprite<
 >(
   spriteObj: SpriteObj<P, S, I>
 ): (props: CustomSpriteProps<P>) => CustomSprite<P, S, I> {
-  return (props) => ({
-    type: "custom",
-    spriteObj,
-    props,
-  });
+  return function makeSpriteCallback(props) {
+    return {
+      type: "custom",
+      spriteObj,
+      props,
+    };
+  };
 }
 
 export interface CustomSprite<P, S, I> {
@@ -71,7 +73,8 @@ interface SpriteObjInit<P, S, I> {
      * returns it will throw an error.
      */
     getState: () => S;
-    device: Device<I>;
+    device: Device;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     /**
      * Asset file names to preload for this Sprite. They'll be cleared from
@@ -88,7 +91,8 @@ interface SpriteObjBase<P, S, I> {
   loop?: (params: {
     props: Readonly<P>;
     state: Readonly<S>;
-    device: Device<I>;
+    device: Device;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => S;
@@ -102,7 +106,8 @@ interface SpriteObjBase<P, S, I> {
   render: (params: {
     props: Readonly<P>;
     state: Readonly<S>;
-    device: Device<I>;
+    device: Device;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
     /**
@@ -120,7 +125,8 @@ interface SpriteObjBase<P, S, I> {
   renderP?: (params: {
     props: Readonly<P>;
     state: Readonly<S>;
-    device: Device<I>;
+    device: Device;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => Sprite[];
@@ -132,7 +138,8 @@ interface SpriteObjBase<P, S, I> {
   renderXL?: (params: {
     props: Readonly<P>;
     state: Readonly<S>;
-    device: Device<I>;
+    device: Device;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => Sprite[];
@@ -146,7 +153,8 @@ interface SpriteObjBase<P, S, I> {
   renderPXL?: (params: {
     props: Readonly<P>;
     state: Readonly<S>;
-    device: Device<I>;
+    device: Device;
+    getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
   }) => Sprite[];
@@ -176,11 +184,13 @@ export type PureCustomSprite<P> = {
 export function makePureSprite<P extends ExcludeSpriteBaseProps<P>>(
   spriteObj: PureSpriteObj<P>
 ): (props: CustomSpriteProps<P>) => PureCustomSprite<P> {
-  return (props) => ({
-    type: "pure",
-    spriteObj,
-    props,
-  });
+  return function makePureSpriteCallback(props) {
+    return {
+      type: "pure",
+      spriteObj,
+      props,
+    };
+  };
 }
 
 type PureSpriteObj<P> = {
@@ -218,16 +228,6 @@ type PureSpriteObj<P> = {
     props: Readonly<P>;
     size: DeviceSize;
   }) => PureSprite[];
-};
-
-/**
- * A nesting of textures sent to the platform to render. The nesting allows for
- * things like transforms on a Sprite.
- */
-export type SpriteTextures = {
-  id: string;
-  baseProps: SpriteBaseProps;
-  textures: (SpriteTextures | Texture)[];
 };
 
 /**

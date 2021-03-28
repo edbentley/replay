@@ -104,8 +104,8 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
     return { ...initState, highScore: 0 };
   },
 
-  loop({ state, device }) {
-    const { inputs } = device;
+  loop({ state, device, getInputs }) {
+    const inputs = getInputs();
     const { stage } = state;
 
     // stage
@@ -170,7 +170,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
           PlayStage({
             id: "play-stage",
             bulletSpeed: state.bulletSpeed,
-            gameOver: (score) => {
+            gameOver: function gameOver(score) {
               if (score > state.highScore) {
                 device.storage.setItem("highScore", String(score));
               }
@@ -191,13 +191,13 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
 
 const PureCircleGroup = makePureSprite({
   shouldRerender() {
-    return true;
+    return false;
   },
 
   render() {
-    return Array.from({ length: 2000 }).map((_, index) =>
-      PureCircle({ id: `Circle-${index}` })
-    );
+    return Array.from({ length: 2000 }).map(function mapCircles(_, index) {
+      return PureCircle({ id: `Circle-${index}` });
+    });
   },
 });
 

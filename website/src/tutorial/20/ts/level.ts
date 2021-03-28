@@ -29,12 +29,12 @@ export const Level = makeSprite<LevelProps, LevelState, WebInputs | iOSInputs>({
     };
   },
 
-  loop({ props, state, device }) {
+  loop({ props, state, getInputs, device }) {
     if (props.paused) {
       return state;
     }
 
-    const { inputs } = device;
+    const inputs = getInputs();
 
     let { birdGravity, birdY, pipes, score } = state;
 
@@ -113,7 +113,7 @@ export const Level = makeSprite<LevelProps, LevelState, WebInputs | iOSInputs>({
   },
 });
 
-function newPipe(device: Device<{}>): PipeT {
+function newPipe(device: Device): PipeT {
   const height = device.size.height + device.size.heightMargin * 2;
   const randomY = (height - pipeGap * 2) * (device.random() - 0.5);
 

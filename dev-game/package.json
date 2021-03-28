@@ -5,7 +5,7 @@
   "description": "An example game for developing Replay",
   "main": "src/index.ts",
   "scripts": {
-    "start": "webpack-dev-server --config webpack.web.js --open",
+    "start": "webpack serve -d eval-cheap-module-source-map --config webpack.web.js --mode development --open",
     "build": "npm run build-web && npm run build-swift",
     "build-web": "webpack --config webpack.web.js",
     "build-swift": "webpack --config webpack.swift.js",

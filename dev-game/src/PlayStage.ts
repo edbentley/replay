@@ -44,7 +44,7 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
       imageFileNames: ["enemy.png"],
       audioFileNames: ["shoot.wav"],
     }).then(() => {
-      const spawnEnemy = () => {
+      function spawnEnemy() {
         device.log("Spawn");
         const timerId = device.timer.start(() => {
           const newId = spawnEnemy();
@@ -59,7 +59,7 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
           }));
         }, device.random() * 2000 + 1000);
         return timerId;
-      };
+      }
       const timerId = spawnEnemy();
       updateState((s) => ({
         ...s,
@@ -80,11 +80,12 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
     };
   },
 
-  loop({ state, device, props: { bulletSpeed, gameOver } }) {
+  loop({ state, device, getInputs, props: { bulletSpeed, gameOver } }) {
     if (state.paused || state.loading) return state;
 
+    const inputs = getInputs();
+
     const {
-      inputs,
       size: { width, height, heightMargin, widthMargin },
     } = device;
     const fullWidth = width + widthMargin * 2;
@@ -99,8 +100,10 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
 
     // bullets
     bullets = bullets
-      .map((b) => ({ ...b, distance: b.distance + bulletSpeed }))
-      .filter((b) => {
+      .map(function mapBullet(b) {
+        return { ...b, distance: b.distance + bulletSpeed };
+      })
+      .filter(function filterBullet(b) {
         const x = bulletX(b);
         const y = bulletY(b, fullHeight / 2);
         return (
@@ -120,8 +123,10 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
 
     // enemies
     enemies = enemies
-      .map((e) => ({ ...e, y: e.y - e.speed }))
-      .filter((e) => {
+      .map(function mapEnemy(e) {
+        return { ...e, y: e.y - e.speed };
+      })
+      .filter(function filterEnemy(e) {
         let isNotHit = true;
         bullets.forEach((b) => {
           const x = bulletX(b);
@@ -133,7 +138,7 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         });
         return isNotHit;
       });
-    enemies.forEach((e) => {
+    enemies.forEach(function forEachEnemy(e) {
       if (e.y < -fullHeight / 2) {
         device.timer.cancel(state.spawnEnemyTimerId);
         gameOver(score);
@@ -146,8 +151,8 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
       bullets,
       enemies,
       pointer: {
-        x: device.inputs.pointer.x,
-        y: device.inputs.pointer.y,
+        x: inputs.pointer.x,
+        y: inputs.pointer.y,
       },
       score,
       spawnEnemyTimerId: state.spawnEnemyTimerId,
@@ -170,26 +175,26 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
     }
     const fullHeight = height + heightMargin * 2;
     const fullWidth = width + widthMargin * 2;
-    const bullets = state.bullets.map((b, i) =>
-      t.circle({
+    const bullets = state.bullets.map(function bulletsMapTexture(b, i) {
+      return t.circle({
         x: bulletX(b, extrapolateFactor * bulletSpeed),
         y: bulletY(b, fullHeight / 2, extrapolateFactor * bulletSpeed),
         testId: `bullet${i + 1}`,
         radius: 2,
         color: "#0095DD",
         opacity: 0.9,
-      })
-    );
-    const enemies = state.enemies.map((e, i) =>
-      t.image({
+      });
+    });
+    const enemies = state.enemies.map(function enemiesMapTexture(e, i) {
+      return t.image({
         x: e.x,
         y: e.y,
         testId: `enemy${i + 1}`,
         fileName: "enemy.png",
         width: 20,
         height: 20,
-      })
-    );
+      });
+    });
     return [
       // t.rectangle({
       //   testId: "background",
@@ -268,19 +273,21 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         : null,
       Clickable({
         id: "PauseButton",
-        sprites: () => [
-          t.rectangle({
-            width: 100,
-            height: 20,
-            color: "black",
-            opacity: 0.2,
-          }),
-          t.text({
-            text: state.paused ? "Resume" : "Pause",
-            color: "purple",
-          }),
-        ],
-        onPress: () => {
+        sprites: function clickableSprites() {
+          return [
+            t.rectangle({
+              width: 100,
+              height: 20,
+              color: "black",
+              opacity: 0.2,
+            }),
+            t.text({
+              text: state.paused ? "Resume" : "Pause",
+              color: "purple",
+            }),
+          ];
+        },
+        onPress: function clickableOnPress() {
           updateState((s) => {
             if (s.paused) {
               timer.resume(s.spawnEnemyTimerId);

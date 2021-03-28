@@ -42,10 +42,10 @@ export const Game = makeSprite({
     };
   },
 
-  loop({ state, device }) {
+  loop({ state, device, getInputs }) {
     if (!state.loaded) return state;
 
-    const { pointer } = device.inputs;
+    const { pointer } = getInputs();
     const { posX, posY } = state;
     let { targetX, targetY } = state;
 

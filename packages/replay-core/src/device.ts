@@ -1,9 +1,7 @@
 /**
  * The type of a device that supports Replay
  */
-export interface Device<I = unknown> {
-  inputs: I;
-
+export interface Device {
   /**
    * Is the device a touch screen device - e.g. show buttons instead of relying
    * on pinch gesture for zooming if there's no touch available.

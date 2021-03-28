@@ -22,12 +22,12 @@ export const Level = makeSprite<LevelProps, LevelState, WebInputs | iOSInputs>({
     };
   },
 
-  loop({ props, state, device }) {
+  loop({ props, state, getInputs }) {
     if (props.paused) {
       return state;
     }
 
-    const { inputs } = device;
+    const inputs = getInputs();
 
     let { birdGravity, birdY } = state;
 

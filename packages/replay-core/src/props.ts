@@ -69,3 +69,18 @@ export function getDefaultProps(
     mask: props.mask || null,
   };
 }
+
+export function mutateBaseProps(
+  prevBaseProps: SpriteBaseProps,
+  props: Partial<SpriteBaseProps>
+) {
+  prevBaseProps.x = props.x || 0;
+  prevBaseProps.y = props.y || 0;
+  prevBaseProps.rotation = props.rotation || 0;
+  prevBaseProps.opacity = Math.min(1, Math.max(0, props.opacity ?? 1));
+  prevBaseProps.scaleX = props.scaleX ?? 1;
+  prevBaseProps.scaleY = props.scaleY ?? 1;
+  prevBaseProps.anchorX = props.anchorX || 0;
+  prevBaseProps.anchorY = props.anchorY || 0;
+  prevBaseProps.mask = props.mask || null;
+}

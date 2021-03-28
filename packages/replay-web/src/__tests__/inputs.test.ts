@@ -80,7 +80,8 @@ const KeyboardGame = makeSprite<GameProps, KeyboardState, Inputs>({
       isUpKeyJustPressed: false,
     };
   },
-  loop({ device: { inputs } }) {
+  loop({ getInputs }) {
+    const inputs = getInputs();
     return {
       isUpKeyPressed: inputs.keysDown.ArrowUp || false,
       isUpKeyJustPressed: inputs.keysJustPressed.ArrowUp || false,
@@ -323,7 +324,8 @@ const PointerGame = makeSprite<GameProps, PointerState, Inputs>({
       pointerY: 0,
     };
   },
-  loop({ device: { inputs } }) {
+  loop({ getInputs }) {
+    const inputs = getInputs();
     return {
       pointerPressed: inputs.pointer.pressed,
       pointerJustPressed: inputs.pointer.justPressed,
@@ -388,7 +390,8 @@ const PointerSprite = makeSprite<{}, PointerState, Inputs>({
       pointerY: 0,
     };
   },
-  loop({ device: { inputs } }) {
+  loop({ getInputs }) {
+    const inputs = getInputs();
     return {
       pointerPressed: inputs.pointer.pressed,
       pointerJustPressed: inputs.pointer.justPressed,

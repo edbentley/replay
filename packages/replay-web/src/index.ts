@@ -3,12 +3,9 @@ import {
   replayCore,
   ReplayPlatform,
   NativeSpriteMap,
+  PlatformRender,
 } from "@replay/core/dist/core";
-import {
-  CustomSprite,
-  SpriteTextures,
-  NativeSpriteUtils,
-} from "@replay/core/dist/sprite";
+import { CustomSprite, NativeSpriteUtils } from "@replay/core/dist/sprite";
 import { AssetUtils, AssetMap } from "@replay/core/dist/device";
 import {
   getInputs,
@@ -24,7 +21,7 @@ import {
   pointerCancelHandler,
 } from "./input";
 import { drawCanvas } from "./draw";
-import { getDeviceSize, setDeviceSize, calculateDeviceSize } from "./size";
+import { calculateDeviceSize } from "./size";
 import { Dimensions } from "./dimensions";
 import { getGameXToWebX, getGameYToWebY } from "./coordinates";
 import { getTimer } from "./timer";
@@ -72,11 +69,19 @@ export type RenderCanvasOptions = {
    * Override the view size, instead of using the window size
    */
   windowSize?: { width: number; height: number };
+  /**
+   * Start your own timer to test game's performance
+   */
+  statsBegin?: () => void;
+  /**
+   * End of timer to test game's performance
+   */
+  statsEnd?: () => void;
 };
 
 type PlatformOptions = {
-  storage?: Device<{}>["storage"];
-  clipboard?: Device<{}>["clipboard"];
+  storage?: Device["storage"];
+  clipboard?: Device["clipboard"];
 };
 
 /**
@@ -97,6 +102,8 @@ export function renderCanvas<S>(
     canvas: userCanvas,
     nativeSpriteMap = {},
     windowSize,
+    statsBegin,
+    statsEnd,
   } = options || {};
 
   const canvas = userCanvas || document.createElement("canvas");
@@ -203,41 +210,46 @@ export function renderCanvas<S>(
     }
 
     // Don't update device size on scroll as window gets smaller
-    const deviceSize =
-      didScroll && prevDeviceSize
-        ? prevDeviceSize
-        : setDeviceSize(
-            windowSize?.width || window.innerWidth,
-            windowSize?.height || window.innerHeight,
-            dimensions,
-            gameSprite.props.size
-          );
-    canvas.width = deviceSize.deviceWidth;
-    canvas.height = deviceSize.deviceHeight;
+    if (!(didScroll && prevDeviceSize)) {
+      mutDevice.size = calculateDeviceSize(
+        windowSize?.width || window.innerWidth,
+        windowSize?.height || window.innerHeight,
+        dimensions,
+        gameSprite.props.size
+      );
+    }
+
+    canvas.width = mutDevice.size.deviceWidth;
+    canvas.height = mutDevice.size.deviceHeight;
 
     const defaultFont = gameSprite.props.defaultFont || DEFAULT_FONT;
 
     // also update render with new size
     const renderCanvasResult = drawCanvas(
       ctx,
-      deviceSize,
+      mutDevice.size,
       imageElements,
       defaultFont
     );
     scale = renderCanvasResult.scale;
-    render.ref = renderCanvasResult.render;
+
+    // Mutate render
+    mutRender.newFrame = renderCanvasResult.render.newFrame;
+    mutRender.startRenderSprite = renderCanvasResult.render.startRenderSprite;
+    mutRender.endRenderSprite = renderCanvasResult.render.endRenderSprite;
+    mutRender.renderTexture = renderCanvasResult.render.renderTexture;
 
     nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
       canvasOffsetLeft: canvas.offsetLeft,
-      width: deviceSize.width,
-      widthMargin: deviceSize.widthMargin,
+      width: mutDevice.size.width,
+      widthMargin: mutDevice.size.widthMargin,
       scale,
     });
 
     nativeSpriteUtils.gameYToPlatformY = getGameYToWebY({
       canvasOffsetTop: canvas.offsetTop,
-      height: deviceSize.height,
-      heightMargin: deviceSize.heightMargin,
+      height: mutDevice.size.height,
+      heightMargin: mutDevice.size.heightMargin,
       scale,
     });
 
@@ -247,23 +259,23 @@ export function renderCanvas<S>(
     const getX = clientXToGameX({
       canvasOffsetLeft: canvas.offsetLeft,
       scrollX: window.scrollX,
-      width: deviceSize.width,
-      widthMargin: deviceSize.widthMargin,
+      width: mutDevice.size.width,
+      widthMargin: mutDevice.size.widthMargin,
       scale,
     });
     const getY = clientYToGameY({
       canvasOffsetTop: canvas.offsetTop,
       scrollY: window.scrollY,
-      height: deviceSize.height,
-      heightMargin: deviceSize.heightMargin,
+      height: mutDevice.size.height,
+      heightMargin: mutDevice.size.heightMargin,
       scale,
     });
 
     const isPointerOutsideGame = (x: number, y: number) =>
-      x > deviceSize.width / 2 + deviceSize.widthMargin ||
-      x < -deviceSize.width / 2 - deviceSize.widthMargin ||
-      y > deviceSize.height / 2 + deviceSize.heightMargin ||
-      y < -deviceSize.height / 2 - deviceSize.heightMargin;
+      x > mutDevice.size.width / 2 + mutDevice.size.widthMargin ||
+      x < -mutDevice.size.width / 2 - mutDevice.size.widthMargin ||
+      y > mutDevice.size.height / 2 + mutDevice.size.heightMargin ||
+      y < -mutDevice.size.height / 2 - mutDevice.size.heightMargin;
 
     pointerDown = (e: PointerEvent | TouchEvent) => {
       if ("changedTouches" in e) {
@@ -348,7 +360,7 @@ export function renderCanvas<S>(
     document.addEventListener(pointerUpEv, pointerUp, false);
     document.addEventListener(pointerCancelEv, pointerCancel, false);
 
-    prevDeviceSize = deviceSize;
+    prevDeviceSize = mutDevice.size;
   }
 
   const audioElements: AssetMap<AudioData> = {};
@@ -388,25 +400,31 @@ export function renderCanvas<S>(
     cleanupImageFile: () => null,
   };
 
-  const domPlatform: ReplayPlatform<Inputs> = {
-    getGetDevice: deviceCreator(
-      audioContext,
-      calculateDeviceSize(
-        windowSize?.width || window.innerWidth,
-        windowSize?.height || window.innerHeight,
-        dimensions,
-        gameSprite.props.size
-      ),
-      assetUtils,
-      platformOptions?.storage || getStorage(),
-      platformOptions?.clipboard || getClipboard()
-    ),
+  const mutRender: PlatformRender = {
+    newFrame: () => null,
+    startRenderSprite: () => null,
+    endRenderSprite: () => null,
+    renderTexture: () => null,
   };
 
-  const render: {
-    ref: ((textures: SpriteTextures) => void) | null;
-  } = { ref: null };
+  const mutDevice = mutDeviceCreator(
+    audioContext,
+    calculateDeviceSize(
+      windowSize?.width || window.innerWidth,
+      windowSize?.height || window.innerHeight,
+      dimensions,
+      gameSprite.props.size
+    ),
+    assetUtils,
+    platformOptions?.storage || getStorage(),
+    platformOptions?.clipboard || getClipboard()
+  );
 
+  const domPlatform: ReplayPlatform<Inputs> = {
+    mutDevice,
+    getInputs,
+    render: mutRender,
+  };
   updateDeviceSize();
 
   let isCleanedUp = false;
@@ -432,7 +450,7 @@ export function renderCanvas<S>(
   document.addEventListener("keydown", onFirstInteraction, false);
   document.addEventListener(pointerDownEv, onFirstInteraction, false);
 
-  const { initTextures, getNextFrameTextures } = replayCore<S, Inputs>(
+  const { runNextFrame } = replayCore<S, Inputs>(
     domPlatform,
     {
       nativeSpriteMap,
@@ -443,12 +461,13 @@ export function renderCanvas<S>(
 
   let initTime: number | null = null;
 
-  function loop(textures: SpriteTextures) {
-    render.ref?.(textures);
-    window.requestAnimationFrame((time) => {
+  function loop() {
+    statsEnd?.();
+    window.requestAnimationFrame(function newFrame(time) {
       if (isCleanedUp) {
         return;
       }
+      statsBegin?.();
       if (initTime === null) {
         initTime = time - 1 / 60;
       }
@@ -457,16 +476,14 @@ export function renderCanvas<S>(
         totalPageNotVisibleTime += time - lastPageNotVisibleTime;
       }
       lastTimeValue = time;
-      loop(
-        getNextFrameTextures(
-          time - initTime - totalPageNotVisibleTime,
-          resetInputs
-        )
-      );
+
+      runNextFrame(time - initTime - totalPageNotVisibleTime, resetInputs);
+
+      loop();
     });
   }
 
-  loop(initTextures);
+  loop();
 
   /**
    * Unloads the game and removes all loops and event listeners
@@ -498,15 +515,14 @@ export function renderCanvas<S>(
   };
 }
 
-function deviceCreator(
+function mutDeviceCreator(
   audioContext: AudioContext,
-  defaultSize: DeviceSize,
+  size: DeviceSize,
   assetUtils: AssetUtils<AudioData, ImageFileData>,
-  storage: Device<{}>["storage"],
-  clipboard: Device<{}>["clipboard"]
-): ReplayPlatform<Inputs>["getGetDevice"] {
-  // called once
-  const initDevice: Omit<Device<Inputs>, "inputs" | "size" | "now"> = {
+  storage: Device["storage"],
+  clipboard: Device["clipboard"]
+): Device {
+  return {
     isTouchScreen: isTouchDevice(),
     log: console.log,
     random: Math.random,
@@ -526,20 +542,7 @@ function deviceCreator(
       },
     },
     clipboard,
-  };
-
-  return () => {
-    // called every frame
-    const device: Omit<Device<Inputs>, "inputs"> = {
-      ...initDevice,
-      size: getDeviceSize() || defaultSize,
-      now: () => new Date(),
-    };
-
-    // called individually by each Sprite to get inputs relative to position
-    return (getLocalCoords) => ({
-      ...device,
-      inputs: getInputs(getLocalCoords),
-    });
+    size,
+    now: () => new Date(),
   };
 }
