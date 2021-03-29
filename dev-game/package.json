@@ -9,6 +9,7 @@
     "build": "npm run build-web && npm run build-swift",
     "build-web": "webpack --config webpack.web.js",
     "build-swift": "webpack --config webpack.swift.js",
+    "build-android": "webpack --config webpack.android.js",
     "serve": "serve dist",
     "test": "jest",
     "test:watch": "jest --watch"
