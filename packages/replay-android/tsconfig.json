@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig",
+  "compilerOptions": {
+    "outDir": "dist"
+  },
+  "files": ["src/index.ts", "src/types.d.ts"]
+}

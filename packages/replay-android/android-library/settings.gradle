@@ -1,0 +1,2 @@
+include ':replay-android'
+rootProject.name = "Replay Android"
