@@ -214,7 +214,7 @@ export const MyWidgetWeb: NativeSpriteImplementation<
 You must import each Native Sprite implementation into its respective platform. See the `nativeSpriteMap` field in the [Web](web.md) platform.
 
 :::tip Important
-Since the [iOS](ios.md) platform uses a web view, you can also use the web native sprite with it.
+Since the [iOS](ios.md) and [Android](android.md) platforms use a web view, you can also use the web native sprite with them.
 :::
 
 

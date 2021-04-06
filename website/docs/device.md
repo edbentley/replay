@@ -35,7 +35,7 @@ Functions like `log` and `random` replace `console.log` and `Math.random`. Using
 
 A function which returns an object of the device's input state. **The value depends on the platform your game is running on**. See [Platforms](web.md) for the values available.
 
-Platforms share similar input object shapes. For example, both the web and iOS platforms have a `pointer` field (relative to the Sprite's position):
+Platforms share similar input object shapes. For example, both the web and mobile platforms have a `pointer` field (relative to the Sprite's position):
 
 ```js
 const hitX = inputs.pointer.x;

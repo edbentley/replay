@@ -16,5 +16,6 @@ It's already setup with:
 - Linting
 - Tests
 - Xcode project for deploying to iOS
+- Android Studio project for deploying to Android
 
 Requires `node` and `npm` are installed.
