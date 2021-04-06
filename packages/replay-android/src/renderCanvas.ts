@@ -1,7 +1,7 @@
 import { GameProps } from "@replay/core";
 import { CustomSprite } from "@replay/core/dist/sprite";
 import { renderCanvas, RenderCanvasOptions } from "@replay/web";
-import { AndroidInputs } from "./index";
+import { androidBridge, AndroidInputs } from "./index";
 
 declare const game: {
   Game: (props: GameProps) => CustomSprite<GameProps, unknown, AndroidInputs>;
@@ -9,55 +9,86 @@ declare const game: {
   options?: RenderCanvasOptions;
 };
 
-// fetch local file doesn't work in Android WebView
-window.fetch = function fetchXML(url: RequestInfo) {
-  return new Promise(function (resolve, reject) {
+// local file doesn't work using `fetch` in Android WebView
+function fileFetch(url: RequestInfo) {
+  return new Promise<Response>(function (resolve, reject) {
     const xhr = new XMLHttpRequest();
     xhr.onload = function () {
       resolve(new Response(xhr.response, { status: xhr.status }));
     };
     xhr.onerror = function () {
-      reject(new TypeError("Local request failed"));
+      reject(new TypeError(`Failed to load file: ${url.toString()}`));
     };
     xhr.open("GET", url as string);
     xhr.responseType = "arraybuffer";
     xhr.send(null);
   });
-};
+}
 
 export function run() {
   renderCanvas(game.Game(game.gameProps), game.options, {
-    storage: {
-      getItem(key) {
-        return Promise.resolve("");
-        // return swiftBridge<string | null>({
-        //   id: `__internalReplayStorageGetItem-${key}`,
-        //   message: `__internalReplayStorageGetItem-${key}`,
-        // });
+    fileFetch,
+    device: {
+      storage: {
+        getItem: async (key) => {
+          const result = await androidBridge<
+            { value: string | null } | { error: string }
+          >({
+            id: `__internalReplayStorageGetItem-${key}`,
+            message: key,
+          });
+          if ("error" in result) {
+            throw Error(result.error);
+          }
+          return result.value;
+        },
+        setItem: async (key, value) => {
+          if (value === null) {
+            const error = await androidBridge<void | string>({
+              id: `__internalReplayStorageRemoveItem-${key}`,
+              message: key,
+            });
+            if (typeof error === "string") {
+              throw Error(error);
+            }
+          }
+          const error = await androidBridge<void | string>({
+            id: `__internalReplayStorageSetItem-${key}`,
+            message: key,
+            message2: value,
+          });
+          if (typeof error === "string") {
+            throw Error(error);
+          }
+        },
       },
-      setItem(key, value) {
-        return Promise.resolve();
-        // if (value === null) {
-        //   return swiftBridge<void>({
-        //     id: `__internalReplayStorageRemoveItem-${key}`,
-        //     message: `__internalReplayStorageRemoveItem-${key}`,
-        //   });
-        // }
-        // return swiftBridge<void>({
-        //   id: `__internalReplayStorageSetItem-${key}`,
-        //   // We assume user's keys won't contain this separator
-        //   message: `__internalReplayStorageSetItem-${key}_____end_of_key______${value}`,
-        // });
+      clipboard: {
+        copy(text, onComplete) {
+          androidBridge<void>({
+            id: "__internalReplayClipboardCopy",
+            message: text,
+          }).then(() => {
+            onComplete();
+          });
+        },
       },
-    },
-    clipboard: {
-      copy(text, onComplete) {
-        // swiftBridge<void>({
-        //   id: "__internalReplayClipboardCopy",
-        //   message: `__internalReplayClipboardCopy${text}`,
-        // }).then(() => {
-        //   onComplete();
-        // });
+      alert: {
+        ok: (message, onResponse) => {
+          androidBridge<void>({
+            id: "__internalReplayAlertOk",
+            message,
+          }).then(() => {
+            onResponse();
+          });
+        },
+        okCancel: (message, onResponse) => {
+          androidBridge<boolean>({
+            id: "__internalReplayAlertOkCancel",
+            message,
+          }).then((wasOk) => {
+            onResponse(wasOk);
+          });
+        },
       },
     },
   });

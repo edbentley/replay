@@ -1,35 +1,96 @@
 package com.replay.android
 
-import androidx.appcompat.app.AppCompatActivity
+import android.app.AlertDialog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import androidx.appcompat.app.AppCompatActivity
 
 open class ReplayActivity : AppCompatActivity() {
+    private lateinit var webView: WebView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         this.supportActionBar?.hide()
 
-        val webView = WebView(this)
+        webView = WebView(this)
         webView.settings.javaScriptEnabled = true
         webView.settings.allowFileAccessFromFileURLs = true
         webView.settings.allowUniversalAccessFromFileURLs = true
+        webView.isHapticFeedbackEnabled = false
 
         webView.webChromeClient = object : WebChromeClient() {
 
             override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+                if (message.messageLevel() === ConsoleMessage.MessageLevel.ERROR) {
+                    Log.e(
+                        "Replay",
+                        "Error on line ${message.lineNumber()} of ${message.sourceId()}: ${message.message()}"
+                    )
+                    return true
+                }
                 Log.d("Replay", message.message())
                 return true
             }
         }
 
+        webView.addJavascriptInterface(WebAppInterface(this), "Android")
+
         setContentView(webView)
 
         webView.loadUrl("file:///android_asset/index.html");
+    }
+
+    open fun onJsCallback(
+        id: String,
+        message: String,
+        message2: String,
+        message3: String,
+        message4: String,
+        message5: String
+    ) {
+        // For overriding
+    }
+
+    fun jsBridge(messageId: String, jsArg: String) {
+        runOnUiThread {
+            webView.evaluateJavascript(
+                "window.__replayGlobalCallbacks__[`${messageId}`](${jsArg});",
+                null
+            )
+        }
+    }
+
+    fun showOkDialog(bridgeMessageId: String, message: String) {
+        val builder = AlertDialog.Builder(this)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("OK") { _, _ ->
+            jsBridge(bridgeMessageId, "")
+        }
+
+        val dialog: AlertDialog = builder.create()
+        dialog.show()
+    }
+
+    fun showOkCancelDialog(bridgeMessageId: String, message: String) {
+        val builder = AlertDialog.Builder(this)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("OK") { _, _ ->
+            jsBridge(bridgeMessageId, "true")
+        }
+
+        builder.setNegativeButton("Cancel") { _, _ ->
+            jsBridge(bridgeMessageId, "false")
+        }
+
+        val dialog: AlertDialog = builder.create()
+        dialog.show()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
