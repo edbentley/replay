@@ -1,9 +1,11 @@
 package com.replay.android
 
 import android.app.AlertDialog
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.WindowManager
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -16,6 +18,11 @@ open class ReplayActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         this.supportActionBar?.hide()
+
+        // Extend into notch area
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
 
         webView = WebView(this)
         webView.settings.javaScriptEnabled = true
