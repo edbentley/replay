@@ -28,6 +28,8 @@ open class ReplayActivity : AppCompatActivity() {
         webView.settings.javaScriptEnabled = true
         webView.settings.allowFileAccessFromFileURLs = true
         webView.settings.allowUniversalAccessFromFileURLs = true
+        webView.settings.domStorageEnabled = true
+        webView.settings.useWideViewPort = true
         webView.isHapticFeedbackEnabled = false
 
         webView.webChromeClient = object : WebChromeClient() {
@@ -72,28 +74,28 @@ open class ReplayActivity : AppCompatActivity() {
         }
     }
 
-    fun showOkDialog(bridgeMessageId: String, message: String) {
+    fun showOkDialog(message: String, callback: () -> Unit) {
         val builder = AlertDialog.Builder(this)
         builder.setMessage(message)
 
         builder.setPositiveButton("OK") { _, _ ->
-            jsBridge(bridgeMessageId, "")
+            callback()
         }
 
         val dialog: AlertDialog = builder.create()
         dialog.show()
     }
 
-    fun showOkCancelDialog(bridgeMessageId: String, message: String) {
+    fun showOkCancelDialog(message: String, callback: (wasOk: Boolean) -> Unit) {
         val builder = AlertDialog.Builder(this)
         builder.setMessage(message)
 
         builder.setPositiveButton("OK") { _, _ ->
-            jsBridge(bridgeMessageId, "true")
+            callback(true)
         }
 
         builder.setNegativeButton("Cancel") { _, _ ->
-            jsBridge(bridgeMessageId, "false")
+            callback(false)
         }
 
         val dialog: AlertDialog = builder.create()

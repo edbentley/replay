@@ -21,8 +21,10 @@ class WebAppInterface(private val replayContext: ReplayActivity) {
             id.startsWith("__internalReplayStorageGetItem") -> getItem(id, message)
             id.startsWith("__internalReplayStorageRemoveItem") -> removeItem(id, message)
             id.startsWith("__internalReplayStorageSetItem") -> setItem(id, message, message2)
-            id == "__internalReplayAlertOk" -> replayContext.showOkDialog(id, message)
-            id == "__internalReplayAlertOkCancel" -> replayContext.showOkCancelDialog(id, message)
+            id == "__internalReplayAlertOk" ->
+                replayContext.showOkDialog(message) { replayContext.jsBridge(id, "") }
+            id == "__internalReplayAlertOkCancel" ->
+                replayContext.showOkCancelDialog(message) { replayContext.jsBridge(id, if (it) { "true" } else { "false" }) }
             else -> {
                 replayContext.onJsCallback(id, message, message2, message3, message4, message5)
             }
