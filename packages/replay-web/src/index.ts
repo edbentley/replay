@@ -375,7 +375,7 @@ export function renderCanvas<S>(
     imageElements,
     loadAudioFile: (fileName) => {
       return getFileBuffer(audioContext, fileName)
-        .then((buffer) => ({ buffer }))
+        .then((buffer) => ({ buffer, volume: 1 }))
         .catch(noFileError("audio", fileName));
     },
     loadImageFile: (fileName) => {

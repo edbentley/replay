@@ -84,6 +84,10 @@ function getBenchmarkPlatform() {
       getPosition: () => 50,
       play: () => null,
       pause: () => null,
+      getDuration: () => 100,
+      getVolume: () => 1,
+      setVolume: () => null,
+      getStatus: () => "paused",
     }),
     assetUtils: {
       imageElements: {},

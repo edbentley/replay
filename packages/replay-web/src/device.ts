@@ -25,6 +25,7 @@ export type AudioData = {
     playTime: number; // seconds
     alreadyPlayedTime: number;
     sample: AudioBufferSourceNode;
+    gainNode: GainNode;
   };
 };
 
@@ -49,7 +50,7 @@ export function getAudio(
 
     return {
       getPosition: () => {
-        return getAudioPosition(audioContext, playState);
+        return getAudioPosition(audioContext, data.playState);
       },
       play: (fromPositionOrSettings) => {
         let fromPosition;
@@ -70,7 +71,10 @@ export function getAudio(
         const sampleSource = audioContext.createBufferSource();
         sampleSource.buffer = buffer;
         sampleSource.playbackRate.value = playbackRate;
-        sampleSource.connect(audioContext.destination);
+
+        const gainNode = audioContext.createGain();
+        sampleSource.connect(gainNode);
+        gainNode.connect(audioContext.destination);
 
         const alreadyPlayedTime =
           fromPosition ?? getAudioPosition(audioContext, playState);
@@ -103,6 +107,7 @@ export function getAudio(
             sample: sampleSource,
             alreadyPlayedTime,
             isPaused: false,
+            gainNode,
           };
         }
       },
@@ -114,6 +119,27 @@ export function getAudio(
             alreadyPlayedTime: getAudioPosition(audioContext, playState),
             isPaused: true,
           };
+        }
+      },
+      getStatus: () => {
+        if (data.playState && data.playState.isPaused === false) {
+          return "playing";
+        }
+        return "paused";
+      },
+      getDuration: () => {
+        return buffer.duration;
+      },
+      getVolume: () => {
+        if (data.playState) {
+          return data.playState.gainNode.gain.value;
+        }
+        return 1;
+      },
+      setVolume: (newVolume) => {
+        const playState = data.playState;
+        if (playState && newVolume >= 0 && newVolume <= 1) {
+          playState.gainNode.gain.value = newVolume;
         }
       },
     };
