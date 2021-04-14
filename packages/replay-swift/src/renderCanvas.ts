@@ -38,6 +38,7 @@ export function run() {
             if (typeof error === "string") {
               throw Error(error);
             }
+            return;
           }
           const error = await swiftBridge<void | string>({
             id: `__internalReplayStorageSetItem-${key}`,
