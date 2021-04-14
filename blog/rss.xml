@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+    <channel>
+        <title>Replay Blog</title>
+        <link>https://replay.js.org/blog</link>
+        <description>Replay Blog</description>
+        <lastBuildDate>Tue, 25 Aug 2020 00:00:00 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>https://github.com/jpmonette/feed</generator>
+        <item>
+            <title><![CDATA[Replay v0.5: JavaScriptCore is really slow]]></title>
+            <link>https://replay.js.org/blog/javascriptcore-is-really-slow</link>
+            <guid>javascriptcore-is-really-slow</guid>
+            <pubDate>Tue, 25 Aug 2020 00:00:00 GMT</pubDate>
+            <description><![CDATA[Before v0.5 of the Replay game engine released last week, Replay was using JavaScriptCore to render a game on iOS.]]></description>
+        </item>
+        <item>
+            <title><![CDATA[Initial Launch]]></title>
+            <link>https://replay.js.org/blog/launch</link>
+            <guid>launch</guid>
+            <pubDate>Sat, 02 May 2020 00:00:00 GMT</pubDate>
+            <description><![CDATA[Today I'm publishing Replay v0.1.0!]]></description>
+        </item>
+    </channel>
+</rss>
