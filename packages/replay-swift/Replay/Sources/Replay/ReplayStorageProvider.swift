@@ -1,22 +1,40 @@
 import Foundation
 
 class ReplayStorageProvider {
-    static func getItem(key: String) -> String? {
-        let defaults = UserDefaults.standard
-        
-        return defaults.string(forKey: key)
+    static func getItem(key: String) -> (String?, Error?) {
+        do {
+            let url = getFileUrl(key: key)
+            if (!FileManager.default.fileExists(atPath: url.path)) {
+                return (nil, nil)
+            }
+            let fileStr = try String(contentsOf: url)
+            return (fileStr, nil)
+        } catch {
+            return (nil, error)
+        }
     }
     
-    static func removeItem(key: String) {
-        let defaults = UserDefaults.standard
-        
-        defaults.removeObject(forKey: key)
+    static func removeItem(key: String) -> Error? {
+        do {
+            try FileManager.default.removeItem(at: getFileUrl(key: key))
+            return nil
+        } catch {
+            return error
+        }
     }
     
-    static func setItem(key: String, value: String) {
-        let defaults = UserDefaults.standard
-        
-        defaults.set(value, forKey: key)
+    static func setItem(key: String, value: String) -> Error? {
+        do {
+            try value.write(to: getFileUrl(key: key), atomically: true, encoding: .utf8)
+            return nil
+        } catch {
+            return error
+        }
+    }
+    
+    static func getFileUrl(key: String) -> URL {
+        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        return paths[0].appendingPathComponent(key)
     }
     
     static let messagePrefix = "Storage"
@@ -30,24 +48,30 @@ class ReplayStorageProvider {
         switch message {
         case let x where x.starts(with: getItemKey):
             let key = String(x.dropFirst(getItemKey.count))
-            let value = ReplayStorageProvider.getItem(key: key)
+            let (value, error) = ReplayStorageProvider.getItem(key: key)
             
             let messageId = "\(internalMessageKey)\(getItemKey)\(key)"
             
-            if let jsString = value {
-                webView.jsBridge(messageId: messageId, jsArg: "`\(jsString)`")
+            if let errorMessage = error?.localizedDescription {
+                webView.jsBridge(messageId: messageId, jsArg: "{ error: `\(errorMessage)` }")
+            } else if let jsString = value {
+                webView.jsBridge(messageId: messageId, jsArg: "{ value: `\(jsString)` }")
             } else {
-                webView.jsBridge(messageId: messageId, jsArg: "null")
+                webView.jsBridge(messageId: messageId, jsArg: "{ value: null }")
             }
             
         case let x where x.starts(with: removeItemKey):
             let key = String(x.dropFirst(removeItemKey.count))
             
-            ReplayStorageProvider.removeItem(key: key)
+            let error = ReplayStorageProvider.removeItem(key: key)
             
             let messageId = "\(internalMessageKey)\(removeItemKey)\(key)"
             
-            webView.jsBridge(messageId: messageId, jsArg: "")
+            if let errorMessage = error?.localizedDescription {
+                webView.jsBridge(messageId: messageId, jsArg: "`\(errorMessage)`")
+            } else {
+                webView.jsBridge(messageId: messageId, jsArg: "")
+            }
             
         case let x where x.starts(with: setItemKey):
             let keyValue = String(x.dropFirst(setItemKey.count))
@@ -55,11 +79,15 @@ class ReplayStorageProvider {
             let key = keyValue[0]
             let value = keyValue[1]
             
-            ReplayStorageProvider.setItem(key: key, value: value)
+            let error = ReplayStorageProvider.setItem(key: key, value: value)
             
             let messageId = "\(internalMessageKey)\(setItemKey)\(key)"
             
-            webView.jsBridge(messageId: messageId, jsArg: "")
+            if let errorMessage = error?.localizedDescription {
+                webView.jsBridge(messageId: messageId, jsArg: "`\(errorMessage)`")
+            } else {
+                webView.jsBridge(messageId: messageId, jsArg: "")
+            }
             
         default:
             break

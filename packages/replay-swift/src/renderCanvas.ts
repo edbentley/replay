@@ -17,24 +17,37 @@ export function run() {
   renderCanvas(game.Game(game.gameProps), game.options, {
     device: {
       storage: {
-        getItem(key) {
-          return swiftBridge<string | null>({
+        getItem: async (key) => {
+          const result = await swiftBridge<
+            { value: string | null } | { error: string }
+          >({
             id: `__internalReplayStorageGetItem-${key}`,
             message: `__internalReplayStorageGetItem-${key}`,
           });
+          if ("error" in result) {
+            throw Error(result.error);
+          }
+          return result.value;
         },
-        setItem(key, value) {
+        setItem: async (key, value) => {
           if (value === null) {
-            return swiftBridge<void>({
+            const error = await swiftBridge<void | string>({
               id: `__internalReplayStorageRemoveItem-${key}`,
               message: `__internalReplayStorageRemoveItem-${key}`,
             });
+            if (typeof error === "string") {
+              throw Error(error);
+            }
+            return;
           }
-          return swiftBridge<void>({
+          const error = await swiftBridge<void | string>({
             id: `__internalReplayStorageSetItem-${key}`,
             // We assume user's keys won't contain this separator
             message: `__internalReplayStorageSetItem-${key}_____end_of_key______${value}`,
           });
+          if (typeof error === "string") {
+            throw Error(error);
+          }
         },
       },
       clipboard: {
