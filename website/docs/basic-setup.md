@@ -57,8 +57,8 @@ const Game = makeSprite({
   },
 
   // This is run 60 times a second. Returns next frame's state.
-  loop({ state, device }) {
-    const { pointer } = device.inputs;
+  loop({ state, getInputs }) {
+    const { pointer } = getInputs();
     const { posX, posY } = state;
     let { targetX, targetY } = state;
 
