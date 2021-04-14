@@ -45,6 +45,8 @@ Object.defineProperty(window, "PointerEvent", {
   value: jest.fn().mockImplementation(() => ({})),
 });
 
+window.fetch = jest.fn();
+
 beforeEach(() => {
   // Clean up DOM
   document.body.childNodes.forEach((node) => document.body.removeChild(node));

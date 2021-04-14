@@ -51,6 +51,7 @@ export function run() {
             if (typeof error === "string") {
               throw Error(error);
             }
+            return;
           }
           const error = await androidBridge<void | string>({
             id: `__internalReplayStorageSetItem-${key}`,
@@ -78,7 +79,7 @@ export function run() {
             id: "__internalReplayAlertOk",
             message,
           }).then(() => {
-            onResponse();
+            onResponse?.();
           });
         },
         okCancel: (message, onResponse) => {

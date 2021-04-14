@@ -1,6 +1,7 @@
 dist/
 umd/
 swift/
+android/
 **/test/build/**
 node_modules
 packages/replay-swift/Replay
