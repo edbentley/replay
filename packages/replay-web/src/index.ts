@@ -80,8 +80,8 @@ export type RenderCanvasOptions = {
 };
 
 type PlatformOptions = {
-  storage?: Device["storage"];
-  clipboard?: Device["clipboard"];
+  device?: Partial<Device>;
+  fileFetch?: (fileName: string) => Promise<Response>;
 };
 
 /**
@@ -370,11 +370,13 @@ export function renderCanvas<S>(
     throw Error(`Failed to load ${fileType} file "${fileName}"`);
   };
 
+  const fileFetch = platformOptions?.fileFetch || fetch;
+
   const assetUtils: AssetUtils<AudioData, ImageFileData> = {
     audioElements,
     imageElements,
     loadAudioFile: (fileName) => {
-      return getFileBuffer(audioContext, fileName)
+      return getFileBuffer(audioContext, fileFetch(fileName))
         .then((buffer) => ({ buffer, volume: 1 }))
         .catch(noFileError("audio", fileName));
     },
@@ -416,8 +418,7 @@ export function renderCanvas<S>(
       gameSprite.props.size
     ),
     assetUtils,
-    platformOptions?.storage || getStorage(),
-    platformOptions?.clipboard || getClipboard()
+    platformOptions?.device || {}
   );
 
   const domPlatform: ReplayPlatform<Inputs> = {
@@ -519,8 +520,7 @@ function mutDeviceCreator(
   audioContext: AudioContext,
   size: DeviceSize,
   assetUtils: AssetUtils<AudioData, ImageFileData>,
-  storage: Device["storage"],
-  clipboard: Device["clipboard"]
+  platformOverrides: Partial<Device>
 ): Device {
   return {
     isTouchScreen: isTouchDevice(),
@@ -530,7 +530,7 @@ function mutDeviceCreator(
     audio: getAudio(audioContext, assetUtils.audioElements),
     assetUtils: assetUtils as AssetUtils<unknown, unknown>,
     network: getNetwork(),
-    storage,
+    storage: getStorage(),
     alert: {
       ok: (message, onResponse) => {
         alert(message);
@@ -541,8 +541,9 @@ function mutDeviceCreator(
         onResponse(wasOk);
       },
     },
-    clipboard,
+    clipboard: getClipboard(),
     size,
     now: () => new Date(),
+    ...platformOverrides,
   };
 }

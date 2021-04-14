@@ -1,9 +1,11 @@
 dist/
 umd/
 swift/
+android/
 **/test/build/**
 node_modules
 packages/replay-swift/Replay
+packages/replay-android/android-library
 packages/replay-text-input/ReplayTextInput
 dev-game/swift
 website/build

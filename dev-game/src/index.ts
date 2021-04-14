@@ -47,6 +47,7 @@ export const gameProps: GameProps = {
       width: 350,
       height: 500,
       maxWidthMargin: 50,
+      maxHeightMargin: 500,
     },
   },
   defaultFont: {

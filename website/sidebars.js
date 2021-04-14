@@ -13,7 +13,7 @@ module.exports = {
       "pure-sprites",
     ],
     Testing: ["test"],
-    Platforms: ["web", "ios"],
+    Platforms: ["web", "ios", "android"],
     "Native Sprites": ["native-sprites", "text-input"],
   },
 };

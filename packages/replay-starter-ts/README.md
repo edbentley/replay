@@ -4,6 +4,7 @@ Welcome to your game!
 
 ## Structure
 
+- `android`: Code specific to deploying to Android goes here, such as your Android Studio project.
 - `assets`: Assets like audio and images go here. Nested folders are not currently supported.
 - `src`: Where your game code and tests go.
 - `swift`: Code specific to deploying to iOS goes here, such as your Xcode project.
@@ -79,3 +80,10 @@ open swift/replay-starter-ts.xcodeproj/
 ```
 
 Assets like audio and images need to be dragged into your Xcode project.
+
+## Run on Android
+
+```bash
+npm run build-android
+# open /android in Android Studio and run project
+```

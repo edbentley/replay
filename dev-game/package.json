@@ -6,9 +6,10 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "webpack serve -d eval-cheap-module-source-map --config webpack.web.js --mode development --open",
-    "build": "npm run build-web && npm run build-swift",
+    "build": "npm run build-web && npm run build-swift && npm run build-android",
     "build-web": "webpack --config webpack.web.js",
     "build-swift": "webpack --config webpack.swift.js",
+    "build-android": "webpack --config webpack.android.js",
     "serve": "serve dist",
     "test": "jest",
     "test:watch": "jest --watch"

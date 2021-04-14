@@ -8,9 +8,9 @@ import { AssetMap } from "@replay/core/dist/device";
  */
 export async function getFileBuffer(
   audioContext: AudioContext,
-  fileName: string
+  file: Promise<Response>
 ) {
-  const response = await fetch(fileName);
+  const response = await file;
   const arrayBuffer = await response.arrayBuffer();
   const audioBuffer = await new Promise<AudioBuffer>((res, rej) => {
     audioContext.decodeAudioData(arrayBuffer, res, rej);

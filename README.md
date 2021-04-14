@@ -7,8 +7,7 @@ Its declarative API goes against the grain of typical game engines. It's small
 yet powerful, giving you total control on how your game runs. With a great
 testing library built in, Replay is ideal for writing bug-free games.
 
-Build your game once and deploy it for web or iOS (with more platforms like
-Android coming in the future).
+Build your game once and deploy it for web, iOS and Android.
 
 [Tutorial](https://replay.js.org/tutorial) ·
 [Docs](https://replay.js.org/docs/intro) · [Blog](https://replay.js.org/blog) ·

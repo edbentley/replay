@@ -27,8 +27,8 @@ const features = [
     title: <>Tooling</>,
     description: (
       <>
-        Build your game once using the latest and greatest frontend tools. Avoid
-        bugs with a built-in testing library, then deploy to web and iOS!
+        Build your game once using the latest frontend tools. Avoid bugs with a
+        built-in testing library, then deploy to web, iOS and Android!
       </>
     ),
   },
