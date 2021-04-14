@@ -76,9 +76,9 @@ cp -a ../replay/packages/replay-android/android-library/. .
 git checkout HEAD replay-android/.gitignore # keep JS build files
 git add .
 git commit -m "v0.x.0"
-git tag v0.x.0
+git tag 0.x.0 # note: no v
 git push
-git push origin v0.x.0
+git push origin 0.x.0
 
 # replay-starter-ts clone
 cd ../replay-starter-ts

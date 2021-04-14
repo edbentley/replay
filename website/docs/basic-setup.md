@@ -12,8 +12,8 @@ Create a file, copy this in and open it in a browser:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Load Replay through a CDN -->
-  <script src="https://unpkg.com/@replay/core@0.8.0/umd/replay-core.min.js"></script>
-  <script src="https://unpkg.com/@replay/web@0.8.0/umd/replay-web.min.js"></script>
+  <script src="https://unpkg.com/@replay/core@0.9.0/umd/replay-core.min.js"></script>
+  <script src="https://unpkg.com/@replay/web@0.9.0/umd/replay-web.min.js"></script>
   <title>Replay Game</title>
 </head>
 <body>

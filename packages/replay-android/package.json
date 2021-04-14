@@ -1,6 +1,6 @@
 {
   "name": "@replay/android",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "A cross-platform JS game engine inspired by React (Android package)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,12 +23,12 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "@replay/core": "~0.8.0",
-    "@replay/web": "~0.8.0"
+    "@replay/core": "~0.9.0",
+    "@replay/web": "~0.9.0"
   },
   "devDependencies": {
-    "@replay/core": "0.8.0",
-    "@replay/web": "0.8.0",
+    "@replay/core": "0.9.0",
+    "@replay/web": "0.9.0",
     "typescript": "^4.1.3",
     "webpack": "^5.20.1",
     "webpack-cli": "^4.5.0"
