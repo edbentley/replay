@@ -362,6 +362,8 @@ function handleSprites<P, I>(
         getLocalCoords
       );
     } else if (sprite.type === "native") {
+      addChildId(sprite.props.id);
+
       const { nativeSpriteMap, nativeSpriteUtils } = nativeSpriteSettings;
 
       const nativeSpriteImplementation = nativeSpriteMap[sprite.name];
