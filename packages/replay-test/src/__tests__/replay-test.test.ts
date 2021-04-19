@@ -5,8 +5,9 @@ import {
   makeNativeSprite,
   mask,
   Texture,
+  makeContext,
 } from "@replay/core";
-import { testSprite } from "../index";
+import { mockContext, testSprite } from "../index";
 
 test("getTextures, nextFrame", () => {
   const { getTextures, nextFrame } = testSprite(Game(gameProps), gameProps, {
@@ -676,6 +677,17 @@ test("shows error if file asset not loaded", async () => {
   ).not.toThrowError();
 });
 
+test("can mock context", () => {
+  const { log } = testSprite(TestContextSprite(gameProps), gameProps, {
+    contexts: [
+      mockContext(testContext1, { val: "test" }),
+      mockContext(testContext2, { result: "hello" }),
+    ],
+  });
+
+  expect(log).toBeCalledWith("Val: test, result: hello");
+});
+
 // --- Mock Game
 
 interface State {
@@ -885,7 +897,7 @@ const Text = makeSprite<{ text: string }, undefined, Inputs>({
 
 /// -- Nested Sprite test
 
-export const NestedSpriteGame = makeSprite<GameProps>({
+const NestedSpriteGame = makeSprite<GameProps>({
   render() {
     return [
       NestedFirstSprite({
@@ -927,7 +939,7 @@ const NestedSecondSprite = makeSprite({
 
 /// -- Mock Native Sprite test
 
-export const NativeSpriteGame = makeSprite<GameProps>({
+const NativeSpriteGame = makeSprite<GameProps>({
   render() {
     return [
       MyNativeSprite({
@@ -940,7 +952,7 @@ const MyNativeSprite = makeNativeSprite("MyNativeSprite");
 
 /// -- Loading files error Sprite test
 
-export const ImageErrorGame = makeSprite<GameProps>({
+const ImageErrorGame = makeSprite<GameProps>({
   render() {
     return [
       t.image({
@@ -952,7 +964,7 @@ export const ImageErrorGame = makeSprite<GameProps>({
   },
 });
 
-export const ImageErrorGame2 = makeSprite<GameProps>({
+const ImageErrorGame2 = makeSprite<GameProps>({
   init({ preloadFiles }) {
     // Loading file, but not waiting in render
     preloadFiles({ imageFileNames: ["player.png"] });
@@ -970,7 +982,7 @@ export const ImageErrorGame2 = makeSprite<GameProps>({
   },
 });
 
-export const AudioErrorGame = makeSprite<GameProps>({
+const AudioErrorGame = makeSprite<GameProps>({
   init({ device }) {
     device.audio("unknown.mp3").play();
     return undefined;
@@ -981,7 +993,7 @@ export const AudioErrorGame = makeSprite<GameProps>({
   },
 });
 
-export const AudioErrorGame2 = makeSprite<GameProps>({
+const AudioErrorGame2 = makeSprite<GameProps>({
   init({ device, preloadFiles }) {
     preloadFiles({ audioFileNames: ["shoot.wav"] });
     device.audio("shoot.wav").play();
@@ -989,6 +1001,20 @@ export const AudioErrorGame2 = makeSprite<GameProps>({
   },
 
   render() {
+    return [];
+  },
+});
+
+const testContext1 = makeContext<{ val: string }>();
+const testContext2 = makeContext<{ result: string }>();
+
+const TestContextSprite = makeSprite<{}>({
+  render({ getContext, device }) {
+    const { val } = getContext(testContext1);
+    const { result } = getContext(testContext2);
+
+    device.log(`Val: ${val}, result: ${result}`);
+
     return [];
   },
 });
