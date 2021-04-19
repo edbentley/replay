@@ -8,6 +8,7 @@ import {
 import { mask, MaskShape } from "../mask";
 import { Assets } from "../device";
 import { Texture } from "../t";
+import { makeContext } from "../context";
 
 export const gameProps: GameProps = {
   id: "Game" as const,
@@ -1114,3 +1115,62 @@ export const MyWidgetImplementation: NativeSpriteImplementation<
     widgetState.text = "";
   },
 };
+
+// -- Test Context
+
+export const TestContextGame = makeSprite<GameProps, { count: number }>({
+  init() {
+    return { count: 0 };
+  },
+
+  loop({ state }) {
+    return { count: state.count + 1 };
+  },
+
+  render({ state, updateState }) {
+    return [
+      countContext.Sprite({
+        context: {
+          count: state.count,
+          increaseCountBy10: () => {
+            updateState((prevState) => ({
+              ...prevState,
+              count: prevState.count + 10,
+            }));
+          },
+        },
+        sprites: [TestContextNestedSprite({ id: "Nested" })],
+      }),
+    ];
+  },
+});
+
+const countContext = makeContext<{
+  count: number;
+  increaseCountBy10: () => void;
+}>();
+
+const TestContextNestedSprite = makeSprite<{}, undefined, TestPlatformInputs>({
+  loop({ getInputs, getContext }) {
+    if (getInputs().buttonPressed.action) {
+      const backendContext = getContext(countContext);
+      backendContext.increaseCountBy10();
+    }
+    return undefined;
+  },
+
+  render({ getContext, device }) {
+    const backendContext = getContext(countContext);
+
+    device.log(`Count: ${backendContext.count}`);
+
+    return [];
+  },
+});
+
+export const TestContextErrorGame = makeSprite<GameProps>({
+  render() {
+    // No context passed in
+    return [TestContextNestedSprite({ id: "Nested" })];
+  },
+});
