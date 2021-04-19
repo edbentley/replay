@@ -1,3 +1,4 @@
+import { makeContext } from "../context";
 import { GameProps } from "../core";
 import { makePureSprite, makeSprite, Sprite } from "../sprite";
 import { t } from "../t";
@@ -174,6 +175,45 @@ export function runRemovedSprites(arg: SuiteArg) {
           radius: 4,
           color: "red",
           x: state.x,
+        }),
+      ];
+    },
+  });
+
+  runGame(Game, arg);
+}
+
+export function runContextSprite(arg: SuiteArg) {
+  const myContext1 = makeContext<{ value: string }>();
+  const myContext2 = makeContext<{ value: string }>();
+  const myContext3 = makeContext<{ value: string }>();
+  const myContext4 = makeContext<{ value: string }>();
+  const myContext5 = makeContext<{ value: string }>();
+
+  const Game = makeSprite<GameProps, undefined, Inputs>({
+    render() {
+      return [
+        myContext1.Sprite({ context: { value: "test" }, sprites: [] }),
+        myContext2.Sprite({ context: { value: "test" }, sprites: [] }),
+        myContext3.Sprite({
+          context: {
+            value: "test",
+          },
+          sprites: [Sprite({ id: "Sprite" })],
+        }),
+        myContext4.Sprite({ context: { value: "test" }, sprites: [] }),
+        myContext5.Sprite({ context: { value: "test" }, sprites: [] }),
+      ];
+    },
+  });
+
+  const Sprite = makeSprite<{}>({
+    render({ getContext }) {
+      const { value } = getContext(myContext3);
+      return [
+        t.text({
+          text: value,
+          color: "red",
         }),
       ];
     },
