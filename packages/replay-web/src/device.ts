@@ -113,6 +113,7 @@ export function getAudio(
       },
       pause: () => {
         if (playState && !playState.isPaused) {
+          playState.sample.onended = null;
           playState.sample.stop();
           data.playState = {
             ...playState,
