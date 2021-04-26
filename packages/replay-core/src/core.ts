@@ -7,9 +7,11 @@ import {
   NativeSpriteUtils,
   PureSprite,
   PureCustomSprite,
+  Context,
 } from "./sprite";
 import { Device, DeviceSize, preloadFiles, cleanupFiles } from "./device";
 import { SpriteBaseProps, getDefaultProps, mutateBaseProps } from "./props";
+import { ContextValue } from "./context";
 
 /**
  * The props type a game should take.
@@ -117,7 +119,8 @@ export function replayCore<S, I>(
     mutDevice,
     () => getInputsPlatform(globalToGameCoords),
     0,
-    gameSprite.props.id
+    gameSprite.props.id,
+    []
   );
   const gameSize = gameSizeArg || gameSprite.props.size;
 
@@ -137,7 +140,8 @@ export function replayCore<S, I>(
     0,
     gameSprite.props.id,
     nativeSpriteSettings,
-    platform.render
+    platform.render,
+    []
   );
 
   const emptyRender: PlatformRender = {
@@ -180,7 +184,8 @@ export function replayCore<S, I>(
           extrapolateFactor,
           gameSprite.props.id,
           nativeSpriteSettings,
-          platformRender
+          platformRender,
+          []
         );
         // reset inputs after each update
         resetInputs();
@@ -208,12 +213,11 @@ function traverseCustomSpriteContainer<P, I>(
   extrapolateFactor: number,
   parentGlobalId: string,
   nativeSpriteSettings: NativeSpriteSettings,
-  platformRender: PlatformRender
+  platformRender: PlatformRender,
+  contextValues: ContextValue[]
 ) {
   const { baseProps } = customSpriteContainer;
   mutateBaseProps(baseProps, spriteProps);
-
-  const { nativeSpriteMap, nativeSpriteUtils } = nativeSpriteSettings;
 
   const getLocalCoords = (globalCoords: { x: number; y: number }) => {
     const parentCoords = getParentCoords(globalCoords);
@@ -235,7 +239,8 @@ function traverseCustomSpriteContainer<P, I>(
     getInputs,
     initCreation,
     renderMethod,
-    extrapolateFactor
+    extrapolateFactor,
+    contextValues
   );
 
   const unusedChildIds = new Set(customSpriteContainer.prevChildIds);
@@ -251,19 +256,115 @@ function traverseCustomSpriteContainer<P, I>(
   // Reuse original array to reduce GC
   const childIds = customSpriteContainer.prevChildIds;
   let childIdIndex = 0;
+  const addChildId = (id: string) => {
+    childIds[childIdIndex] = id;
+    childIdIndex++;
+    unusedChildIds.delete(id);
+  };
 
   platformRender.startRenderSprite(baseProps);
 
+  handleSprites(
+    sprites,
+    customSpriteContainer,
+    mutDevice,
+    getInputsPlatform,
+    renderMethod,
+    extrapolateFactor,
+    parentGlobalId,
+    nativeSpriteSettings,
+    platformRender,
+    contextValues,
+    addChildId,
+    getInputs,
+    getLocalCoords
+  );
+
+  platformRender.endRenderSprite();
+
+  nativeSpriteSettings.nativeSpriteUtils.didResize = false;
+  if (childIdIndex < childIds.length) {
+    childIds.length = childIdIndex;
+  }
+
+  unusedChildIds.forEach((id) => {
+    // Run cleanup of Sprites on all the removed child containers
+    const recursiveSpriteCleanup = (
+      containers: { [id: string]: SpriteContainer<unknown, unknown, I> },
+      containerParentGlobalId: string
+    ) => {
+      Object.entries(containers).forEach(([containerId, container]) => {
+        if (container.type === "custom") {
+          const containerGlobalId = `${containerParentGlobalId}--${containerId}`;
+
+          recursiveSpriteCleanup(container.childContainers, containerGlobalId);
+
+          if (container.loadFilesPromise) {
+            container.loadFilesPromise.then(() => {
+              // Only cleanup once the initial load is complete
+              cleanupFiles(containerGlobalId, mutDevice.assetUtils);
+            });
+          }
+        } else if (container.type === "native") {
+          container.cleanup({
+            state: container.state,
+            parentGlobalId,
+          });
+        }
+      });
+    };
+
+    const spriteContainer = customSpriteContainer.childContainers[id];
+    recursiveSpriteCleanup({ [id]: spriteContainer }, parentGlobalId);
+
+    delete customSpriteContainer.childContainers[id];
+  });
+}
+
+function handleSprites<P, I>(
+  sprites: Sprite[],
+  customSpriteContainer: CustomSpriteContainer<P, unknown, I>,
+  mutDevice: Device,
+  getInputsPlatform: ReplayPlatform<I>["getInputs"],
+  renderMethod: RenderMethod,
+  extrapolateFactor: number,
+  parentGlobalId: string,
+  nativeSpriteSettings: NativeSpriteSettings,
+  platformRender: PlatformRender,
+  contextValues: ContextValue[],
+  addChildId: (id: string) => void,
+  getInputs: () => I,
+  getLocalCoords: (globalCoords: {
+    x: number;
+    y: number;
+  }) => { x: number; y: number }
+) {
   for (let i = 0; i < sprites.length; i++) {
     const sprite = sprites[i];
 
     if (!sprite) continue;
 
-    if (sprite.type === "native") {
-      childIds[childIdIndex] = sprite.props.id;
-      childIdIndex++;
+    if (sprite.type === "context") {
+      handleSprites(
+        sprite.sprites,
+        customSpriteContainer,
+        mutDevice,
+        getInputsPlatform,
+        renderMethod,
+        extrapolateFactor,
+        parentGlobalId,
+        nativeSpriteSettings,
+        platformRender,
+        // Adding the context value to nested sprites here
+        [...contextValues, sprite],
+        addChildId,
+        getInputs,
+        getLocalCoords
+      );
+    } else if (sprite.type === "native") {
+      addChildId(sprite.props.id);
 
-      unusedChildIds.delete(sprite.props.id);
+      const { nativeSpriteMap, nativeSpriteUtils } = nativeSpriteSettings;
 
       const nativeSpriteImplementation = nativeSpriteMap[sprite.name];
       if (!nativeSpriteImplementation) {
@@ -305,9 +406,7 @@ function traverseCustomSpriteContainer<P, I>(
         utils: nativeSpriteUtils,
       });
     } else if (sprite.type === "pure") {
-      childIds[childIdIndex] = sprite.props.id;
-      childIdIndex++;
-      unusedChildIds.delete(sprite.props.id);
+      addChildId(sprite.props.id);
 
       let lookupPureCustomSpriteContainer =
         customSpriteContainer.childContainers[sprite.props.id];
@@ -328,14 +427,12 @@ function traverseCustomSpriteContainer<P, I>(
         lookupPureCustomSpriteContainer,
         sprite.props,
         mutDevice.size,
-        nativeSpriteUtils.didResize, // conveniently get this from native utils
+        nativeSpriteSettings.nativeSpriteUtils.didResize, // conveniently get this from native utils
         renderMethod,
         platformRender
       );
     } else if (sprite.type === "custom") {
-      childIds[childIdIndex] = sprite.props.id;
-      childIdIndex++;
-      unusedChildIds.delete(sprite.props.id);
+      addChildId(sprite.props.id);
 
       let spriteInitCreation = false;
 
@@ -354,7 +451,8 @@ function traverseCustomSpriteContainer<P, I>(
           mutDevice,
           getInputs,
           customSpriteContainer.prevTime,
-          globalId
+          globalId,
+          contextValues
         );
         customSpriteContainer.childContainers[
           sprite.props.id
@@ -372,52 +470,13 @@ function traverseCustomSpriteContainer<P, I>(
         extrapolateFactor,
         globalId,
         nativeSpriteSettings,
-        platformRender
+        platformRender,
+        contextValues
       );
     } else {
       platformRender.renderTexture(sprite);
     }
   }
-
-  platformRender.endRenderSprite();
-
-  nativeSpriteUtils.didResize = false;
-  if (childIdIndex < childIds.length) {
-    childIds.length = childIdIndex;
-  }
-
-  unusedChildIds.forEach((id) => {
-    // Run cleanup of Sprites on all the removed child containers
-    const recursiveSpriteCleanup = (
-      containers: { [id: string]: SpriteContainer<unknown, unknown, I> },
-      containerParentGlobalId: string
-    ) => {
-      Object.entries(containers).forEach(([containerId, container]) => {
-        if (container.type === "custom") {
-          const containerGlobalId = `${containerParentGlobalId}--${containerId}`;
-
-          recursiveSpriteCleanup(container.childContainers, containerGlobalId);
-
-          if (container.loadFilesPromise) {
-            container.loadFilesPromise.then(() => {
-              // Only cleanup once the initial load is complete
-              cleanupFiles(containerGlobalId, mutDevice.assetUtils);
-            });
-          }
-        } else if (container.type === "native") {
-          container.cleanup({
-            state: container.state,
-            parentGlobalId,
-          });
-        }
-      });
-    };
-
-    const spriteContainer = customSpriteContainer.childContainers[id];
-    recursiveSpriteCleanup({ [id]: spriteContainer }, parentGlobalId);
-
-    delete customSpriteContainer.childContainers[id];
-  });
 }
 
 /**
@@ -434,7 +493,8 @@ function createCustomSpriteContainer<P, S, I>(
   mutDevice: Device,
   getInitInputs: () => I,
   currentTime: number,
-  globalId: string
+  globalId: string,
+  contextValues: ContextValue[]
 ): CustomSpriteContainer<P, S, I> {
   const { spriteObj, props: initProps } = sprite;
 
@@ -460,6 +520,13 @@ function createCustomSpriteContainer<P, S, I>(
       device: mutDevice,
       getInputs: getInitInputs,
       updateState,
+      getContext: <T>(context: Context<T>): T => {
+        const contextValue = contextValues.find((c) => c.context === context);
+        if (!contextValue) {
+          throw Error("No context setup");
+        }
+        return contextValue.value as T;
+      },
       preloadFiles: async (assets) => {
         const loadFiles = preloadFiles(globalId, assets, mutDevice.assetUtils);
         if (spriteContainer) {
@@ -508,10 +575,19 @@ function createCustomSpriteContainer<P, S, I>(
       getInputs,
       initCreation,
       renderMethod,
-      extrapolateFactor
+      extrapolateFactor,
+      contextValues
     ) {
       // Run any updateState from callbacks in other sprites last render
       runUpdateStateCallbacks();
+
+      const getContext = <T>(context: Context<T>): T => {
+        const contextValue = contextValues.find((c) => c.context === context);
+        if (!contextValue) {
+          throw Error("No context setup");
+        }
+        return contextValue.value as T;
+      };
 
       // Do not run loop on init creation of sprites
       if (!initCreation && spriteObj.loop) {
@@ -522,6 +598,7 @@ function createCustomSpriteContainer<P, S, I>(
           getInputs,
           updateState,
           getState,
+          getContext,
         });
       }
 
@@ -543,6 +620,7 @@ function createCustomSpriteContainer<P, S, I>(
         getInputs,
         updateState,
         getState,
+        getContext,
         extrapolateFactor,
       });
 
@@ -614,7 +692,8 @@ type CustomSpriteContainer<P, S, I> = {
     getInputs: () => I,
     initCreation: boolean,
     renderMethod: RenderMethod,
-    time: number
+    time: number,
+    contextValues: ContextValue[]
   ) => Sprite[];
 };
 
@@ -748,7 +827,6 @@ function traversePureCustomSpriteContainerNotCached<P>(
     if (sprite.type === "pure") {
       childIds[childIdIndex] = sprite.props.id;
       childIdIndex++;
-
       unusedChildIds.delete(sprite.props.id);
 
       let lookupPureCustomSpriteContainer =

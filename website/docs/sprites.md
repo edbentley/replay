@@ -222,6 +222,7 @@ All Sprite methods have the following parameters:
    updateState((prevState) => ({ ...prevState, playerX: 0 }));
    ```
 - `getState`: A function which returns the current state of the Sprite for asynchronous callbacks. If you call this before `init` returns it will throw an error.
+- `getContext`: Access a parent Sprite's context value, see [Context](context.md).
 
 ### `init`
 

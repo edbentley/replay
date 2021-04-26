@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { GameProps, Texture, Device, DeviceSize } from "@replay/core";
+import { GameProps, Texture, Device, DeviceSize, Context } from "@replay/core";
 import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
-import { CustomSprite, makeSprite } from "@replay/core/dist/sprite";
+import { CustomSprite, makeSprite, Sprite } from "@replay/core/dist/sprite";
 import { TextTexture } from "@replay/core/dist/t";
 import { getParentCoordsForSprite } from "./coords";
 import { NativeSpriteMock } from "./nativeSpriteMock";
@@ -15,7 +15,7 @@ interface Timer {
   isPaused: boolean;
 }
 
-interface Options<I> {
+export interface TestSpriteOptions<I> {
   initInputs?: I;
   /**
    * A mapping function to adjust an input's (x, y) coordinate to its relative
@@ -31,6 +31,10 @@ interface Options<I> {
     },
     inputs: I
   ) => I;
+  /**
+   * Array of tuples of context and the value to inject
+   */
+  contexts?: ContextTuple<any>[];
   /**
    * Same as setRandomNumbers but for init call
    */
@@ -129,10 +133,11 @@ interface TestSpriteUtils<I> {
 export function testSprite<P, S, I>(
   sprite: CustomSprite<P, S, I>,
   gameProps: GameProps,
-  options: Options<I> = {}
+  options: TestSpriteOptions<I> = {}
 ): TestSpriteUtils<I> {
   const {
     initInputs = {} as I,
+    contexts: contextTuples = [],
     initRandom = [0.5],
     size = {
       width:
@@ -461,7 +466,15 @@ export function testSprite<P, S, I>(
 
   const TestContainer = makeSprite<GameProps>({
     render() {
-      return [sprite];
+      return [
+        // Wrap sprite with contexts passed in options
+        contextTuples.reduce<Sprite>((prevSprite, [context, contextValue]) => {
+          return context.Sprite({
+            context: contextValue,
+            sprites: [prevSprite],
+          });
+        }, sprite),
+      ];
     },
   });
 
@@ -654,4 +667,13 @@ function removeStackLines(stack: string, removeLineContaining: string) {
   if (jumpToFrameLine === -1) return stack;
 
   return [stackLines[0], ...stackLines.slice(jumpToFrameLine + 1)].join("\n");
+}
+
+type ContextTuple<T> = [Context<T>, T];
+
+export function mockContext<T>(
+  context: Context<T>,
+  mockValue: T
+): ContextTuple<T> {
+  return [context, mockValue];
 }

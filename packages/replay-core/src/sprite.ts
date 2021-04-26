@@ -11,6 +11,8 @@ export type Sprite<P = any, S = any, I = any> =
   | CustomSprite<P, S, I>
   | PureCustomSprite<P>
   | NativeSprite<P>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | ContextSprite<any>
   | Texture
   | null;
 
@@ -81,6 +83,7 @@ interface SpriteObjInit<P, S, I> {
      * memory when the Sprite is unmounted.
      */
     preloadFiles: (assets: Assets) => Promise<void>;
+    getContext: <T>(context: Context<T>) => T;
   }) => S;
 }
 
@@ -95,6 +98,7 @@ interface SpriteObjBase<P, S, I> {
     getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
+    getContext: <T>(context: Context<T>) => T;
   }) => S;
 
   // -- render methods
@@ -110,6 +114,7 @@ interface SpriteObjBase<P, S, I> {
     getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
+    getContext: <T>(context: Context<T>) => T;
     /**
      * A value between 0 and 1 representing how much time has passed before
      * the next frame is scheduled.
@@ -129,6 +134,7 @@ interface SpriteObjBase<P, S, I> {
     getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
+    getContext: <T>(context: Context<T>) => T;
   }) => Sprite[];
 
   /**
@@ -142,6 +148,7 @@ interface SpriteObjBase<P, S, I> {
     getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
+    getContext: <T>(context: Context<T>) => T;
   }) => Sprite[];
 
   /**
@@ -157,6 +164,7 @@ interface SpriteObjBase<P, S, I> {
     getInputs: () => I;
     updateState: (update: (state: S) => S) => void;
     getState: () => S;
+    getContext: <T>(context: Context<T>) => T;
   }) => Sprite[];
 }
 
@@ -286,3 +294,14 @@ export function makeNativeSprite<P extends { id: string }>(
     props,
   });
 }
+
+export type ContextSprite<T> = {
+  type: "context";
+  context: Context<T>;
+  value: T;
+  sprites: Sprite[];
+};
+
+export type Context<T> = {
+  Sprite: (args: { context: T; sprites: Sprite[] }) => ContextSprite<T>;
+};

@@ -24,6 +24,8 @@ import {
   GetStateGame,
   AssetsGame,
   DuplicateSpriteIdsGame,
+  TestContextGame,
+  TestContextErrorGame,
 } from "./utils";
 import { NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture } from "../t";
@@ -1162,4 +1164,50 @@ test("supports Native Sprites", () => {
   mutInputs.ref.x = 100;
   nextFrame();
   expect(widgetState.text).toBe("");
+});
+
+test("supports context", () => {
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
+  const resetInputs = jest.fn();
+
+  const { runNextFrame } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    TestContextGame(gameProps)
+  );
+
+  let time = 1;
+  const nextFrame = () => {
+    time += 1000 * (1 / 60);
+    runNextFrame(time, resetInputs);
+  };
+
+  expect(mutableTestDevice.log).toBeCalledTimes(1);
+  expect(mutableTestDevice.log).toHaveBeenCalledWith("Count: 0");
+
+  nextFrame();
+  expect(mutableTestDevice.log).toBeCalledTimes(2);
+  expect(mutableTestDevice.log).toHaveBeenCalledWith("Count: 1");
+
+  mutInputs.ref.buttonPressed.action = true;
+
+  // increaseCountBy10 is called this frame
+  nextFrame();
+  expect(mutableTestDevice.log).toBeCalledTimes(3);
+  expect(mutableTestDevice.log).toHaveBeenCalledWith("Count: 2");
+
+  mutInputs.ref.buttonPressed.action = false;
+
+  // so result is seen this frame
+  nextFrame();
+  expect(mutableTestDevice.log).toBeCalledTimes(4);
+  expect(mutableTestDevice.log).toHaveBeenCalledWith("Count: 13");
+});
+
+test("context will throw error if not passed in", () => {
+  const { platform } = getTestPlatform();
+
+  expect(() =>
+    replayCore(platform, nativeSpriteSettings, TestContextErrorGame(gameProps))
+  ).toThrowError("No context setup");
 });

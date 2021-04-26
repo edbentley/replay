@@ -10,6 +10,7 @@ module.exports = {
       "top-level-game",
       "thinking-in-replay",
       "mask",
+      "context",
       "pure-sprites",
     ],
     Testing: ["test"],

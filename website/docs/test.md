@@ -19,6 +19,7 @@ The `@replay/test` package is useful for writing tests in Jest for your Replay g
 - `options`: (Optional) An object with the following properties:
   - `initInputs`: (Optional) The inputs `getInputs` returns. Match with the platforms you're targeting.
   - `mapInputCoordinates`: (Optional) A mapping function to adjust an input's (x, y) coordinate to its relative value within a Sprite. The [Web package](web.md) exports this for pointer values.
+  - `contexts`: (Optional) An array of mock context values to inject using `mockContext`.
   - `initRandom`: (Optional) An array of numbers that `random()` will call, starting from index 0 and looping if it reaches the end. Allows for predictable randomness.
   - `size`: (Optional) Set the size parameter passed into Sprites.
   - `initStore`: (Optional) Set the init store for local storage.
@@ -183,6 +184,21 @@ A mock clipboard object.
 
 ```js
 expect(clipboard.copy).toBeCalledWith("ABCDEFG", expect.any(Function));
+```
+
+## `mockContext(context, mockValue)`
+
+Mock a [Context](context.md) value, to be passed into `options.contexts` of `testSprite`.
+
+```js
+import { mockContext, testSprite } from "@replay/test";
+
+testSprite(MyGame(gameProps), gameProps, {
+  contexts: [
+    mockContext(myContext1, { val: "hello" }),
+    mockContext(myContext2, { example: 100 }),
+  ],
+});
 ```
 
 ## Example
