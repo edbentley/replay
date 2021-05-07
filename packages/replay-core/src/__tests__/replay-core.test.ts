@@ -26,6 +26,7 @@ import {
   DuplicateSpriteIdsGame,
   TestContextGame,
   TestContextErrorGame,
+  DuplicatePureSpriteIdsGame,
 } from "./utils";
 import { NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture } from "../t";
@@ -1063,14 +1064,24 @@ test("Sprite unmounted before it loads", async () => {
 test("throws error on duplicate Sprites", () => {
   const { platform } = getTestPlatform();
 
-  const { runNextFrame } = replayCore(
-    platform,
-    nativeSpriteSettings,
-    DuplicateSpriteIdsGame(gameProps)
-  );
+  expect(() => {
+    replayCore(
+      platform,
+      nativeSpriteSettings,
+      DuplicateSpriteIdsGame(gameProps)
+    );
+  }).toThrowError("Duplicate Sprite id TestSprite");
+});
+
+test("throws error on duplicate Pure Sprites", () => {
+  const { platform } = getTestPlatform();
 
   expect(() => {
-    runNextFrame(1000 / 60, jest.fn());
+    replayCore(
+      platform,
+      nativeSpriteSettings,
+      DuplicatePureSpriteIdsGame(gameProps)
+    );
   }).toThrowError("Duplicate Sprite id TestSprite");
 });
 

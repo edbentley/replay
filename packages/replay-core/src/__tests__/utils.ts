@@ -969,6 +969,48 @@ export const DuplicateSpriteIdsGame = makeSprite<GameProps>({
   },
 });
 
+export const DuplicatePureSpriteIdsGame = makeSprite<GameProps>({
+  render() {
+    return [
+      PureSprite({
+        id: "TestSprite",
+      }),
+    ];
+  },
+});
+
+const PureSprite = makePureSprite({
+  shouldRerender() {
+    return false;
+  },
+
+  render() {
+    return [
+      PureSpriteNested({
+        id: "TestSprite",
+      }),
+      PureSpriteNested({
+        id: "TestSprite",
+      }),
+    ];
+  },
+});
+
+const PureSpriteNested = makePureSprite({
+  shouldRerender() {
+    return false;
+  },
+
+  render() {
+    return [
+      t.circle({
+        radius: 5,
+        color: "red",
+      }),
+    ];
+  },
+});
+
 /// -- Test Pure Sprites
 
 export const PureSpriteGame = makeSprite<

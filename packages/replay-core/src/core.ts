@@ -243,15 +243,7 @@ function traverseCustomSpriteContainer<P, I>(
     contextValues
   );
 
-  const unusedChildIds = new Set(customSpriteContainer.prevChildIds);
-
-  if (unusedChildIds.size < customSpriteContainer.prevChildIds.length) {
-    const duplicate = customSpriteContainer.prevChildIds.find(
-      (item, index) =>
-        customSpriteContainer.prevChildIds.indexOf(item) !== index
-    );
-    throw Error(`Duplicate Sprite id ${duplicate}`);
-  }
+  const unusedChildIds = customSpriteContainer.prevChildIdsSet;
 
   // Reuse original array to reduce GC
   const childIds = customSpriteContainer.prevChildIds;
@@ -319,6 +311,15 @@ function traverseCustomSpriteContainer<P, I>(
 
     delete customSpriteContainer.childContainers[id];
   });
+
+  customSpriteContainer.prevChildIdsSet = new Set(childIds);
+
+  if (customSpriteContainer.prevChildIdsSet.size < childIds.length) {
+    const duplicate = childIds.find(
+      (item, index) => childIds.indexOf(item) !== index
+    );
+    throw Error(`Duplicate Sprite id ${duplicate}`);
+  }
 }
 
 function handleSprites<P, I>(
@@ -567,6 +568,7 @@ function createCustomSpriteContainer<P, S, I>(
     baseProps: getDefaultProps(initProps),
     childContainers: {},
     prevChildIds: [],
+    prevChildIdsSet: new Set(),
     prevTime: currentTime,
     currentLag: 0,
     loadFilesPromise,
@@ -684,6 +686,7 @@ type CustomSpriteContainer<P, S, I> = {
   // stored for memory pooling
   baseProps: SpriteBaseProps;
   prevChildIds: string[];
+  prevChildIdsSet: Set<string>;
   prevTime: number;
   currentLag: number;
   loadFilesPromise: null | Promise<void>;
@@ -703,6 +706,7 @@ type PureCustomSpriteContainer<P> = {
     [id: string]: PureCustomSpriteContainer<unknown>;
   };
   prevChildIds: string[];
+  prevChildIdsSet: Set<string>;
   baseProps: SpriteBaseProps;
   cache?: PureSpriteCache;
   prevProps?: P;
@@ -729,6 +733,7 @@ function createPureCustomSpriteContainer<P>(
     type: "pure",
     childContainers: {},
     prevChildIds: [],
+    prevChildIdsSet: new Set(),
     baseProps: getDefaultProps(sprite.props),
     getSprites(props, size, didResize, renderMethod) {
       if (
@@ -808,7 +813,7 @@ function traversePureCustomSpriteContainerNotCached<P>(
 ): PureSpriteCache {
   const { baseProps } = pureSpriteContainer;
 
-  const unusedChildIds = new Set(pureSpriteContainer.prevChildIds);
+  const unusedChildIds = pureSpriteContainer.prevChildIdsSet;
 
   // Mutate original to reduce GC
   const childIds = pureSpriteContainer.prevChildIds;
@@ -881,6 +886,15 @@ function traversePureCustomSpriteContainerNotCached<P>(
 
   if (childIdIndex < childIds.length) {
     childIds.length = childIdIndex;
+  }
+
+  pureSpriteContainer.prevChildIdsSet = new Set(childIds);
+
+  if (pureSpriteContainer.prevChildIdsSet.size < childIds.length) {
+    const duplicate = childIds.find(
+      (item, index) => childIds.indexOf(item) !== index
+    );
+    throw Error(`Duplicate Sprite id ${duplicate}`);
   }
 
   return cache;
