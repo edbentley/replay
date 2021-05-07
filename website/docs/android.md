@@ -18,7 +18,7 @@ class MainActivity : ReplayActivity() {
 }
 ```
 
-An assets folder also [needs to be created](https://code2care.org/2015/create-assets-folder-in-android-studio) for your project. See [Replay Starter](starter.md) for an example setup.
+An assets folder also [needs to be created](https://code2care.org/2015/create-assets-folder-in-android-studio) for your project. See [Replay Starter](starter.md) for an example setup. You can optionally add an `index.html` here to override the [default file](https://github.com/edbentley/replay/blob/master/packages/replay-android/android-library/replay-android/src/main/assets/index.html).
 
 ### `ReplayActivity()`
 
