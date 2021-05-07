@@ -17,30 +17,33 @@ export function drawCanvas(
     deviceWidth,
     deviceHeight,
   }: DeviceSize,
+  devicePixelRatio: number,
   imageElements: AssetMap<ImageFileData>,
   defaultFont: TextureFont
 ): { scale: number; render: PlatformRender } {
   // Init setting up device size
   ctx.save();
-  const scale = Math.min(deviceWidth / width, deviceHeight / height);
+
+  // Scale to pixel ratio for sharper graphics
+  const deviceWidthPx = deviceWidth * devicePixelRatio;
+  const deviceHeightPx = deviceHeight * devicePixelRatio;
+
   const fullWidth = width + widthMargin * 2;
   const fullHeight = height + heightMargin * 2;
-  ctx.translate(deviceWidth / 2, deviceHeight / 2);
+  ctx.translate(deviceWidthPx / 2, deviceHeightPx / 2);
+
+  const scale = deviceWidthPx / fullWidth;
   ctx.scale(scale, scale);
 
   const drawUtilsCtx = drawUtils(ctx);
 
   return {
-    scale,
+    // Scale of device points (not pixels) to game
+    scale: deviceWidth / fullWidth,
     render: {
       newFrame: () => {
         // First clear rect
-        ctx.clearRect(
-          -deviceWidth / 2 / scale,
-          -deviceHeight / 2 / scale,
-          deviceWidth / scale,
-          deviceHeight / scale
-        );
+        ctx.clearRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
         // Set white background for game
         ctx.fillStyle = "white";
         ctx.fillRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
