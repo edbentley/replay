@@ -939,6 +939,39 @@ const NestedAssetsSprite = makeSprite<{
   },
 });
 
+export const AssetsUnmountRemountGame = makeSprite<
+  GameProps,
+  undefined,
+  TestPlatformInputs
+>({
+  render({ getInputs }) {
+    const show = getInputs().buttonPressed.show;
+
+    if (show) {
+      return [
+        AssetsPlaySprite({
+          id: "PlaySprite",
+        }),
+      ];
+    }
+    return [];
+  },
+});
+
+const AssetsPlaySprite = makeSprite<{}>({
+  init({ preloadFiles, device }) {
+    device.log("init");
+    preloadFiles({ audioFileNames: ["game.mp3"] }).then(() => {
+      device.audio("game.mp3").play();
+    });
+    return undefined;
+  },
+
+  render() {
+    return [];
+  },
+});
+
 /// -- Test getState
 
 export const GetStateGame = makeSprite<GameProps, undefined>({

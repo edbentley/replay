@@ -27,6 +27,7 @@ import {
   TestContextGame,
   TestContextErrorGame,
   DuplicatePureSpriteIdsGame,
+  AssetsUnmountRemountGame,
 } from "./utils";
 import { NativeSpriteUtils } from "../sprite";
 import { TextTexture, CircleTexture } from "../t";
@@ -956,14 +957,14 @@ test("can preload and clear file assets", async () => {
 
   expect(mutableTestDevice.assetUtils.audioElements).toEqual({
     "game.mp3": {
-      globalSpriteIds: new Set(["Game"]),
+      globalSpriteIds: ["Game"],
       // Loading Promise
       data: expect.not.stringMatching("audioData"),
     },
   });
   expect(mutableTestDevice.assetUtils.imageElements).toEqual({
     "game.png": {
-      globalSpriteIds: new Set(["Game"]),
+      globalSpriteIds: ["Game"],
       // Loading Promise
       data: expect.not.stringMatching("imageData"),
     },
@@ -974,13 +975,13 @@ test("can preload and clear file assets", async () => {
 
   expect(mutableTestDevice.assetUtils.audioElements).toEqual({
     "game.mp3": {
-      globalSpriteIds: new Set(["Game"]),
+      globalSpriteIds: ["Game"],
       data: "audioData",
     },
   });
   expect(mutableTestDevice.assetUtils.imageElements).toEqual({
     "game.png": {
-      globalSpriteIds: new Set(["Game"]),
+      globalSpriteIds: ["Game"],
       data: "imageData",
     },
   });
@@ -1001,14 +1002,11 @@ test("can preload and clear file assets", async () => {
 
   expect(mutableTestDevice.assetUtils.imageElements).toEqual({
     "game.png": {
-      globalSpriteIds: new Set(["Game"]),
+      globalSpriteIds: ["Game"],
       data: "imageData",
     },
     "a.png": {
-      globalSpriteIds: new Set([
-        "Game--Sprite1",
-        "Game--Sprite1--NestedSprite",
-      ]),
+      globalSpriteIds: ["Game--Sprite1", "Game--Sprite1--NestedSprite"],
       data: "imageData",
     },
   });
@@ -1059,6 +1057,63 @@ test("Sprite unmounted before it loads", async () => {
 
   // Image not in memory
   expect("a.png" in mutableTestDevice.assetUtils.imageElements).toBe(false);
+
+  // Was cleaned up
+  expect(mutableTestDevice.assetUtils.cleanupImageFile).toHaveBeenCalledTimes(
+    1
+  );
+});
+
+test("Sprite unmounted and remounted before it loads", async () => {
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
+  const resetInputs = jest.fn();
+
+  const { runNextFrame } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    AssetsUnmountRemountGame(gameProps)
+  );
+
+  let time = 1;
+  const nextFrame = () => {
+    time += 1000 * (1 / 60);
+    runNextFrame(time, resetInputs);
+  };
+
+  nextFrame();
+
+  // Sprites have started loading
+  expect(mutableTestDevice.assetUtils.loadAudioFile).toHaveBeenCalledTimes(1);
+
+  expect(mutableTestDevice.log).toBeCalledTimes(1);
+  expect(mutableTestDevice.log).toHaveBeenCalledWith("init");
+
+  // Unmount Sprites before they finish loading
+  mutInputs.ref.buttonPressed.show = false;
+  nextFrame();
+
+  // No cleanup yet
+  expect(mutableTestDevice.assetUtils.cleanupAudioFile).toHaveBeenCalledTimes(
+    0
+  );
+
+  // Remount Sprites before they finish loading
+  mutInputs.ref.buttonPressed.show = true;
+  nextFrame();
+
+  expect(mutableTestDevice.log).toBeCalledTimes(2);
+  expect(mutableTestDevice.log).toHaveBeenLastCalledWith("init");
+
+  // Wait for promises to load
+  await waitFrame();
+
+  // Still in memory
+  expect("game.mp3" in mutableTestDevice.assetUtils.audioElements).toBe(true);
+
+  // Still no cleanup
+  expect(mutableTestDevice.assetUtils.cleanupAudioFile).toHaveBeenCalledTimes(
+    0
+  );
 });
 
 test("throws error on duplicate Sprites", () => {

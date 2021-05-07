@@ -161,9 +161,9 @@ export type AssetMap<T> = Record<
   string,
   {
     /**
-     * Which Sprites are using this asset
+     * Which Sprites are using this asset. Duplicate IDs indicate a Sprite was unmounted and remounted
      */
-    globalSpriteIds: Set<string>;
+    globalSpriteIds: string[];
     /**
      * A promise indicates it's still loading
      */
@@ -211,7 +211,7 @@ function preloadFileType<T>(
   return fileNames.map((fileName) => {
     if (elements[fileName]) {
       // Already preloaded
-      elements[fileName].globalSpriteIds.add(globalSpriteId);
+      elements[fileName].globalSpriteIds.push(globalSpriteId);
 
       const { data } = elements[fileName];
       if ("then" in data) {
@@ -225,7 +225,7 @@ function preloadFileType<T>(
       elements[fileName].data = data;
     });
     elements[fileName] = {
-      globalSpriteIds: new Set([globalSpriteId]),
+      globalSpriteIds: [globalSpriteId],
       data: dataPromise,
     };
     return dataPromise;
@@ -255,13 +255,16 @@ function cleanupFileType<T>(
 ) {
   for (const fileName in elements) {
     const { globalSpriteIds } = elements[fileName];
-    if (globalSpriteIds.has(globalSpriteId)) {
-      if (globalSpriteIds.size === 1) {
+
+    const index = globalSpriteIds.indexOf(globalSpriteId);
+
+    if (index !== -1) {
+      if (globalSpriteIds.length === 1) {
         // Clean up from memory
         cleanupFile(fileName);
         delete elements[fileName];
       } else {
-        elements[fileName].globalSpriteIds.delete(globalSpriteId);
+        elements[fileName].globalSpriteIds.splice(index, 1);
       }
     }
   }
