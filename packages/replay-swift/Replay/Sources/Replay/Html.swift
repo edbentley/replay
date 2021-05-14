@@ -1,11 +1,14 @@
 import Foundation
 
-func getReplayRenderCanvasHtmlString(renderCanvasJsString: String, gameJsString : String) -> String {
+func getReplayRenderCanvasHtmlString(renderCanvasJsString: String, gameJsString: String, userStyles: String) -> String {
     let htmlPath = Bundle.module.path(forResource: "index", ofType: ".html")!
     var htmlString = try! String(
         contentsOfFile: htmlPath,
         encoding: String.Encoding.utf8
     )
+    
+    htmlString = htmlString.replacingOccurrences(of: "__user_styles__", with: userStyles)
+    
     let linesInHtmlBeforeGameJs = htmlString
         .components(separatedBy: "\n")
         .firstIndex(where: { $0.contains("__gameJsString__") }) ?? 0

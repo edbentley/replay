@@ -24,6 +24,7 @@ beforeAll(() => {
     const renderTexture = drawCanvas(
       ctx,
       deviceSize,
+      1,
       {},
       { family: "Courier", size: 12 }
     ).render.renderTexture;

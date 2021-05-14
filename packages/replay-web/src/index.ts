@@ -219,8 +219,11 @@ export function renderCanvas<S>(
       );
     }
 
-    canvas.width = mutDevice.size.deviceWidth;
-    canvas.height = mutDevice.size.deviceHeight;
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    canvas.width = mutDevice.size.deviceWidth * devicePixelRatio;
+    canvas.height = mutDevice.size.deviceHeight * devicePixelRatio;
+    canvas.style.width = `${mutDevice.size.deviceWidth}px`;
+    canvas.style.height = `${mutDevice.size.deviceHeight}px`;
 
     const defaultFont = gameSprite.props.defaultFont || DEFAULT_FONT;
 
@@ -228,6 +231,7 @@ export function renderCanvas<S>(
     const renderCanvasResult = drawCanvas(
       ctx,
       mutDevice.size,
+      devicePixelRatio,
       imageElements,
       defaultFont
     );

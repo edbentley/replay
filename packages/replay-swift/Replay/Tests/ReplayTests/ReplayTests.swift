@@ -40,6 +40,7 @@ final class ReplayTests: XCTestCase {
         
         webView = ReplayWebViewManager(
             customGameJsString: gameJsString,
+            userStyles: "",
             onLogCallback: onLogCallback,
             onJsCallback: { (message) in
                 if (message == "Hello!") {

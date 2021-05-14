@@ -34,6 +34,7 @@ Your image and audio assets also need to be added to your Xcode project. See [Re
 #### Parameters
 
 - `hideStatusBar`: (Optional) A boolean to set if the status bar is hidden or not. Default `true`.
+- `userStyles`: (Optional) CSS code which will be injected into the web view. Useful for defining custom fonts.
 - `onJsCallback`: (Optional) A callback for messages sent from your game. See [Bridge](#bridge).
 
 #### Methods
