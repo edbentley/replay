@@ -474,5 +474,95 @@ test("Can mask with circle, rectangle and line", () => {
   expect(canvasToImage(canvas)).toMatchImageSnapshot();
 });
 
+test("Can draw gradients", () => {
+  render([
+    t.text({
+      x: -70,
+      font: { family: "Arial", size: 10 },
+      color: "blue",
+      gradient: {
+        type: "linear",
+        path: [
+          [-10, 10],
+          [10, -10],
+        ],
+        colors: [
+          { offset: 0, color: "red" },
+          { offset: 1, color: "rgba(0, 0, 0, 0)" },
+        ],
+      },
+      text: "Hello",
+    }),
+    t.circle({
+      x: -20,
+      y: 0,
+      radius: 10,
+      color: "red",
+      gradient: {
+        type: "linear",
+        path: [
+          [30, 0],
+          [-30, 0],
+        ],
+        colors: [
+          { offset: 0.5, color: "purple" },
+          { offset: 1, color: "#ff0000" },
+        ],
+      },
+    }),
+    t.rectangle({
+      x: 20,
+      y: 0,
+      width: 10,
+      height: 10,
+      color: "red",
+      gradient: {
+        type: "linear",
+        path: [
+          [-5, 0],
+          [5, 0],
+        ],
+        colors: [
+          { offset: 0, color: "black" },
+          { offset: 0.5, color: "white" },
+          { offset: 1, color: "black" },
+        ],
+      },
+    }),
+    t.line({
+      x: 70,
+      path: [
+        [-10, -10],
+        [10, -10],
+        [0, 10],
+      ],
+      gradient: {
+        type: "linear",
+        path: [
+          [-10, 0],
+          [10, 0],
+        ],
+        colors: [
+          { offset: 0, color: "red" },
+          { offset: 1, color: "blue" },
+        ],
+      },
+      fillGradient: {
+        type: "linear",
+        path: [
+          [0, -10],
+          [0, 10],
+        ],
+        colors: [
+          { offset: 0, color: "purple" },
+          { offset: 1, color: "orange" },
+        ],
+      },
+    }),
+  ]);
+
+  expect(canvasToImage(canvas)).toMatchImageSnapshot();
+});
+
 // images should be tested in replay-web.test.ts as it involves asset loading
 // logic

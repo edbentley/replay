@@ -41,6 +41,24 @@ export type TextureFont = {
   align?: "left" | "center" | "right" | "start" | "end";
 };
 
+export type Gradient = {
+  type: "linear";
+  /**
+   * A tuple of start and end `[x, y]` coordinates to draw the gradient line
+   */
+  path: [[number, number], [number, number]];
+  colors: {
+    /**
+     * A CSS colour (e.g. `#ff0000`, `rgba(0, 0, 0, 0)`, `green`)
+     */
+    color: string;
+    /**
+     * Distance of `color` along gradient line, must be between 0 - 1
+     */
+    offset: number;
+  }[];
+};
+
 /**
  * `t` is a util which contains functions to create every type of Texture.
  */
@@ -52,9 +70,10 @@ export const t = {
     font?: TextureFont;
     text: string;
     /**
-     * An RGB hex value (e.g. `#ff0000`) or CSS Level 1 keyword (e.g. `green`)
+     * A CSS colour (e.g. `#ff0000`, `rgba(0, 0, 0, 0)`, `green`)
      */
     color: string;
+    gradient?: Gradient;
     opacity?: number;
     scaleX?: number;
     scaleY?: number;
@@ -74,15 +93,17 @@ export const t = {
         font: props.font,
         text: props.text,
         color: props.color,
+        gradient: props.gradient,
       },
     };
   },
   circle: (props: {
     radius: number;
     /**
-     * An RGB hex value (e.g. `#ff0000`) or CSS Level 1 keyword (e.g. `green`)
+     * A CSS colour (e.g. `#ff0000`, `rgba(0, 0, 0, 0)`, `green`)
      */
     color: string;
+    gradient?: Gradient;
     opacity?: number;
     scaleX?: number;
     scaleY?: number;
@@ -101,6 +122,7 @@ export const t = {
         ...getDefaultProps(props),
         radius: props.radius,
         color: props.color,
+        gradient: props.gradient,
       },
     };
   },
@@ -108,9 +130,10 @@ export const t = {
     width: number;
     height: number;
     /**
-     * An RGB hex value (e.g. `#ff0000`) or CSS Level 1 keyword (e.g. `green`)
+     * A CSS colour (e.g. `#ff0000`, `rgba(0, 0, 0, 0)`, `green`)
      */
     color: string;
+    gradient?: Gradient;
     opacity?: number;
     scaleX?: number;
     scaleY?: number;
@@ -130,15 +153,17 @@ export const t = {
         width: props.width,
         height: props.height,
         color: props.color,
+        gradient: props.gradient,
       },
     };
   },
   line: (props: {
     /**
-     * An RGB hex value (e.g. `#ff0000`) or CSS Level 1 keyword (e.g. `green`)
-     * of the stroke colour. Default no stroke.
+     * A CSS colour (e.g. `#ff0000`, `rgba(0, 0, 0, 0)`, `green`) of the stroke
+     * colour. Default no stroke.
      */
     color?: string;
+    gradient?: Gradient;
     opacity?: number;
     scaleX?: number;
     scaleY?: number;
@@ -156,10 +181,11 @@ export const t = {
      */
     path: [number, number][];
     /**
-     * An RGB hex value (e.g. `#ff0000`) or CSS Level 1 keyword (e.g. `green`)
-     * to fill in the shape of the path with a colour. Default no fill.
+     * A CSS colour (e.g. `#ff0000`, `rgba(0, 0, 0, 0)`, `green`) to fill in the
+     * shape of the path with a colour. Default no fill.
      */
     fillColor?: string;
+    fillGradient?: Gradient;
     /**
      * The shape of the line ends. `"square"` adds a box sticking out with half
      * the line thickness.
@@ -181,6 +207,8 @@ export const t = {
         thickness: props.thickness ?? 1,
         lineCap: props.lineCap || "butt",
         path: props.path,
+        gradient: props.gradient,
+        fillGradient: props.fillGradient,
       },
     };
   },
@@ -272,6 +300,7 @@ type TextProps = BaseProps & {
   font?: TextureFont;
   text: string;
   color: string;
+  gradient?: Gradient;
 };
 export interface TextTexture {
   type: "text";
@@ -282,6 +311,7 @@ export interface TextTexture {
 type CircleProps = BaseProps & {
   radius: number;
   color: string;
+  gradient?: Gradient;
 };
 export interface CircleTexture {
   type: "circle";
@@ -293,6 +323,7 @@ type RectangleProps = BaseProps & {
   width: number;
   height: number;
   color: string;
+  gradient?: Gradient;
 };
 export interface RectangleTexture {
   type: "rectangle";
@@ -306,6 +337,8 @@ type LineProps = BaseProps & {
   path: [number, number][];
   fillColor?: string;
   lineCap: "butt" | "round" | "square";
+  gradient?: Gradient;
+  fillGradient?: Gradient;
 };
 export interface LineTexture {
   type: "line";

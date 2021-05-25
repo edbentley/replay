@@ -4,6 +4,7 @@ import { MaskShape } from "@replay/core/dist/mask";
 import { AssetMap } from "@replay/core/dist/device";
 import { PlatformRender } from "@replay/core/dist/core";
 import { ImageFileData } from "./device";
+import { Gradient } from "@replay/core/dist/t";
 
 export type WebRender = PlatformRender;
 
@@ -87,16 +88,26 @@ function drawTexture(
   switch (texture.type) {
     case "text":
       const fontDetails = { ...defaultFont, ...texture.props.font };
-      drawUtilsCtx.text(fontDetails, texture.props.text, texture.props.color);
+      drawUtilsCtx.text(
+        fontDetails,
+        texture.props.text,
+        texture.props.color,
+        texture.props.gradient
+      );
       return 0;
     case "circle":
-      drawUtilsCtx.circle(texture.props.radius, texture.props.color);
+      drawUtilsCtx.circle(
+        texture.props.radius,
+        texture.props.color,
+        texture.props.gradient
+      );
       return 0;
     case "rectangle":
       drawUtilsCtx.rectangle(
         texture.props.width,
         texture.props.height,
-        texture.props.color
+        texture.props.color,
+        texture.props.gradient
       );
       return 0;
     case "line":
@@ -105,6 +116,8 @@ function drawTexture(
         texture.props.thickness,
         texture.props.color,
         texture.props.fillColor,
+        texture.props.gradient,
+        texture.props.fillGradient,
         texture.props.lineCap
       );
       return 0;
@@ -127,6 +140,21 @@ function drawTexture(
       return 0;
   }
 }
+
+const generateGradient = (
+  ctx: CanvasRenderingContext2D,
+  gradient: Gradient
+): CanvasGradient => {
+  const [[x1, y1], [x2, y2]] = gradient.path;
+
+  const canvasGradient = ctx.createLinearGradient(x1, y1, x2, y2);
+
+  gradient.colors.forEach(({ offset, color }) => {
+    canvasGradient.addColorStop(offset, color);
+  });
+
+  return canvasGradient;
+};
 
 const getImage = (imageElements: AssetMap<ImageFileData>, fileName: string) => {
   const imageElement = imageElements[fileName];
@@ -224,23 +252,25 @@ function applyMask(ctx: CanvasRenderingContext2D, mask: MaskShape): 0 {
 
 const drawUtils = (ctx: CanvasRenderingContext2D) => ({
   globalAlphaStack: [1],
-  circle(radius: number, fillStyle: string) {
+  circle(radius: number, color: string, gradient?: Gradient) {
     ctx.beginPath();
     ctx.arc(0, 0, Math.round(radius), 0, Math.PI * 2);
-    ctx.fillStyle = fillStyle;
+    ctx.fillStyle = gradient ? generateGradient(ctx, gradient) : color;
     ctx.fill();
     ctx.closePath();
   },
-  rectangle(width: number, height: number, fillStyle: string) {
-    ctx.fillStyle = fillStyle;
+  rectangle(width: number, height: number, color: string, gradient?: Gradient) {
+    ctx.fillStyle = gradient ? generateGradient(ctx, gradient) : color;
     ctx.fillRect(-width / 2, -height / 2, width, height);
     ctx.closePath();
   },
   line(
     path: [number, number][],
     lineWidth: number,
-    strokeStyle: string | undefined,
-    fillStyle: string | undefined,
+    strokeColor: string | undefined,
+    fillColor: string | undefined,
+    strokeGradient: Gradient | undefined,
+    fillGradient: Gradient | undefined,
     lineCap: "butt" | "round" | "square"
   ) {
     if (path.length < 2) {
@@ -254,18 +284,26 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
       ctx.lineTo(x, -y);
     });
 
-    if (fillStyle) {
-      ctx.fillStyle = fillStyle;
+    if (fillGradient) {
+      ctx.fillStyle = generateGradient(ctx, fillGradient);
+      ctx.fill();
+    } else if (fillColor) {
+      ctx.fillStyle = fillColor;
       ctx.fill();
     }
-    if (strokeStyle) {
-      ctx.strokeStyle = strokeStyle;
+    if (strokeGradient) {
+      ctx.strokeStyle = generateGradient(ctx, strokeGradient);
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = lineCap;
+      ctx.stroke();
+    } else if (strokeColor) {
+      ctx.strokeStyle = strokeColor;
       ctx.lineWidth = lineWidth;
       ctx.lineCap = lineCap;
       ctx.stroke();
     }
   },
-  text(font: TextureFont, text: string, fillStyle: string) {
+  text(font: TextureFont, text: string, color: string, gradient?: Gradient) {
     const { size, weight = "normal", style = "normal", family } = font;
     const fontString = `${style} ${weight} ${size ? `${size}px` : ""} ${
       family ? `${family}` : ""
@@ -273,7 +311,7 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
     ctx.font = fontString;
     ctx.textBaseline = font.baseline || "middle";
     ctx.textAlign = font.align || "center";
-    ctx.fillStyle = fillStyle;
+    ctx.fillStyle = gradient ? generateGradient(ctx, gradient) : color;
     ctx.fillText(text, 0, 0);
   },
   image(image: HTMLImageElement, width: number, height: number) {
