@@ -25,7 +25,8 @@ t.circle({
 #### Props
 
 - `radius`: Radius of the circle in game coordinates.
-- `color`: An RGB hex value (e.g. `#ff0000`) or [CSS Level 1 keyword](https://developer.mozilla.org/docs/Web/CSS/color_value) (e.g. `green`).
+- `color`: A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`).
+- `gradient`: (Optional) Override the `color` prop with a [gradient](#gradient).
 
 ## Rectangle
 
@@ -43,7 +44,8 @@ t.rectangle({
 
 - `width`: Width of the rectangle in game coordinates.
 - `height`: Height of the rectangle in game coordinates.
-- `color`: An RGB hex value (e.g. `#ff0000`) or [CSS Level 1 keyword](https://developer.mozilla.org/docs/Web/CSS/color_value) (e.g. `green`).
+- `color`: A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`).
+- `gradient`: (Optional) Override the `color` prop with a [gradient](#gradient).
 
 ## Line
 
@@ -63,10 +65,12 @@ t.line({
 
 #### Props
 
-> Make sure one of `color` or `fillColor` is set, otherwise nothing will be drawn!
+> Make sure one of `color`, `gradient`, `fillColor` or `fillGradient` is set, otherwise nothing will be drawn!
 
-- `color`: (Optional) An RGB hex value (e.g. `#ff0000`) or [CSS Level 1 keyword](https://developer.mozilla.org/docs/Web/CSS/color_value) (e.g. `green`) of the stroke colour. Default no stroke.
-- `fillColor`: (Optional) An RGB hex value (e.g. `#ff0000`) or [CSS Level 1 keyword](https://developer.mozilla.org/docs/Web/CSS/color_value) (e.g. `green`) to fill in the shape of the path with a colour. Default no fill.
+- `color`: (Optional) A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`) of the stroke colour. Default no stroke.
+- `gradient`: (Optional) Override the `color` prop with a [gradient](#gradient).
+- `fillColor`: (Optional) A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`) to fill in the shape of the path with a colour. Default no fill.
+- `fillGradient`: (Optional) Override the `fillColor` prop with a [gradient](#gradient).
 - `path`: An array of `[x, y]` coordinates to draw the line.
 - `thickness`: (Optional) Line thickness. Default `1`.
 - `lineCap`: (Optional) The shape of the line ends. Can be one of:
@@ -88,7 +92,8 @@ t.text({
 #### Props
 
 - `text`: A string to display.
-- `color`: An RGB hex value (e.g. `#ff0000`) or [CSS Level 1 keyword](https://developer.mozilla.org/docs/Web/CSS/color_value) (e.g. `green`).
+- `color`: A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`).
+- `gradient`: (Optional) Override the `color` prop with a [gradient](#gradient).
 - `font`: (Optional) Set the font family, size, etc. If any properties are not provided, will cascade from the game's default font (see [Top-Level Game](top-level-game.md)).
   - `family`: (Optional) Font family, e.g. `"Helvetica"`
   - `size`: (Optional) Font size, e.g. `20`
@@ -142,3 +147,35 @@ t.spriteSheet({
 - `height`: Scale the displayed tile to this height in game coordinates.
 
 <img src="/img/sprite-sheet-index.png" width="50%" />
+
+## Gradient
+
+A colour gradient effect can be achieved through the `gradient` prop. Pass in an object with the following fields:
+
+- `type`: Must be `"linear"`.
+- `path`: A tuple of start and end `[x, y]` coordinates to draw the gradient line.
+- `colors`: An array of objects with fields:
+  - `color`: A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`).
+  - `offset`: Distance of `color` along gradient line, must be between 0 - 1.
+
+#### Example
+
+```js
+t.rectangle({
+  width: 10,
+  height: 10,
+  color: "white",
+  gradient: {
+    type: "linear",
+    path: [
+      [-5, 0],
+      [5, 0],
+    ],
+    colors: [
+      { offset: 0, color: "black" },
+      { offset: 0.5, color: "white" },
+      { offset: 1, color: "black" },
+    ],
+  },
+}),
+```
