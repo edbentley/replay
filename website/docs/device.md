@@ -186,10 +186,20 @@ mySound.getDuration();
 
 #### `setVolume`
 
-Set the volume of the sound. 1 is maximum (default), 0 is muted. Resets when sound finishes playing.
+Set the volume of the sound. Resets when sound finishes playing. Argument can be a number (1 is maximum (default), 0 is muted) or an object with the following fields:
+
+- `type`: `"linear"` or `"exponential"`.
+- `fadeTo`: Volume to fade to. Must be between 0 - 1.
+- `fadeTime`: Total fade time in seconds, starts immediately after calling.
 
 ```js
 mySound.setVolume(0);
+
+mySound.setVolume({
+  type: "linear",
+  fadeTo: 0,
+  fadeTime: 0.5,
+});
 ```
 
 #### `getVolume`

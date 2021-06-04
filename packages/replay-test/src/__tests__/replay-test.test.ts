@@ -413,7 +413,7 @@ test("audio additional features", async () => {
   /*
     getStatus: () => "paused" | "playing";
     getVolume: () => number;
-    setVolume: (volume: number) => void;
+    setVolume: (volume: Volume) => void;
     getDuration: () => number;
   */
 

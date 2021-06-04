@@ -73,7 +73,7 @@ export interface Device {
     pause: () => void;
     getStatus: () => "paused" | "playing";
     getVolume: () => number;
-    setVolume: (volume: number) => void;
+    setVolume: (volume: Volume) => void;
     getDuration: () => number;
   };
 
@@ -121,6 +121,20 @@ export interface Device {
     copy: (text: string, onComplete: (error?: Error) => void) => void;
   };
 }
+
+export type Volume =
+  | number
+  | {
+      type: "linear" | "exponential";
+      /**
+       * Volume to fade to. Must be between 0 - 1.
+       */
+      fadeTo: number;
+      /**
+       * Total fade time in seconds, starts immediately after calling.
+       */
+      fadeTime: number;
+    };
 
 /**
  * Width and height values and margins in game coordinates.
