@@ -139,8 +139,27 @@ export function getAudio(
       },
       setVolume: (newVolume) => {
         const playState = data.playState;
-        if (playState && newVolume >= 0 && newVolume <= 1) {
-          playState.gainNode.gain.value = newVolume;
+        if (!playState) return;
+
+        if (typeof newVolume === "number") {
+          playState.gainNode.gain.setValueAtTime(
+            Math.max(Math.min(1, newVolume), 0),
+            audioContext.currentTime
+          );
+        } else {
+          const { type, fadeTo, fadeTime } = newVolume;
+          const volumeVal = Math.max(Math.min(1, fadeTo), 0);
+          if (type === "linear") {
+            playState.gainNode.gain.linearRampToValueAtTime(
+              volumeVal,
+              audioContext.currentTime + fadeTime
+            );
+          } else {
+            playState.gainNode.gain.exponentialRampToValueAtTime(
+              volumeVal,
+              audioContext.currentTime + fadeTime
+            );
+          }
         }
       },
     };

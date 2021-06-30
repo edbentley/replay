@@ -303,7 +303,7 @@ export function testSprite<P, S, I>(
       pause: () => audio.pause(filename),
       getStatus: () => audio.getStatus(filename),
       getVolume: () => audio.getVolume(filename),
-      setVolume: (volume: number) => audio.setVolume(filename, volume),
+      setVolume: (volume) => audio.setVolume(filename, volume),
       getDuration: () => audio.getDuration(filename),
     };
   };
