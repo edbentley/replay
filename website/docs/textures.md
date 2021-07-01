@@ -94,6 +94,8 @@ t.text({
 - `text`: A string to display.
 - `color`: A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`).
 - `gradient`: (Optional) Override the `color` prop with a [gradient](#gradient).
+- `strokeColor`: (Optional) Apply a stroke to the text, must be a [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value).
+- `strokeThickness`: (Optional) Thickness of stroke. Default `1`.
 - `font`: (Optional) Set the font family, size, etc. If any properties are not provided, will cascade from the game's default font (see [Top-Level Game](top-level-game.md)).
   - `family`: (Optional) Font family, e.g. `"Helvetica"`
   - `size`: (Optional) Font size, e.g. `20`

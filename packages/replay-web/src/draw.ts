@@ -92,7 +92,9 @@ function drawTexture(
         fontDetails,
         texture.props.text,
         texture.props.color,
-        texture.props.gradient
+        texture.props.gradient,
+        texture.props.strokeColor,
+        texture.props.strokeThickness
       );
       return 0;
     case "circle":
@@ -303,7 +305,14 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
       ctx.stroke();
     }
   },
-  text(font: TextureFont, text: string, color: string, gradient?: Gradient) {
+  text(
+    font: TextureFont,
+    text: string,
+    color: string,
+    gradient?: Gradient,
+    strokeColor?: string,
+    strokeThickness = 1
+  ) {
     const { size, weight = "normal", style = "normal", family } = font;
     const fontString = `${style} ${weight} ${size ? `${size}px` : ""} ${
       family ? `${family}` : ""
@@ -311,6 +320,13 @@ const drawUtils = (ctx: CanvasRenderingContext2D) => ({
     ctx.font = fontString;
     ctx.textBaseline = font.baseline || "middle";
     ctx.textAlign = font.align || "center";
+
+    if (strokeColor) {
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeThickness;
+      ctx.strokeText(text, 0, 0);
+    }
+
     ctx.fillStyle = gradient ? generateGradient(ctx, gradient) : color;
     ctx.fillText(text, 0, 0);
   },

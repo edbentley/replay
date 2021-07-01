@@ -74,6 +74,11 @@ export const t = {
      */
     color: string;
     gradient?: Gradient;
+    /**
+     * A CSS colour (e.g. `#ff0000`, `rgba(0, 0, 0, 0)`, `green`)
+     */
+    strokeColor?: string;
+    strokeThickness?: number;
     opacity?: number;
     scaleX?: number;
     scaleY?: number;
@@ -94,6 +99,8 @@ export const t = {
         text: props.text,
         color: props.color,
         gradient: props.gradient,
+        strokeColor: props.strokeColor,
+        strokeThickness: props.strokeThickness,
       },
     };
   },
@@ -301,6 +308,8 @@ type TextProps = BaseProps & {
   text: string;
   color: string;
   gradient?: Gradient;
+  strokeColor?: string;
+  strokeThickness?: number;
 };
 export interface TextTexture {
   type: "text";
