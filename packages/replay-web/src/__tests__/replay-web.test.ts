@@ -145,6 +145,24 @@ test("Dimension 'scale-up' renders up to browser size and resizes", () => {
   expect(canvas.height).toBe(360);
 });
 
+test("Dimension 'scale-up-proportional' maintains proportion", () => {
+  const canvas = document.createElement("canvas");
+  (window as any).innerWidth = 500;
+  (window as any).innerHeight = 400;
+
+  const props: GameProps = {
+    id: "Game",
+    size: { width: 240, height: 180 },
+  };
+  renderCanvas(TestGame(props), {
+    dimensions: "scale-up-proportional",
+    canvas,
+  });
+
+  expect(canvas.width).toBe(480);
+  expect(canvas.height).toBe(360);
+});
+
 test("Missing image file throws error", async () => {
   let error = "";
 
