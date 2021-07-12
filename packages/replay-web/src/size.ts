@@ -36,6 +36,24 @@ export function calculateDeviceSize(
   const windowWidthHeightRatio = innerWidth / innerHeight;
   const gameWidthHeightRatio = width / height;
 
+  if (dimensions === "scale-up-proportional") {
+    // find max height & width based on screen size
+    const landscapeLayout = gameWidthHeightRatio > windowWidthHeightRatio;
+    const scaleUnrounded = landscapeLayout
+      ? innerWidth / width
+      : innerHeight / height;
+    const scale = Math.floor(scaleUnrounded);
+
+    return {
+      width,
+      height,
+      widthMargin: 0,
+      heightMargin: 0,
+      deviceWidth: width * scale,
+      deviceHeight: height * scale,
+    };
+  }
+
   if (gameWidthHeightRatio > windowWidthHeightRatio) {
     // game is wider than window, so set width to match window and scale height with margin
     const scaledWidth = innerWidth;
