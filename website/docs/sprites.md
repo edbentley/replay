@@ -286,3 +286,13 @@ An alternative render method run for large screens. See [Game Size](game-size.md
 ### `renderPXL`
 
 An alternative render method run for large screens if the device is in portrait. See [Game Size](game-size.md) for more.
+
+### `cleanup`
+
+Called when Sprite is removed. Useful for cleaning up any external libraries stored in state.
+
+```js
+  cleanup({ state, device, getInputs }) {
+    // Cleanup
+  },
+```
