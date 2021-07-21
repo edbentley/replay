@@ -922,6 +922,33 @@ test("loop and render order for callback prop change on low render FPS", () => {
   expect(resetInputs).toBeCalledTimes(9);
 });
 
+test("calls cleanup when unmounting Sprites", async () => {
+  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
+  const resetInputs = jest.fn();
+
+  const { runNextFrame } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    AssetsGame(gameProps)
+  );
+
+  let time = 1;
+  const nextFrame = () => {
+    time += 1000 * (1 / 60);
+    runNextFrame(time, resetInputs);
+  };
+
+  await waitFrame();
+  nextFrame();
+
+  expect(mutableTestDevice.log).not.toHaveBeenCalledWith("cleanup");
+
+  mutInputs.ref.buttonPressed.show = false;
+  nextFrame();
+
+  expect(mutableTestDevice.log).toHaveBeenCalledWith("cleanup");
+});
+
 test("can preload and clear file assets", async () => {
   const {
     platform,

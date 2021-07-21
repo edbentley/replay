@@ -285,7 +285,7 @@ export function testSprite<P, S, I>(
         throw Error(`Audio file "${filename}" was not preloaded`);
       }
       const { data } = audioElements[filename];
-      if (typeof data === "object") {
+      if ("then" in data) {
         throw Error(
           `Audio file "${filename}" did not finish loading before it was used`
         );
@@ -370,8 +370,8 @@ export function testSprite<P, S, I>(
    */
   const resolvePromises = () => new Promise(setImmediate);
 
-  const audioElements: AssetMap<string> = {};
-  const imageElements: AssetMap<string> = {};
+  const audioElements: AssetMap<Record<string, string>> = {};
+  const imageElements: AssetMap<Record<string, string>> = {};
 
   type Pos = { x: number; y: number; rotation: number };
   /**
@@ -395,12 +395,12 @@ export function testSprite<P, S, I>(
         imageElements,
         loadAudioFile: (fileName) => {
           return Promise.resolve().then(() => {
-            return `audioData-${fileName}`;
+            return { [fileName]: "*audioData*" };
           });
         },
         loadImageFile: (fileName) => {
           return Promise.resolve().then(() => {
-            return `imageData-${fileName}`;
+            return { [fileName]: "*imageData*" };
           });
         },
         cleanupAudioFile: () => null,
@@ -438,7 +438,7 @@ export function testSprite<P, S, I>(
           if (!imageElement) {
             throw Error(`Image file "${fileName}" was not preloaded`);
           }
-          if (typeof imageElement.data === "object") {
+          if ("then" in imageElement.data) {
             throw Error(
               `Image file "${fileName}" did not finish loading before it was used`
             );

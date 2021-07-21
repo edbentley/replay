@@ -291,6 +291,8 @@ function traverseCustomSpriteContainer<P, I>(
 
           recursiveSpriteCleanup(container.childContainers, containerGlobalId);
 
+          container.cleanup(getInputs);
+
           if (container.loadFilesPromise) {
             container.loadFilesPromise.then(() => {
               // Only cleanup once the initial load is complete
@@ -631,6 +633,13 @@ function createCustomSpriteContainer<P, S, I>(
 
       return sprites;
     },
+    cleanup(getInputs) {
+      spriteObj.cleanup?.({
+        state: this.state,
+        device: mutDevice,
+        getInputs,
+      });
+    },
   };
   return spriteContainer;
 }
@@ -698,6 +707,7 @@ type CustomSpriteContainer<P, S, I> = {
     time: number,
     contextValues: ContextValue[]
   ) => Sprite[];
+  cleanup: (getInputs: () => I) => void;
 };
 
 type PureCustomSpriteContainer<P> = {

@@ -101,6 +101,15 @@ interface SpriteObjBase<P, S, I> {
     getContext: <T>(context: Context<T>) => T;
   }) => S;
 
+  /**
+   * Called on sprite unmount.
+   */
+  cleanup?: (params: {
+    state: Readonly<S>;
+    device: Device;
+    getInputs: () => I;
+  }) => void;
+
   // -- render methods
 
   /**

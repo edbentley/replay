@@ -924,6 +924,10 @@ const AssetsSprite = makeSprite<{
       }),
     ];
   },
+
+  cleanup({ device }) {
+    device.log("cleanup");
+  },
 });
 
 const NestedAssetsSprite = makeSprite<{
