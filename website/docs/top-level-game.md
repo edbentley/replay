@@ -66,6 +66,7 @@ export const gameProps: GameProps = {
     name: "Courier",
     size: 10,
   },
+  backgroundColor: "blue",
 };
 
 type GameState = {
@@ -86,8 +87,9 @@ export const Game = makeSprite<GameProps, GameState, WebInputs | iOSInputs>({
 </TabItem>
 </Tabs>
 
-The `Game` Sprite requires two specific props, and one optional prop (set in `gameProps`):
+The `Game` Sprite requires two specific props, and some optional props (set in `gameProps`):
 
 1. an `id` prop of value `"Game"`
 1. a `size` prop, see [Game Size](game-size.md)
 1. (Optional) a `defaultFont` prop that applies to all `t.text` Textures
+1. (Optional) a `backgroundColor` prop, must be a [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`)

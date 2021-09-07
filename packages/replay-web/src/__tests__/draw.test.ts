@@ -26,7 +26,8 @@ beforeAll(() => {
       deviceSize,
       1,
       {},
-      { family: "Courier", size: 12 }
+      { family: "Courier", size: 12 },
+      "white"
     ).render.renderTexture;
 
     textures.forEach(renderTexture);

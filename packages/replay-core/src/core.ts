@@ -20,6 +20,10 @@ export interface GameProps {
   id: "Game";
   size: GameSize;
   defaultFont?: TextureFont;
+  /**
+   * Default `"white"`
+   */
+  backgroundColor?: string;
 }
 
 /**
