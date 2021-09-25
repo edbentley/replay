@@ -12,7 +12,7 @@ import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
 
 open class ReplayActivity : AppCompatActivity() {
-    private lateinit var webView: WebView
+    lateinit var webView: WebView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
