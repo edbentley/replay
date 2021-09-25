@@ -133,6 +133,8 @@ export function replayCore<S, I>(
   let prevTime = 0;
   let currentLag = 0;
 
+  platform.render.newFrame();
+
   traverseCustomSpriteContainer<GameProps, I>(
     gameContainer,
     gameSprite.props,
