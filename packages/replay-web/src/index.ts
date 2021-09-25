@@ -226,6 +226,7 @@ export function renderCanvas<S>(
     canvas.style.height = `${mutDevice.size.deviceHeight}px`;
 
     const defaultFont = gameSprite.props.defaultFont || DEFAULT_FONT;
+    const bgColor = gameSprite.props.backgroundColor || "white";
 
     // also update render with new size
     const renderCanvasResult = drawCanvas(
@@ -233,7 +234,8 @@ export function renderCanvas<S>(
       mutDevice.size,
       devicePixelRatio,
       imageElements,
-      defaultFont
+      defaultFont,
+      bgColor
     );
     scale = renderCanvasResult.scale;
 

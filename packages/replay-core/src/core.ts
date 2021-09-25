@@ -20,6 +20,10 @@ export interface GameProps {
   id: "Game";
   size: GameSize;
   defaultFont?: TextureFont;
+  /**
+   * Default `"white"`
+   */
+  backgroundColor?: string;
 }
 
 /**
@@ -128,6 +132,8 @@ export function replayCore<S, I>(
 
   let prevTime = 0;
   let currentLag = 0;
+
+  platform.render.newFrame();
 
   traverseCustomSpriteContainer<GameProps, I>(
     gameContainer,

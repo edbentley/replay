@@ -20,7 +20,8 @@ export function drawCanvas(
   }: DeviceSize,
   devicePixelRatio: number,
   imageElements: AssetMap<ImageFileData>,
-  defaultFont: TextureFont
+  defaultFont: TextureFont,
+  bgColor: string
 ): { scale: number; render: PlatformRender } {
   // Init setting up device size
   ctx.save();
@@ -45,8 +46,8 @@ export function drawCanvas(
       newFrame: () => {
         // First clear rect
         ctx.clearRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
-        // Set white background for game
-        ctx.fillStyle = "white";
+        // Set background for game
+        ctx.fillStyle = bgColor;
         ctx.fillRect(-fullWidth / 2, -fullHeight / 2, fullWidth, fullHeight);
       },
       startRenderSprite: (baseProps) => {
