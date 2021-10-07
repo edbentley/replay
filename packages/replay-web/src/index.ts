@@ -432,7 +432,6 @@ export function renderCanvas<S>(
     getInputs,
     render: mutRender,
   };
-  updateDeviceSize();
 
   let isCleanedUp = false;
 
@@ -457,40 +456,54 @@ export function renderCanvas<S>(
   document.addEventListener("keydown", onFirstInteraction, false);
   document.addEventListener(pointerDownEv, onFirstInteraction, false);
 
-  const { runNextFrame } = replayCore<S, Inputs>(
-    domPlatform,
-    {
-      nativeSpriteMap,
-      nativeSpriteUtils,
-    },
-    gameSprite
-  );
+  function launch() {
+    const innerWidth = windowSize?.width || window.innerWidth;
+    const innerHeight = windowSize?.height || window.innerHeight;
+    if (!innerWidth || !innerHeight) {
+      // Delay running game until dimensions are non-zero (this can happen on
+      // launch on Android)
+      setTimeout(launch, 50);
+      return;
+    }
 
-  let initTime: number | null = null;
+    updateDeviceSize();
 
-  function loop() {
-    statsEnd?.();
-    window.requestAnimationFrame(function newFrame(time) {
-      if (isCleanedUp) {
-        return;
-      }
-      statsBegin?.();
-      if (initTime === null) {
-        initTime = time - 1 / 60;
-      }
-      if (needsToUpdateNotVisibleTime) {
-        needsToUpdateNotVisibleTime = false;
-        totalPageNotVisibleTime += time - lastPageNotVisibleTime;
-      }
-      lastTimeValue = time;
+    const { runNextFrame } = replayCore<S, Inputs>(
+      domPlatform,
+      {
+        nativeSpriteMap,
+        nativeSpriteUtils,
+      },
+      gameSprite
+    );
 
-      runNextFrame(time - initTime - totalPageNotVisibleTime, resetInputs);
+    let initTime: number | null = null;
 
-      loop();
-    });
+    function loop() {
+      statsEnd?.();
+      window.requestAnimationFrame(function newFrame(time) {
+        if (isCleanedUp) {
+          return;
+        }
+        statsBegin?.();
+        if (initTime === null) {
+          initTime = time - 1 / 60;
+        }
+        if (needsToUpdateNotVisibleTime) {
+          needsToUpdateNotVisibleTime = false;
+          totalPageNotVisibleTime += time - lastPageNotVisibleTime;
+        }
+        lastTimeValue = time;
+
+        runNextFrame(time - initTime - totalPageNotVisibleTime, resetInputs);
+
+        loop();
+      });
+    }
+
+    loop();
   }
-
-  loop();
+  launch();
 
   /**
    * Unloads the game and removes all loops and event listeners

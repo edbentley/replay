@@ -21,7 +21,12 @@ export function calculateDeviceSize(
     maxHeightMargin = 0,
   } = orientationSize;
 
-  if (dimensions === "game-coords") {
+  if (
+    dimensions === "game-coords" ||
+    // avoid dividing by 0s
+    innerWidth === 0 ||
+    innerHeight === 0
+  ) {
     return {
       width,
       height,
