@@ -489,6 +489,13 @@ export function renderCanvas<S>(
         if (initTime === null) {
           initTime = time - 1 / 60;
         }
+
+        // Wait until visible before running to avoid bad timestamps
+        if (!isPageVisible) {
+          loop();
+          return;
+        }
+
         if (needsToUpdateNotVisibleTime) {
           needsToUpdateNotVisibleTime = false;
           totalPageNotVisibleTime += time - lastPageNotVisibleTime;

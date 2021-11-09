@@ -19,6 +19,8 @@ public class ReplayWebView: WKWebView {
 class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNavigationDelegate {
     let webConfiguration = WKWebViewConfiguration()
     var webView: ReplayWebView!
+    var userStyles: String
+    var customGameJsString: String?
     let alerter = ReplayAlerter()
     let onJsCallback: (String) -> Void // userland
     let onLogCallback: (String) -> Void // for testing
@@ -32,6 +34,8 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     ) {
         self.onLogCallback = onLogCallback
         self.onJsCallback = onJsCallback
+        self.userStyles = userStyles
+        self.customGameJsString = customGameJsString
         super.init()
         
         let contentController = WKUserContentController()
@@ -56,6 +60,10 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
         longPress.minimumPressDuration = 0.1
         webView.addGestureRecognizer(longPress)
         
+        loadGame()
+    }
+    
+    func loadGame() {
         // Load in game
         var gameJsString = ""
         
@@ -118,7 +126,10 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     }
     
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        fatalError("Web view terminated. This may be caused by your game using up too much memory.")
+        print("Web view terminated, restarting. This may be caused by your game using up too much memory.")
+        
+        // Reload
+        loadGame()
     }
     
     func handleInternalMessage(message: String) {
