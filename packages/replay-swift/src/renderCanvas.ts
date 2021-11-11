@@ -60,6 +60,24 @@ export function run() {
           });
         },
       },
+      alert: {
+        ok: (message, onResponse) => {
+          swiftBridge<void>({
+            id: "__internalReplayAlertOk",
+            message: `__internalReplayAlertOk${message}`,
+          }).then(() => {
+            onResponse?.();
+          });
+        },
+        okCancel: (message, onResponse) => {
+          swiftBridge<boolean>({
+            id: "__internalReplayAlertConfirm",
+            message: `__internalReplayAlertConfirm${message}`,
+          }).then((wasOk) => {
+            onResponse(wasOk);
+          });
+        },
+      },
     },
   });
 }

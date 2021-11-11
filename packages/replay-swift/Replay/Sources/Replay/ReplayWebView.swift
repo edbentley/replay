@@ -19,7 +19,7 @@ public class ReplayWebView: WKWebView {
 class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNavigationDelegate {
     let webConfiguration = WKWebViewConfiguration()
     var webView: ReplayWebView!
-    let alerter = Alerter()
+    let alerter = ReplayAlerter()
     let onJsCallback: (String) -> Void // userland
     let onLogCallback: (String) -> Void // for testing
     let internalMessageKey = "__internalReplay"
@@ -123,6 +123,12 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     
     func handleInternalMessage(message: String) {
         switch message {
+        case let x where x.starts(with: ReplayAlerter.messagePrefix):
+            alerter.handleInternalMessage(
+                message: message,
+                webView: webView,
+                internalMessageKey: internalMessageKey
+            )
         case let x where x.starts(with: ReplayStorageProvider.messagePrefix):
             ReplayStorageProvider.handleInternalMessage(
                 message: message,
