@@ -79,7 +79,12 @@ export function getAudio(
         const alreadyPlayedTime =
           fromPosition ?? getAudioPosition(audioContext, playState);
 
-        sampleSource.start(undefined, alreadyPlayedTime);
+        try {
+          sampleSource.start(undefined, alreadyPlayedTime);
+        } catch (_) {
+          // Older versions of Safari randomly throw errors
+          return;
+        }
         sampleSource.loop = loop;
         sampleSource.onended = () => {
           if (!audioElements[fileName]) return;
