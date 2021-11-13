@@ -9,9 +9,23 @@ declare const game: {
   options?: RenderCanvasOptions;
 };
 
-console.log = (message: string) => {
-  window.webkit.messageHandlers.consoleLog.postMessage(message);
+const sendLog = (...args: unknown[]) => {
+  window.webkit.messageHandlers.consoleLog.postMessage(
+    args
+      .map((arg) =>
+        typeof arg === "string"
+          ? arg
+          : arg instanceof Error
+          ? `Error(${arg.message})`
+          : JSON.stringify(arg)
+      )
+      .join("    ")
+  );
 };
+console.log = sendLog;
+console.info = sendLog;
+console.warn = sendLog;
+console.error = sendLog;
 
 export function run() {
   renderCanvas(game.Game(game.gameProps), game.options, {
