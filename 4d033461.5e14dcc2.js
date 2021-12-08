@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[29],{110:function(e){e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Replay v0.5: JavaScriptCore is really slow","permalink":"/blog/javascriptcore-is-really-slow"},{"title":"Initial Launch","permalink":"/blog/launch"}]}')}}]);
