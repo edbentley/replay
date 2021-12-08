@@ -112,6 +112,8 @@ test("can render simple game and runNextFrame", () => {
       mask: null,
     },
   });
+
+  expect(platform.render.calledNativeSprite).not.toBeCalled();
 });
 
 test("can render simple game with sprites", () => {
@@ -832,6 +834,8 @@ test("supports masks on Sprites", () => {
       [10, 0],
       [10, 10],
     ],
+    x: 0,
+    y: 0,
   });
 });
 
@@ -979,7 +983,8 @@ test("can preload and clear file assets", async () => {
   );
   expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(1);
   expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledWith(
-    "game.png"
+    "game.png",
+    false
   );
 
   expect(mutableTestDevice.assetUtils.audioElements).toEqual({
@@ -1208,6 +1213,14 @@ test("supports Native Sprites", () => {
     scale: 3,
     gameXToPlatformX: (x) => x + 10,
     gameYToPlatformY: (y) => y - 10,
+    size: {
+      width: 300,
+      height: 200,
+      widthMargin: 0,
+      heightMargin: 0,
+      deviceWidth: 500,
+      deviceHeight: 300,
+    },
   };
 
   const { runNextFrame } = replayCore(
@@ -1233,6 +1246,8 @@ test("supports Native Sprites", () => {
     globalId: "Game--nested--widget",
     width: 100,
   });
+
+  expect(platform.render.calledNativeSprite).toBeCalled();
 
   let time = 1;
   const nextFrame = () => {

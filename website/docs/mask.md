@@ -5,6 +5,10 @@ title: Mask
 
 Adding a mask to a Sprite or Texture ensures it only renders what's within the outline of the mask shape.
 
+:::tip Important
+Nested masks (using a mask within a Sprite which already has a mask) are currently not supported.
+:::
+
 ## Circle Mask
 
 #### Example
@@ -16,12 +20,15 @@ t.rectangle({
   width: 100,
   height: 100,
   color: "black",
+  x: 50,
   mask: mask.circle({
     radius: 5,
     x: 10,
   }),
 }),
 ```
+
+> Masks are drawn relative to the `x` and `y` props of the texture / Sprite applied to. In this case, the mask would have an `x` of 60 in the parent Sprite's coordinates.
 
 #### Props
 
@@ -77,3 +84,5 @@ t.rectangle({
 #### Props
 
 - `path`: An array of `[x, y]` coordinates to draw the mask shape outline.
+- `x`: (Optional) x coordinate of line. Default `0`.
+- `y`: (Optional) y coordinate of line. Default `0`.

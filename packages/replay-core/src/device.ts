@@ -169,6 +169,13 @@ export interface DeviceSize {
 export type Assets = {
   imageFileNames?: string[];
   audioFileNames?: string[];
+  /**
+   * Use the nearest pixel when scaling. Only recommended for pixel art games as
+   * it can makes pixels flicker when moving.
+   *
+   * @default `false`
+   */
+  imageScalingNearestPixel?: boolean;
 };
 
 export type AssetMap<T> = Record<
@@ -189,7 +196,7 @@ export type AssetUtils<A, I> = {
   audioElements: AssetMap<A>;
   imageElements: AssetMap<I>;
   loadAudioFile: (fileName: string) => Promise<A>;
-  loadImageFile: (fileName: string) => Promise<I>;
+  loadImageFile: (fileName: string, scaleSharp: boolean) => Promise<I>;
   cleanupAudioFile: (fileName: string) => void;
   cleanupImageFile: (fileName: string) => void;
 };
@@ -211,7 +218,11 @@ export async function preloadFiles(
       globalSpriteId,
       assets.imageFileNames || [],
       assetUtils.imageElements,
-      assetUtils.loadImageFile
+      (fileName) =>
+        assetUtils.loadImageFile(
+          fileName,
+          assets.imageScalingNearestPixel || false
+        )
     ),
   ]);
 }

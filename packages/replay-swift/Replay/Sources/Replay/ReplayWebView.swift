@@ -20,6 +20,7 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     let webConfiguration = WKWebViewConfiguration()
     var webView: ReplayWebView!
     var userStyles: String
+    var jsRun: String
     var customGameJsString: String?
     let alerter = ReplayAlerter()
     let onJsCallback: (String) -> Void // userland
@@ -29,12 +30,14 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     init(
         customGameJsString: String? = nil,
         userStyles: String,
+        jsRun: String,
         onLogCallback: @escaping (String) -> Void = {_ in },
         onJsCallback: @escaping (String) -> Void
     ) {
         self.onLogCallback = onLogCallback
         self.onJsCallback = onJsCallback
         self.userStyles = userStyles
+        self.jsRun = jsRun
         self.customGameJsString = customGameJsString
         super.init()
         
@@ -91,7 +94,8 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
         let htmlString = getReplayRenderCanvasHtmlString(
             renderCanvasJsString: renderCanvasJsString,
             gameJsString: gameJsString,
-            userStyles: userStyles
+            userStyles: userStyles,
+            jsRun: jsRun
         )
         
         self.webView.loadHTMLString(htmlString, baseURL: Bundle.main.bundleURL)

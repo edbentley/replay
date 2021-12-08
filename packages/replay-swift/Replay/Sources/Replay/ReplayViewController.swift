@@ -7,10 +7,11 @@ public class ReplayViewController: UIViewController {
     public init(
         hideStatusBar: Bool = true,
         userStyles: String = "",
+        jsRun: String = "renderCanvas.run();",
         onJsCallback: @escaping (String) -> Void = {_ in }
     ) {
         self.hideStatusBar = hideStatusBar
-        self.webView = ReplayWebViewManager(userStyles: userStyles, onJsCallback: onJsCallback).webView
+        self.webView = ReplayWebViewManager(userStyles: userStyles, jsRun: jsRun, onJsCallback: onJsCallback).webView
         super.init(nibName: nil, bundle: nil)
     }
     

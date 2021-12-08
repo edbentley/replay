@@ -245,6 +245,10 @@ Called on initial load of Sprite. Use this to run anything you need on setup. Re
     updateState((state) => ({ ...state, loaded: true }));
   });
    ```
+  Arguments:
+  - `imageFileNames`: (Optional) Array of images to preload
+  - `audioFileNames`: (Optional) Array of audio files to preload
+  - `imageScalingNearestPixel`: (Optional) Use the nearest pixel when scaling the images in `imageFileNames`. Only recommended for pixel art games as it can makes pixels flicker when moving. Default `false`.
 
 ### `loop`
 

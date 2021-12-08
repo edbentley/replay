@@ -25,8 +25,7 @@ t.circle({
 #### Props
 
 - `radius`: Radius of the circle in game coordinates.
-- `color`: A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`).
-- `gradient`: (Optional) Override the `color` prop with a [gradient](#gradient).
+- `color`: A [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`).
 
 ## Rectangle
 
@@ -44,7 +43,7 @@ t.rectangle({
 
 - `width`: Width of the rectangle in game coordinates.
 - `height`: Height of the rectangle in game coordinates.
-- `color`: A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`).
+- `color`: A [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`).
 - `gradient`: (Optional) Override the `color` prop with a [gradient](#gradient).
 
 ## Line
@@ -67,16 +66,14 @@ t.line({
 
 > Make sure one of `color`, `gradient`, `fillColor` or `fillGradient` is set, otherwise nothing will be drawn!
 
-- `color`: (Optional) A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`) of the stroke colour. Default no stroke.
-- `gradient`: (Optional) Override the `color` prop with a [gradient](#gradient).
-- `fillColor`: (Optional) A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`) to fill in the shape of the path with a colour. Default no fill.
+- `color`: (Optional) A [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`) of the stroke colour. Default no stroke.
+- `fillColor`: (Optional) A [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`) to fill in the shape of the path with a colour. Default no fill.
 - `fillGradient`: (Optional) Override the `fillColor` prop with a [gradient](#gradient).
 - `path`: An array of `[x, y]` coordinates to draw the line.
 - `thickness`: (Optional) Line thickness. Default `1`.
 - `lineCap`: (Optional) The shape of the line ends. Can be one of:
   - `"butt"`: (Default) The ends of lines are squared off at the endpoints.
   - `"round"`: The ends of lines are rounded.
-  - `"square"`: The ends of lines are squared off by adding a box with an equal width and half the height of the line's thickness.
 
 ## Text
 
@@ -92,9 +89,9 @@ t.text({
 #### Props
 
 - `text`: A string to display.
-- `color`: A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`).
+- `color`: A [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`).
 - `gradient`: (Optional) Override the `color` prop with a [gradient](#gradient).
-- `strokeColor`: (Optional) Apply a stroke to the text, must be a [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value).
+- `strokeColor`: (Optional) Apply a stroke to the text, must be a [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex.
 - `strokeThickness`: (Optional) Thickness of stroke. Default `1`.
 - `font`: (Optional) Set the font family, size, etc. If any properties are not provided, will cascade from the game's default font (see [Top-Level Game](top-level-game.md)).
   - `family`: (Optional) Font family, e.g. `"Helvetica"`
@@ -157,7 +154,7 @@ A colour gradient effect can be achieved through the `gradient` prop. Pass in an
 - `type`: Must be `"linear"`.
 - `path`: A tuple of start and end `[x, y]` coordinates to draw the gradient line.
 - `colors`: An array of objects with fields:
-  - `color`: A [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`).
+  - `color`: A [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`).
   - `offset`: Distance of `color` along gradient line, must be between 0 - 1.
 
 #### Example

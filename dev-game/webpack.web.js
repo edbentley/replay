@@ -32,9 +32,10 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
   },
   // Test on local network
-  // devServer: {
-  //   host: "0.0.0.0",
-  // },
+  devServer: {
+    port: 8000,
+    // host: "0.0.0.0",
+  },
   resolve: {
     // Ensure import of core from web is also local package
     alias: {

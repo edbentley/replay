@@ -168,6 +168,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
       case GameStage.Play:
         return [
           PureCircleGroup({ id: "Circles" }),
+
           PlayStage({
             id: "play-stage",
             bulletSpeed: state.bulletSpeed,
@@ -184,7 +185,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
             },
             highScore: state.highScore,
           }),
-          input,
+          // input,
         ];
     }
   },
@@ -196,7 +197,8 @@ const PureCircleGroup = makePureSprite({
   },
 
   render() {
-    return Array.from({ length: 2000 }).map(function mapCircles(_, index) {
+    // Ramp up to 2000 to really test
+    return Array.from({ length: 20 }).map(function mapCircles(_, index) {
       return PureCircle({ id: `Circle-${index}` });
     });
   },

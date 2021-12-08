@@ -92,4 +92,4 @@ The `Game` Sprite requires two specific props, and some optional props (set in `
 1. an `id` prop of value `"Game"`
 1. a `size` prop, see [Game Size](game-size.md)
 1. (Optional) a `defaultFont` prop that applies to all `t.text` Textures
-1. (Optional) a `backgroundColor` prop, must be a [CSS color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) (e.g. `#ff0000`, `green`)
+1. (Optional) a `backgroundColor` prop, must be a [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`)

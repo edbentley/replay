@@ -19,6 +19,8 @@ type RectangleMask = {
 type LineMask = {
   type: "lineMask";
   path: [number, number][];
+  x: number;
+  y: number;
 };
 
 /**
@@ -47,10 +49,16 @@ export const mask = {
       y: props.y || 0,
     };
   },
-  line: (props: { path: [number, number][] }): MaskShape => {
+  line: (props: {
+    path: [number, number][];
+    x?: number;
+    y?: number;
+  }): MaskShape => {
     return {
       type: "lineMask",
       path: props.path,
+      x: props.x || 0,
+      y: props.y || 0,
     };
   },
 };

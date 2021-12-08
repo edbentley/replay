@@ -231,6 +231,7 @@ export function getTestPlatform(customSize?: DeviceSize) {
         }
         textures.push(texture);
       },
+      calledNativeSprite: jest.fn(),
     },
   };
 
@@ -251,6 +252,14 @@ export const nativeSpriteSettings: NativeSpriteSettings = {
     scale: 1,
     gameXToPlatformX: (x) => x,
     gameYToPlatformY: (y) => y,
+    size: {
+      width: 300,
+      height: 200,
+      widthMargin: 0,
+      heightMargin: 0,
+      deviceWidth: 500,
+      deviceHeight: 300,
+    },
   },
 };
 

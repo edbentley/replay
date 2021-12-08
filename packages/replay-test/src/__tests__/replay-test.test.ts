@@ -23,7 +23,6 @@ test("getTextures, nextFrame", () => {
           "anchorX": 0,
           "anchorY": 0,
           "color": "blue",
-          "gradient": undefined,
           "mask": Object {
             "height": 10,
             "type": "rectangleMask",
@@ -99,7 +98,6 @@ test("getTextures, nextFrame", () => {
           "anchorX": 0,
           "anchorY": 0,
           "color": "blue",
-          "gradient": undefined,
           "mask": Object {
             "height": 10,
             "type": "rectangleMask",

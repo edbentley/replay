@@ -29,7 +29,12 @@ export type AudioData = {
   };
 };
 
-export type ImageFileData = HTMLImageElement;
+export type ImageFileData = {
+  image: HTMLImageElement;
+  // width: number;
+  // height: number;
+  texture: WebGLTexture;
+};
 
 export function getAudio(
   audioContext: AudioContext,
