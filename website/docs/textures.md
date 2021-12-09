@@ -149,13 +149,21 @@ t.spriteSheet({
 
 ## Gradient
 
-A colour gradient effect can be achieved through the `gradient` prop. Pass in an object with the following fields:
+A colour gradient effect can be achieved through the `gradient` prop. Pass in one of the following objects:
 
-- `type`: Must be `"linear"`.
-- `path`: A tuple of start and end `[x, y]` coordinates to draw the gradient line.
-- `colors`: An array of objects with fields:
-  - `color`: A [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`).
-  - `offset`: Distance of `color` along gradient line, must be between 0 - 1.
+### Horizontal Gradient
+
+- `type`: `"linearHoriz"`
+- `colors`: An array of [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`) colours in left to right order spread evenly.
+- `opacities`: (Optional) An array of opacities for each colour in `colors`.
+- `width`: Width between first and last colour in game coordinates.
+
+### Vertical Gradient
+
+- `type`: `"linearVert"`
+- `colors`: An array of [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`) colours in top to bottom order spread evenly.
+- `opacities`: (Optional) An array of opacities for each colour in `colors`.
+- `height`: Height between first and last colour in game coordinates.
 
 #### Example
 
@@ -165,16 +173,10 @@ t.rectangle({
   height: 10,
   color: "white",
   gradient: {
-    type: "linear",
-    path: [
-      [-5, 0],
-      [5, 0],
-    ],
-    colors: [
-      { offset: 0, color: "black" },
-      { offset: 0.5, color: "white" },
-      { offset: 1, color: "black" },
-    ],
+    type: "linearVert",
+    colors: ["#FF0000", "#0000FF"],
+    opacities: [0.5, 1],
+    height: 5,
   },
 }),
 ```

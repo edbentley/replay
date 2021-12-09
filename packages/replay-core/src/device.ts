@@ -170,12 +170,10 @@ export type Assets = {
   imageFileNames?: string[];
   audioFileNames?: string[];
   /**
-   * Use the nearest pixel when scaling. Only recommended for pixel art games as
-   * it can makes pixels flicker when moving.
-   *
-   * @default `false`
+   * Load these images using the nearest pixel when scaling. Only recommended
+   * for pixel art games as it can cause jagged lines.
    */
-  imageScalingNearestPixel?: boolean;
+  imageFileNamesScaleNearestPixel?: string[];
 };
 
 export type AssetMap<T> = Record<
@@ -218,11 +216,13 @@ export async function preloadFiles(
       globalSpriteId,
       assets.imageFileNames || [],
       assetUtils.imageElements,
-      (fileName) =>
-        assetUtils.loadImageFile(
-          fileName,
-          assets.imageScalingNearestPixel || false
-        )
+      (fileName) => assetUtils.loadImageFile(fileName, false)
+    ),
+    ...preloadFileType(
+      globalSpriteId,
+      assets.imageFileNamesScaleNearestPixel || [],
+      assetUtils.imageElements,
+      (fileName) => assetUtils.loadImageFile(fileName, true)
     ),
   ]);
 }
