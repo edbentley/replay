@@ -1,5 +1,8 @@
 const { toMatchImageSnapshot } = require("jest-image-snapshot");
 const fetch = require("node-fetch");
+const { mockDOM } = require("node-canvas-webgl");
+
+mockDOM(window);
 
 if (!globalThis.fetch) {
   globalThis.fetch = fetch;

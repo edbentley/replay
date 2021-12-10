@@ -94,6 +94,7 @@ export type PlatformRender = {
   startRenderSprite: (baseProps: SpriteBaseProps) => void;
   endRenderSprite: () => void;
   renderTexture: (texture: Texture) => void;
+  calledNativeSprite: () => void;
 };
 
 export type NativeSpriteMap = Record<
@@ -147,7 +148,9 @@ export function replayCore<S, I>(
     gameSprite.props.id,
     nativeSpriteSettings,
     platform.render,
-    []
+    [],
+    0,
+    0
   );
 
   const emptyRender: PlatformRender = {
@@ -155,6 +158,7 @@ export function replayCore<S, I>(
     startRenderSprite: () => null,
     endRenderSprite: () => null,
     renderTexture: () => null,
+    calledNativeSprite: () => null,
   };
 
   return {
@@ -191,7 +195,9 @@ export function replayCore<S, I>(
           gameSprite.props.id,
           nativeSpriteSettings,
           platformRender,
-          []
+          [],
+          0,
+          0
         );
         // reset inputs after each update
         resetInputs();
@@ -220,7 +226,9 @@ function traverseCustomSpriteContainer<P, I>(
   parentGlobalId: string,
   nativeSpriteSettings: NativeSpriteSettings,
   platformRender: PlatformRender,
-  contextValues: ContextValue[]
+  contextValues: ContextValue[],
+  parentX: number,
+  parentY: number
 ) {
   const { baseProps } = customSpriteContainer;
   mutateBaseProps(baseProps, spriteProps);
@@ -275,7 +283,9 @@ function traverseCustomSpriteContainer<P, I>(
     contextValues,
     addChildId,
     getInputs,
-    getLocalCoords
+    getLocalCoords,
+    customSpriteContainer.baseProps.x + parentX,
+    customSpriteContainer.baseProps.y + parentY
   );
 
   platformRender.endRenderSprite();
@@ -346,7 +356,9 @@ function handleSprites<P, I>(
   getLocalCoords: (globalCoords: {
     x: number;
     y: number;
-  }) => { x: number; y: number }
+  }) => { x: number; y: number },
+  spriteX: number,
+  spriteY: number
 ) {
   for (let i = 0; i < sprites.length; i++) {
     const sprite = sprites[i];
@@ -368,7 +380,9 @@ function handleSprites<P, I>(
         [...contextValues, sprite],
         addChildId,
         getInputs,
-        getLocalCoords
+        getLocalCoords,
+        spriteX,
+        spriteY
       );
     } else if (sprite.type === "native") {
       addChildId(sprite.props.id);
@@ -413,7 +427,11 @@ function handleSprites<P, I>(
         state: lookupNativeSpriteContainer.state,
         parentGlobalId,
         utils: nativeSpriteUtils,
+        parentX: spriteX,
+        parentY: spriteY,
       });
+
+      platformRender.calledNativeSprite();
     } else if (sprite.type === "pure") {
       addChildId(sprite.props.id);
 
@@ -480,7 +498,9 @@ function handleSprites<P, I>(
         globalId,
         nativeSpriteSettings,
         platformRender,
-        contextValues
+        contextValues,
+        spriteX + (sprite.props.x || 0),
+        spriteY + (sprite.props.y || 0)
       );
     } else {
       platformRender.renderTexture(sprite);

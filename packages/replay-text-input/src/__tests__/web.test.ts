@@ -2,6 +2,11 @@ import { renderCanvas } from "@replay/web";
 import { Game, gameProps } from "./game";
 import { TextInputWeb } from "../web";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { mockDOM } = require("node-canvas-webgl");
+
+mockDOM(window);
+
 const mockTime: MockTime = { nextFrame: () => undefined };
 
 // https://jestjs.io/docs/en/manual-mocks#mocking-methods-which-are-not-implemented-in-jsdom

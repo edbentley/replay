@@ -461,6 +461,7 @@ export function testSprite<P, S, I>(
           },
         } as Texture);
       },
+      calledNativeSprite: () => null,
     },
   };
 
@@ -491,6 +492,7 @@ export function testSprite<P, S, I>(
         didResize: false,
         gameXToPlatformX: (x) => x,
         gameYToPlatformY: (y) => y,
+        size,
       },
     },
     TestContainer(gameProps)

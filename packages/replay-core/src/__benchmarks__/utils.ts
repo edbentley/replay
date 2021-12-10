@@ -141,6 +141,7 @@ function getBenchmarkPlatform() {
       startRenderSprite: () => null,
       endRenderSprite: () => null,
       renderTexture: () => null,
+      calledNativeSprite: () => null,
     },
   };
 
@@ -155,6 +156,14 @@ function getNativeSpriteSettings(): NativeSpriteSettings {
       scale: 1,
       gameXToPlatformX: (x) => x,
       gameYToPlatformY: (y) => y,
+      size: {
+        width: 300,
+        height: 200,
+        widthMargin: 0,
+        heightMargin: 0,
+        deviceWidth: 500,
+        deviceHeight: 300,
+      },
     },
   };
 }

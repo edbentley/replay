@@ -38,26 +38,40 @@ export type TextureFont = {
    *
    * @default "center"
    */
-  align?: "left" | "center" | "right" | "start" | "end";
+  align?: "left" | "center" | "right";
 };
 
-export type Gradient = {
-  type: "linear";
-  /**
-   * A tuple of start and end `[x, y]` coordinates to draw the gradient line
-   */
-  path: [[number, number], [number, number]];
-  colors: {
-    /**
-     * A CSS colour (e.g. `#ff0000`, `rgba(0, 0, 0, 0)`, `green`)
-     */
-    color: string;
-    /**
-     * Distance of `color` along gradient line, must be between 0 - 1
-     */
-    offset: number;
-  }[];
-};
+export type Gradient =
+  | {
+      type: "linearHoriz";
+      /**
+       * Colours in left to right order spread evenly
+       */
+      colors: string[];
+      /**
+       * Array of opacity of each colour, from 0 - 1
+       */
+      opacities?: number[];
+      /**
+       * Width between first and last colour in game coordinates
+       */
+      width: number;
+    }
+  | {
+      type: "linearVert";
+      /**
+       * Colours in top to bottom order spread evenly
+       */
+      colors: string[];
+      /**
+       * Array of opacity of each colour, from 0 - 1
+       */
+      opacities?: number[];
+      /**
+       * Height between first and last colour in game coordinates
+       */
+      height: number;
+    };
 
 /**
  * `t` is a util which contains functions to create every type of Texture.
@@ -110,7 +124,6 @@ export const t = {
      * A CSS colour (e.g. `#ff0000`, `rgba(0, 0, 0, 0)`, `green`)
      */
     color: string;
-    gradient?: Gradient;
     opacity?: number;
     scaleX?: number;
     scaleY?: number;
@@ -129,7 +142,6 @@ export const t = {
         ...getDefaultProps(props),
         radius: props.radius,
         color: props.color,
-        gradient: props.gradient,
       },
     };
   },
@@ -170,7 +182,6 @@ export const t = {
      * colour. Default no stroke.
      */
     color?: string;
-    gradient?: Gradient;
     opacity?: number;
     scaleX?: number;
     scaleY?: number;
@@ -194,11 +205,10 @@ export const t = {
     fillColor?: string;
     fillGradient?: Gradient;
     /**
-     * The shape of the line ends. `"square"` adds a box sticking out with half
-     * the line thickness.
+     * The shape of the line ends.
      * @default "butt"
      */
-    lineCap?: "butt" | "round" | "square";
+    lineCap?: "butt" | "round";
     x?: number;
     y?: number;
     rotation?: number;
@@ -214,7 +224,6 @@ export const t = {
         thickness: props.thickness ?? 1,
         lineCap: props.lineCap || "butt",
         path: props.path,
-        gradient: props.gradient,
         fillGradient: props.fillGradient,
       },
     };
@@ -345,7 +354,7 @@ type LineProps = BaseProps & {
   thickness: number;
   path: [number, number][];
   fillColor?: string;
-  lineCap: "butt" | "round" | "square";
+  lineCap: "butt" | "round";
   gradient?: Gradient;
   fillGradient?: Gradient;
 };

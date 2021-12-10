@@ -1,4 +1,5 @@
 import WebKit
+import os.log
 
 let CONSOLE_LOG = "consoleLog"
 let ERROR = "error"
@@ -20,6 +21,7 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     let webConfiguration = WKWebViewConfiguration()
     var webView: ReplayWebView!
     var userStyles: String
+    var jsRun: String
     var customGameJsString: String?
     let alerter = ReplayAlerter()
     let onJsCallback: (String) -> Void // userland
@@ -29,12 +31,14 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     init(
         customGameJsString: String? = nil,
         userStyles: String,
+        jsRun: String,
         onLogCallback: @escaping (String) -> Void = {_ in },
         onJsCallback: @escaping (String) -> Void
     ) {
         self.onLogCallback = onLogCallback
         self.onJsCallback = onJsCallback
         self.userStyles = userStyles
+        self.jsRun = jsRun
         self.customGameJsString = customGameJsString
         super.init()
         
@@ -91,21 +95,27 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
         let htmlString = getReplayRenderCanvasHtmlString(
             renderCanvasJsString: renderCanvasJsString,
             gameJsString: gameJsString,
-            userStyles: userStyles
+            userStyles: userStyles,
+            jsRun: jsRun
         )
         
         self.webView.loadHTMLString(htmlString, baseURL: Bundle.main.bundleURL)
     }
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        let messageBody = "\(message.body)"
         switch message.name {
         case ERROR:
-            fatalError("\(message.body)")
+            fatalError(messageBody)
         case CONSOLE_LOG:
-            onLogCallback("\(message.body)")
-            print(message.body)
+            onLogCallback(messageBody)
+            if #available(iOS 14.0, *) {
+                os_log("%@", messageBody)
+            } else {
+                print(messageBody)
+            }
         case JS_CALLBACK:
-            let value = "\(message.body)"
+            let value = messageBody
             if value.starts(with: internalMessageKey) {
                 let restOfMessage = String(value.dropFirst(internalMessageKey.count))
                 handleInternalMessage(message: restOfMessage)

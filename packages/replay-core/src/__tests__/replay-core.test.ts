@@ -112,6 +112,8 @@ test("can render simple game and runNextFrame", () => {
       mask: null,
     },
   });
+
+  expect(platform.render.calledNativeSprite).not.toBeCalled();
 });
 
 test("can render simple game with sprites", () => {
@@ -832,6 +834,8 @@ test("supports masks on Sprites", () => {
       [10, 0],
       [10, 10],
     ],
+    x: 0,
+    y: 0,
   });
 });
 
@@ -977,9 +981,15 @@ test("can preload and clear file assets", async () => {
   expect(mutableTestDevice.assetUtils.loadAudioFile).toHaveBeenCalledWith(
     "game.mp3"
   );
-  expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(1);
+  expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(2);
   expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledWith(
-    "game.png"
+    "game.png",
+    false
+  );
+  expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledWith(
+    "pixel.png",
+    // Loaded sharp
+    true
   );
 
   expect(mutableTestDevice.assetUtils.audioElements).toEqual({
@@ -993,6 +1003,10 @@ test("can preload and clear file assets", async () => {
     "game.png": {
       globalSpriteIds: ["Game"],
       // Loading Promise
+      data: expect.not.stringMatching("imageData"),
+    },
+    "pixel.png": {
+      globalSpriteIds: ["Game"],
       data: expect.not.stringMatching("imageData"),
     },
   });
@@ -1011,6 +1025,10 @@ test("can preload and clear file assets", async () => {
       globalSpriteIds: ["Game"],
       data: "imageData",
     },
+    "pixel.png": {
+      globalSpriteIds: ["Game"],
+      data: "imageData",
+    },
   });
 
   nextFrame();
@@ -1021,14 +1039,18 @@ test("can preload and clear file assets", async () => {
   ).toBe(true);
 
   // Sprite & nested sprite start loading - but no duplicate parallel loads
-  // (called 2 not 3 times)
-  expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(2);
+  // (called 3 not 4 times)
+  expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(3);
 
   // Wait for sprites to load
   await waitFrame();
 
   expect(mutableTestDevice.assetUtils.imageElements).toEqual({
     "game.png": {
+      globalSpriteIds: ["Game"],
+      data: "imageData",
+    },
+    "pixel.png": {
       globalSpriteIds: ["Game"],
       data: "imageData",
     },
@@ -1073,7 +1095,7 @@ test("Sprite unmounted before it loads", async () => {
   nextFrame();
 
   // Sprites have started loading
-  expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(2);
+  expect(mutableTestDevice.assetUtils.loadImageFile).toHaveBeenCalledTimes(3);
 
   // Unmount Sprites before they finish loading
   mutInputs.ref.buttonPressed.show = false;
@@ -1208,6 +1230,14 @@ test("supports Native Sprites", () => {
     scale: 3,
     gameXToPlatformX: (x) => x + 10,
     gameYToPlatformY: (y) => y - 10,
+    size: {
+      width: 300,
+      height: 200,
+      widthMargin: 0,
+      heightMargin: 0,
+      deviceWidth: 500,
+      deviceHeight: 300,
+    },
   };
 
   const { runNextFrame } = replayCore(
@@ -1233,6 +1263,8 @@ test("supports Native Sprites", () => {
     globalId: "Game--nested--widget",
     width: 100,
   });
+
+  expect(platform.render.calledNativeSprite).toBeCalled();
 
   let time = 1;
   const nextFrame = () => {

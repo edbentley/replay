@@ -1,10 +1,10 @@
-import { drawCanvas } from "../draw";
+import { draw } from "../webGL/drawGL";
 import { canvasToImage } from "./utils";
 import { t, DeviceSize, mask, Texture } from "@replay/core";
 
 const deviceSize: DeviceSize = {
   width: 300,
-  height: 200,
+  height: 300,
   widthMargin: 0,
   heightMargin: 0,
   deviceWidth: 500,
@@ -12,29 +12,37 @@ const deviceSize: DeviceSize = {
 };
 
 let canvas: HTMLCanvasElement;
+let offscreenCanvas: HTMLCanvasElement;
 let render: (textures: Texture[]) => void;
 
 beforeAll(() => {
   render = (textures) => {
     canvas = document.body.appendChild(document.createElement("canvas"));
-    canvas.width = 500;
-    canvas.height = 500;
-    const ctx = canvas.getContext("2d", { alpha: false })!;
+    offscreenCanvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl", { stencil: true })!;
+    gl.canvas.width = deviceSize.deviceWidth;
+    gl.canvas.height = deviceSize.deviceHeight;
 
-    const renderTexture = drawCanvas(
-      ctx,
-      deviceSize,
-      1,
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+    const renderTexture = draw(
+      gl,
+      offscreenCanvas,
+      deviceSize.width,
+      deviceSize.height,
       {},
       { family: "Courier", size: 12 },
-      "white"
-    ).render.renderTexture;
+      "white",
+      1
+    ).renderTexture;
 
     textures.forEach(renderTexture);
   };
 });
 
-test("Can draw text", () => {
+// Text doesn't show: https://github.com/stackgl/headless-gl/issues/149
+test.skip("Can draw text", () => {
   render([
     t.text({
       x: -100,
@@ -101,13 +109,16 @@ test("Can draw rectangles", () => {
       color: "red",
     }),
     t.rectangle({
-      x: 0,
-      y: 0,
-      rotation: 0,
-      opacity: 0,
-      width: 100,
-      height: 10,
+      width: 20,
+      height: 20,
       color: "green",
+    }),
+    // Not premultiplying alpha in shader can make this show up
+    t.rectangle({
+      opacity: 0,
+      width: 10,
+      height: 10,
+      color: "red",
     }),
   ]);
 
@@ -137,6 +148,7 @@ test("Can draw lines", () => {
         [10, -10],
         [100, -100],
       ],
+      lineCap: "round",
     }),
     t.line({
       x: 0,
@@ -427,7 +439,8 @@ test("Can change anchor X and Y", () => {
   expect(canvasToImage(canvas)).toMatchImageSnapshot();
 });
 
-test("Can mask with circle, rectangle and line", () => {
+// Masks not working in test renderer
+test.skip("Can mask with circle, rectangle and line", () => {
   render([
     t.rectangle({
       x: -60,
@@ -477,38 +490,30 @@ test("Can mask with circle, rectangle and line", () => {
 
 test("Can draw gradients", () => {
   render([
-    t.text({
-      x: -70,
-      font: { family: "Arial", size: 10 },
-      color: "blue",
-      gradient: {
-        type: "linear",
-        path: [
-          [-10, 10],
-          [10, -10],
-        ],
-        colors: [
-          { offset: 0, color: "red" },
-          { offset: 1, color: "rgba(0, 0, 0, 0)" },
-        ],
-      },
-      text: "Hello",
-    }),
-    t.circle({
+    // Skip text
+    // t.text({
+    //   x: -70,
+    //   font: { family: "Arial", size: 10 },
+    //   color: "blue",
+    //   gradient: {
+    //     type: "linearVert",
+    //     colors: ["red", "#FFFFFF"],
+    //     opacities: [1, 0],
+    //     height: 20,
+    //   },
+    //   text: "Hello",
+    // }),
+    t.rectangle({
       x: -20,
       y: 0,
-      radius: 10,
+      width: 20,
+      height: 20,
       color: "red",
       gradient: {
-        type: "linear",
-        path: [
-          [30, 0],
-          [-30, 0],
-        ],
-        colors: [
-          { offset: 0.5, color: "purple" },
-          { offset: 1, color: "#ff0000" },
-        ],
+        type: "linearHoriz",
+        colors: ["purple", "#ff0000"],
+        opacities: [1, 0],
+        width: 60,
       },
     }),
     t.rectangle({
@@ -518,16 +523,9 @@ test("Can draw gradients", () => {
       height: 10,
       color: "red",
       gradient: {
-        type: "linear",
-        path: [
-          [-5, 0],
-          [5, 0],
-        ],
-        colors: [
-          { offset: 0, color: "black" },
-          { offset: 0.5, color: "white" },
-          { offset: 1, color: "black" },
-        ],
+        type: "linearHoriz",
+        colors: ["black", "white", "black"],
+        width: 10,
       },
     }),
     t.line({
@@ -537,27 +535,10 @@ test("Can draw gradients", () => {
         [10, -10],
         [0, 10],
       ],
-      gradient: {
-        type: "linear",
-        path: [
-          [-10, 0],
-          [10, 0],
-        ],
-        colors: [
-          { offset: 0, color: "red" },
-          { offset: 1, color: "blue" },
-        ],
-      },
       fillGradient: {
-        type: "linear",
-        path: [
-          [0, -10],
-          [0, 10],
-        ],
-        colors: [
-          { offset: 0, color: "purple" },
-          { offset: 1, color: "orange" },
-        ],
+        type: "linearVert",
+        colors: ["purple", "#FFA500"],
+        height: 20,
       },
     }),
   ]);

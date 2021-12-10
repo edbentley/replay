@@ -14,10 +14,6 @@ import {
 import { makeSprite, GameProps, t } from "@replay/core";
 import { renderCanvas } from "../index";
 
-const defaultProps = {
-  color: "black",
-};
-
 const mockTime: MockTime = { nextFrame: () => undefined };
 
 beforeEach(() => {
@@ -25,47 +21,36 @@ beforeEach(() => {
 });
 
 test("Key events press and release keys", () => {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d", { alpha: false })!;
-  (canvas as any).getContext = () => ctx;
-  const textSpy = jest.spyOn(ctx, "fillText");
+  console.log = jest.fn();
 
-  renderCanvas(KeyboardGame(testGameProps), { canvas });
+  renderCanvas(KeyboardGame(testGameProps));
 
   mockTime.nextFrame();
 
-  expect(textSpy).lastCalledWith(
-    "isUpKeyPressed: false, isUpKeyJustPressed: false",
-    0,
-    0
+  expect(console.log).lastCalledWith(
+    "isUpKeyPressed: false, isUpKeyJustPressed: false"
   );
 
   pressKey("ArrowUp");
 
   mockTime.nextFrame();
 
-  expect(textSpy).lastCalledWith(
-    "isUpKeyPressed: true, isUpKeyJustPressed: true",
-    0,
-    0
+  expect(console.log).lastCalledWith(
+    "isUpKeyPressed: true, isUpKeyJustPressed: true"
   );
 
   mockTime.nextFrame();
 
-  expect(textSpy).lastCalledWith(
-    "isUpKeyPressed: true, isUpKeyJustPressed: false",
-    0,
-    0
+  expect(console.log).lastCalledWith(
+    "isUpKeyPressed: true, isUpKeyJustPressed: false"
   );
 
   releaseKey("ArrowUp");
 
   mockTime.nextFrame();
 
-  expect(textSpy).lastCalledWith(
-    "isUpKeyPressed: false, isUpKeyJustPressed: false",
-    0,
-    0
+  expect(console.log).lastCalledWith(
+    "isUpKeyPressed: false, isUpKeyJustPressed: false"
   );
 });
 
@@ -88,34 +73,27 @@ const KeyboardGame = makeSprite<GameProps, KeyboardState, Inputs>({
     };
   },
   render({ state }) {
-    return [
-      t.text({
-        ...defaultProps,
-        text: `isUpKeyPressed: ${state.isUpKeyPressed}, isUpKeyJustPressed: ${state.isUpKeyJustPressed}`,
-      }),
-    ];
+    console.log(
+      `isUpKeyPressed: ${state.isUpKeyPressed}, isUpKeyJustPressed: ${state.isUpKeyJustPressed}`
+    );
+    return [];
   },
 });
 
 test("Pointer clicks and move", () => {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d", { alpha: false })!;
-  (canvas as any).getContext = () => ctx;
-  const textSpy = jest.spyOn(ctx, "fillText");
+  console.log = jest.fn();
 
-  renderCanvas(PointerGame(testGameProps), { canvas });
+  renderCanvas(PointerGame(testGameProps));
 
   mockTime.nextFrame();
 
-  expect(textSpy).lastCalledWith(
+  expect(console.log).lastCalledWith(
     [
       "pointerPressed: false",
       "pointerJustPressed: false",
       "pointerX: 0",
       "pointerY: 0",
-    ].join(),
-    0,
-    0
+    ].join()
   );
 
   // (200, 200) in browser translates to (100, -100) in game coordinates due to
@@ -124,58 +102,50 @@ test("Pointer clicks and move", () => {
 
   mockTime.nextFrame();
 
-  expect(textSpy).lastCalledWith(
+  expect(console.log).lastCalledWith(
     [
       "pointerPressed: true",
       "pointerJustPressed: true",
       "pointerX: 100",
       "pointerY: -100",
-    ].join(),
-    0,
-    0
+    ].join()
   );
 
   mockTime.nextFrame();
 
-  expect(textSpy).lastCalledWith(
+  expect(console.log).lastCalledWith(
     [
       "pointerPressed: true",
       "pointerJustPressed: false",
       "pointerX: 100",
       "pointerY: -100",
-    ].join(),
-    0,
-    0
+    ].join()
   );
 
   movePointer(150, 150);
 
   mockTime.nextFrame();
 
-  expect(textSpy).lastCalledWith(
+  expect(console.log).lastCalledWith(
     [
       "pointerPressed: true",
       "pointerJustPressed: false",
       "pointerX: 50",
       "pointerY: -50",
-    ].join(),
-    0,
-    0
+    ].join()
   );
 
   releasePointer(100, 100);
 
   mockTime.nextFrame();
 
-  expect(textSpy).lastCalledWith(
+  expect(console.log).lastCalledWith(
     [
       "pointerPressed: false",
       "pointerJustPressed: false",
       "pointerX: 0",
       "pointerY: 0",
-    ].join(),
-    0,
-    0
+    ].join()
   );
 
   movePointer(500, 500);
@@ -183,21 +153,19 @@ test("Pointer clicks and move", () => {
   mockTime.nextFrame();
 
   // Moving outside of game size doesn't register
-  expect(textSpy).not.lastCalledWith(
+  expect(console.log).not.lastCalledWith(
     [
       "pointerPressed: false",
       "pointerJustPressed: false",
       "pointerX: 400",
       "pointerY: -400",
-    ].join(),
-    0,
-    0
+    ].join()
   );
 });
 
 test("Pointer position within sprite", () => {
   const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d", { alpha: false })!;
+  const ctx = canvas.getContext("webgl")!;
   (canvas as any).getContext = () => ctx;
 
   renderCanvas(PointerGameWithSprite(testGameProps), {
@@ -228,12 +196,12 @@ test("Pointer position within sprite", () => {
 });
 
 test("Pointer clicks in scaled canvas with margins and canvas offset", () => {
+  console.log = jest.fn();
   const canvas = document.createElement("canvas");
   (window as any).innerWidth = 600;
   (window as any).innerHeight = 400;
-  const ctx = canvas.getContext("2d", { alpha: false })!;
+  const ctx = canvas.getContext("webgl")!;
   (canvas as any).getContext = () => ctx;
-  const textSpy = jest.spyOn(ctx, "fillText");
 
   // hack to set canvas offsetLeft properly (not needed in browser)
   Object.defineProperty(canvas, "offsetLeft", {
@@ -268,15 +236,13 @@ test("Pointer clicks in scaled canvas with margins and canvas offset", () => {
 
   expect(canvas.offsetLeft).toBe(80);
 
-  expect(textSpy).lastCalledWith(
+  expect(console.log).lastCalledWith(
     [
       "pointerPressed: true",
       "pointerJustPressed: true",
       "pointerX: -50", // see clientXToGameX for calculation
       "pointerY: 0",
-    ].join(),
-    0,
-    0
+    ].join()
   );
 
   Object.defineProperty(canvas, "offsetLeft", { value: 0 });
@@ -297,15 +263,13 @@ test("Pointer clicks in scaled canvas with margins and canvas offset", () => {
   // width = 200
   // height = 200
 
-  expect(textSpy).lastCalledWith(
+  expect(console.log).lastCalledWith(
     [
       "pointerPressed: true",
       "pointerJustPressed: false",
       "pointerX: 25",
       "pointerY: 62.5",
-    ].join(),
-    0,
-    0
+    ].join()
   );
 });
 
@@ -334,17 +298,15 @@ const PointerGame = makeSprite<GameProps, PointerState, Inputs>({
     };
   },
   render({ state }) {
-    return [
-      t.text({
-        ...defaultProps,
-        text: [
-          `pointerPressed: ${state.pointerPressed}`,
-          `pointerJustPressed: ${state.pointerJustPressed}`,
-          `pointerX: ${state.pointerX}`,
-          `pointerY: ${state.pointerY}`,
-        ].join(),
-      }),
-    ];
+    console.log(
+      [
+        `pointerPressed: ${state.pointerPressed}`,
+        `pointerJustPressed: ${state.pointerJustPressed}`,
+        `pointerX: ${state.pointerX}`,
+        `pointerY: ${state.pointerY}`,
+      ].join()
+    );
+    return [];
   },
 });
 
