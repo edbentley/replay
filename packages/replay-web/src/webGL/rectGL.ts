@@ -1,37 +1,49 @@
 import { Gradient } from "@replay/core/dist/t";
+import { RectBatchElement } from "./batch";
 import { createProgram, hexToRGB, setupRampTexture } from "./glUtils";
 import { m2d, Matrix2D } from "./matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_position;
+attribute vec4 a_matrix_abcd;
+attribute vec2 a_matrix_txty;
+attribute vec4 a_colour;
 
-uniform mat3 u_matrix;
+varying vec4 v_colour;
 
 void main() {
-  gl_Position = vec4(u_matrix * vec3(a_position, 1.0), 1.0);
+  mat3 matrix = mat3(
+    a_matrix_abcd.x, a_matrix_abcd.y, 0,
+    a_matrix_abcd.z, a_matrix_abcd.w, 0,
+    a_matrix_txty.x, a_matrix_txty.y, 1
+  );
+  gl_Position = vec4(matrix * vec3(a_position, 1.0), 1.0);
+  v_colour = a_colour;
 }
 `;
 
 const fragmentShaderSource = `
 precision mediump float;
 
-uniform vec4 u_colour;
+varying vec4 v_colour;
 
 void main() {
-  gl_FragColor = u_colour;
-  gl_FragColor.rgb *= u_colour.a;
+  gl_FragColor = v_colour;
+  gl_FragColor.rgb *= v_colour.a;
 }
 `;
 
-export function getDrawRect(gl: WebGLRenderingContext) {
+export function getDrawRects(
+  gl: WebGLRenderingContext,
+  glExt: ANGLE_instanced_arrays
+) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
   // Attributes
   const aPositionLocation = gl.getAttribLocation(program, "a_position");
-
-  // Uniforms
-  const uMatrixLocation = gl.getUniformLocation(program, "u_matrix");
-  const uColourLocation = gl.getUniformLocation(program, "u_colour");
+  const aMatrixABCDLocation = gl.getAttribLocation(program, "a_matrix_abcd");
+  const aMatrixTXTYLocation = gl.getAttribLocation(program, "a_matrix_txty");
+  const aColourLocation = gl.getAttribLocation(program, "a_colour");
 
   // Buffers
   const positionBuffer = gl.createBuffer();
@@ -49,43 +61,96 @@ export function getDrawRect(gl: WebGLRenderingContext) {
   ];
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
-  return function drawRect(
-    matrix: Matrix2D,
-    colour: string,
-    width: number,
-    height: number,
-    opacity: number,
+  const matrixBuffer = gl.createBuffer();
+  const coloursBuffer = gl.createBuffer();
+
+  return function drawRects(
+    elements: RectBatchElement[],
     prevProgram: WebGLProgram | null
   ): WebGLProgram {
     if (program !== prevProgram) {
       gl.useProgram(program);
 
-      // Setup the attributes to pull data from our buffers
+      // Attributes
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
       gl.enableVertexAttribArray(aPositionLocation);
       gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0);
+      glExt.vertexAttribDivisorANGLE(aPositionLocation, 0);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
+      gl.enableVertexAttribArray(aMatrixABCDLocation);
+      gl.vertexAttribPointer(aMatrixABCDLocation, 4, gl.FLOAT, false, 6 * 4, 0);
+      glExt.vertexAttribDivisorANGLE(aMatrixABCDLocation, 1);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
+      gl.enableVertexAttribArray(aMatrixTXTYLocation);
+      gl.vertexAttribPointer(
+        aMatrixTXTYLocation,
+        2,
+        gl.FLOAT,
+        false,
+        6 * 4,
+        4 * 4
+      );
+      glExt.vertexAttribDivisorANGLE(aMatrixTXTYLocation, 1);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, coloursBuffer);
+      gl.enableVertexAttribArray(aColourLocation);
+      gl.vertexAttribPointer(aColourLocation, 4, gl.FLOAT, false, 0, 0);
+      glExt.vertexAttribDivisorANGLE(aColourLocation, 1);
     }
 
-    // u_matrix * a_position
-    // where
-    // u_matrix = matrix * scale
-    // scale converts position (which is -0.5 / 0.5 points) to the size of the image
-    const uMatrixValue = m2d.multiply(
-      matrix,
-      m2d.getScaleMatrix(width, height)
+    const { matrices, colours } = getMatricesColoursData(elements);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, matrices, gl.DYNAMIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, coloursBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, colours, gl.DYNAMIC_DRAW);
+
+    glExt.drawArraysInstancedANGLE(
+      gl.TRIANGLES,
+      0, // offset
+      6, // num vertices per instance
+      elements.length // num instances
     );
-
-    // Set the matrix which will be u_matrix * a_position
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(uMatrixValue));
-
-    // Set colour
-    gl.uniform4f(uColourLocation, ...hexToRGB(colour), opacity);
-
-    // draw the quad (2 triangles, 6 vertices)
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     return program;
   };
+}
+
+function getMatricesColoursData(elements: RectBatchElement[]) {
+  const floatsPerMatrix = 6;
+  const floatsPerColour = 4;
+
+  // floats per mat3
+  const matrices = new Float32Array(elements.length * floatsPerMatrix);
+
+  // floats for colour vec4
+  const colours = new Float32Array(elements.length * floatsPerColour);
+
+  for (let i = 0; i < elements.length; i++) {
+    const element = elements[i];
+
+    const n = i * floatsPerMatrix;
+    matrices[n] = element.matrix[0];
+    matrices[n + 1] = element.matrix[1];
+    matrices[n + 2] = element.matrix[2];
+    matrices[n + 3] = element.matrix[3];
+    matrices[n + 4] = element.matrix[4];
+    matrices[n + 5] = element.matrix[5];
+
+    const [r, g, b] = hexToRGB(element.colour);
+
+    const n2 = i * floatsPerColour;
+
+    colours[n2] = r;
+    colours[n2 + 1] = g;
+    colours[n2 + 2] = b;
+    colours[n2 + 3] = element.opacity;
+  }
+
+  return { matrices, colours };
 }
 
 const vertexGradShaderSource = `

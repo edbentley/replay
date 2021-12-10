@@ -196,6 +196,36 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
       });
     });
     return [
+      t.image({
+        fileName: "enemy.png",
+        x: -100,
+        width: 20,
+        height: 20,
+      }),
+      t.image({
+        fileName: "enemy.png",
+        x: -50,
+        width: 20,
+        height: 30,
+      }),
+      t.rectangle({
+        color: "red",
+        x: 0,
+        width: 20,
+        height: 40,
+      }),
+      t.rectangle({
+        color: "blue",
+        x: 50,
+        width: 20,
+        height: 50,
+      }),
+      t.image({
+        fileName: "enemy.png",
+        x: 100,
+        width: 20,
+        height: 60,
+      }),
       // t.rectangle({
       //   testId: "background",
       //   position: {
@@ -216,154 +246,154 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
       //   height,
       //   color: "#D8D8D8"
       // }),
-      WalkingGreenCapChar({
-        id: "spritesheet",
-        x: -100,
-        y: 0,
-        mask: mask.circle({
-          radius: 20,
-          x: -24,
-        }),
-      }),
-      t.line({
-        path: [
-          [-30, -30],
-          [0, -60],
-          [30, -30],
-        ],
-        thickness: 3,
-        fillColor: "#000000",
-        color: "#FF0000",
-      }),
-      t.text({
-        text: "test",
-        color: "",
-        gradient: {
-          type: "linearVert",
-          colors: ["#FF0000", "#0000FF"],
-          opacities: [0, 1],
-          height: 5,
-        },
-      }),
-      t.text({
-        text: "test-left",
-        color: "#FF0000",
-        y: 20,
-        font: { align: "left" },
-      }),
-      t.text({
-        text: "test-right",
-        color: "#FF0000",
-        y: 40,
-        font: { align: "right" },
-      }),
-      t.rectangle({
-        x: 50,
-        color: "#FF0000",
-        gradient: {
-          type: "linearVert",
-          colors: ["#FF0000", "#0000FF"],
-          opacities: [0.5, 1],
-          height: 100,
-        },
-        width: 30,
-        height: 100,
-      }),
-      t.rectangle({
-        x: 100,
-        color: "#0000FF",
-        width: 50,
-        height: 100,
-      }),
-      t.rectangle({
-        x: 100,
-        color: "#FF0000",
-        width: 30,
-        height: 100,
-        opacity: 0,
-      }),
-      t.line({
-        x: -150,
-        y: 0,
-        opacity: 0.5,
-        fillGradient: {
-          type: "linearVert",
-          colors: ["#FF0000", "#0000FF"],
-          opacities: [0, 1],
-          height: 100,
-        },
-        path: [
-          [-30, -50],
-          [50, -50],
-          [50, 50],
-          [-50, 50],
-        ],
-        scaleX: -1,
-      }),
-      t.rectangle({
-        testId: "player",
-        x: 0,
-        y: -fullHeight / 2,
-        rotation: state.playerRotation,
-        width: 50,
-        height: 20,
-        color: "#0095DD",
-        scaleY: 0.5,
-      }),
-      ...bullets,
-      ...enemies,
-      t.circle({
-        radius: 4,
-        color: "green",
-        x: state.pointer.x,
-        y: state.pointer.y,
-      }),
-      Score({ score: state.score, id: "score" }),
-      Score({
-        preText: "High ",
-        score: highScore,
-        id: "highScore",
-        x: 100,
-        y: 0,
-      }),
-      PosLogger({ id: "posLogger", x: 100, y: 200 }),
-      state.paused
-        ? t.text({
-            text: "Paused",
-            color: "red",
-          })
-        : null,
-      Clickable({
-        id: "PauseButton",
-        sprites: function clickableSprites() {
-          return [
-            t.rectangle({
-              width: 100,
-              height: 20,
-              color: "black",
-              opacity: 0.2,
-            }),
-            t.text({
-              text: state.paused ? "Resume" : "Pause",
-              color: "purple",
-            }),
-          ];
-        },
-        onPress: function clickableOnPress() {
-          updateState((s) => {
-            if (s.paused) {
-              timer.resume(s.spawnEnemyTimerId);
-            } else {
-              timer.pause(s.spawnEnemyTimerId);
-            }
-            return { ...s, paused: !s.paused };
-          });
-        },
-        width: 100,
-        height: 20,
-        y: fullHeight / 2 - 15,
-        x: fullWidth / 2 - 55,
-      }),
+      // WalkingGreenCapChar({
+      //   id: "spritesheet",
+      //   x: -100,
+      //   y: 0,
+      //   mask: mask.circle({
+      //     radius: 20,
+      //     x: -24,
+      //   }),
+      // }),
+      // t.line({
+      //   path: [
+      //     [-30, -30],
+      //     [0, -60],
+      //     [30, -30],
+      //   ],
+      //   thickness: 3,
+      //   fillColor: "#000000",
+      //   color: "#FF0000",
+      // }),
+      // t.text({
+      //   text: "test",
+      //   color: "",
+      //   gradient: {
+      //     type: "linearVert",
+      //     colors: ["#FF0000", "#0000FF"],
+      //     opacities: [0, 1],
+      //     height: 5,
+      //   },
+      // }),
+      // t.text({
+      //   text: "test-left",
+      //   color: "#FF0000",
+      //   y: 20,
+      //   font: { align: "left" },
+      // }),
+      // t.text({
+      //   text: "test-right",
+      //   color: "#FF0000",
+      //   y: 40,
+      //   font: { align: "right" },
+      // }),
+      // t.rectangle({
+      //   x: 50,
+      //   color: "#FF0000",
+      //   gradient: {
+      //     type: "linearVert",
+      //     colors: ["#FF0000", "#0000FF"],
+      //     opacities: [0.5, 1],
+      //     height: 100,
+      //   },
+      //   width: 30,
+      //   height: 100,
+      // }),
+      // t.rectangle({
+      //   x: 100,
+      //   color: "#0000FF",
+      //   width: 50,
+      //   height: 100,
+      // }),
+      // t.rectangle({
+      //   x: 100,
+      //   color: "#FF0000",
+      //   width: 30,
+      //   height: 100,
+      //   opacity: 0,
+      // }),
+      // t.line({
+      //   x: -150,
+      //   y: 0,
+      //   opacity: 0.5,
+      //   fillGradient: {
+      //     type: "linearVert",
+      //     colors: ["#FF0000", "#0000FF"],
+      //     opacities: [0, 1],
+      //     height: 100,
+      //   },
+      //   path: [
+      //     [-30, -50],
+      //     [50, -50],
+      //     [50, 50],
+      //     [-50, 50],
+      //   ],
+      //   scaleX: -1,
+      // }),
+      // t.rectangle({
+      //   testId: "player",
+      //   x: 0,
+      //   y: -fullHeight / 2,
+      //   rotation: state.playerRotation,
+      //   width: 50,
+      //   height: 20,
+      //   color: "#0095DD",
+      //   scaleY: 0.5,
+      // }),
+      // ...bullets,
+      // ...enemies,
+      // t.circle({
+      //   radius: 4,
+      //   color: "green",
+      //   x: state.pointer.x,
+      //   y: state.pointer.y,
+      // }),
+      // Score({ score: state.score, id: "score" }),
+      // Score({
+      //   preText: "High ",
+      //   score: highScore,
+      //   id: "highScore",
+      //   x: 100,
+      //   y: 0,
+      // }),
+      // PosLogger({ id: "posLogger", x: 100, y: 200 }),
+      // state.paused
+      //   ? t.text({
+      //       text: "Paused",
+      //       color: "red",
+      //     })
+      //   : null,
+      // Clickable({
+      //   id: "PauseButton",
+      //   sprites: function clickableSprites() {
+      //     return [
+      //       t.rectangle({
+      //         width: 100,
+      //         height: 20,
+      //         color: "black",
+      //         opacity: 0.2,
+      //       }),
+      //       t.text({
+      //         text: state.paused ? "Resume" : "Pause",
+      //         color: "purple",
+      //       }),
+      //     ];
+      //   },
+      //   onPress: function clickableOnPress() {
+      //     updateState((s) => {
+      //       if (s.paused) {
+      //         timer.resume(s.spawnEnemyTimerId);
+      //       } else {
+      //         timer.pause(s.spawnEnemyTimerId);
+      //       }
+      //       return { ...s, paused: !s.paused };
+      //     });
+      //   },
+      //   width: 100,
+      //   height: 20,
+      //   y: fullHeight / 2 - 15,
+      //   x: fullWidth / 2 - 55,
+      // }),
     ];
   },
 });

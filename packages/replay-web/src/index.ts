@@ -133,6 +133,9 @@ export function renderCanvas<S>(
   // Use premultiplied alpha on textures (avoids white edges on images)
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const glExt = gl.getExtension("ANGLE_instanced_arrays")!;
+
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   const audioContext = new AudioContext();
 
@@ -242,6 +245,7 @@ export function renderCanvas<S>(
     // also update render with new size
     const renderCanvasResult = draw(
       gl,
+      glExt,
       offscreenCanvas,
       fullWidth,
       fullHeight,
@@ -255,10 +259,12 @@ export function renderCanvas<S>(
 
     // Mutate render
     mutRender.newFrame = renderCanvasResult.newFrame;
+    mutRender.endFrame = renderCanvasResult.endFrame;
     mutRender.startRenderSprite = renderCanvasResult.startRenderSprite;
     mutRender.endRenderSprite = renderCanvasResult.endRenderSprite;
     mutRender.renderTexture = renderCanvasResult.renderTexture;
-    mutRender.calledNativeSprite = renderCanvasResult.calledNativeSprite;
+    mutRender.startNativeSprite = renderCanvasResult.startNativeSprite;
+    mutRender.endNativeSprite = renderCanvasResult.endNativeSprite;
 
     nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
       canvasOffsetLeft: canvas.offsetLeft,
@@ -430,10 +436,12 @@ export function renderCanvas<S>(
 
   const mutRender: PlatformRender = {
     newFrame: () => null,
+    endFrame: () => null,
     startRenderSprite: () => null,
     endRenderSprite: () => null,
     renderTexture: () => null,
-    calledNativeSprite: () => null,
+    startNativeSprite: () => null,
+    endNativeSprite: () => null,
   };
 
   const mutDevice = mutDeviceCreator(

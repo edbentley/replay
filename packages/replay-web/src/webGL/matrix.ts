@@ -84,7 +84,7 @@ function multiplyMultiple(matrices: Matrix2D[]): Matrix2D | null {
     .reduce((prev, curr) => multiply(prev, curr), matrices[0]);
 }
 
-function toUniform3fv(matrix: Matrix2D): Float32List {
+function toUniform3fv(matrix: Matrix2D): Float32Array {
   const out = new Float32Array(9);
   out[0] = matrix[0];
   out[1] = matrix[1];
@@ -97,6 +97,23 @@ function toUniform3fv(matrix: Matrix2D): Float32List {
   out[8] = 1;
   return out;
 }
+
+// // Mutates
+// function addToFloat32Array(
+//   list: Float32Array,
+//   matrix: Matrix2D,
+//   index: number
+// ) {
+//   list[index] = matrix[0];
+//   list[index + 1] = matrix[1];
+//   list[index + 2] = 0;
+//   list[index + 3] = matrix[2];
+//   list[index + 4] = matrix[3];
+//   list[index + 5] = 0;
+//   list[index + 6] = matrix[4];
+//   list[index + 7] = matrix[5];
+//   list[index + 8] = 1;
+// }
 
 function getScale(matrix: Matrix2D): [scaleX: number, scaleY: number] {
   const scaleX = Math.hypot(matrix[0], matrix[2]);

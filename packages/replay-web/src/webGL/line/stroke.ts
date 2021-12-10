@@ -1,61 +1,77 @@
 import { Gradient } from "@replay/core/dist/t";
-import { createProgram, hexToRGB, setupRampTexture } from "./glUtils";
-import { m2d, Matrix2D } from "./matrix";
+import { createProgram, hexToRGB, setupRampTexture } from "../glUtils";
+import { m2d, Matrix2D } from "../matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_origin;
 attribute vec2 a_point1;
 attribute vec2 a_point2;
+attribute vec4 a_matrix_abcd;
+attribute vec2 a_matrix_txty;
+attribute vec4 a_colour;
+attribute float a_half_thickness;
 
-uniform mat3 u_matrix;
-uniform float u_half_thickness;
+varying vec4 v_colour;
 
 void main() {
+  v_colour = a_colour;
+
+  mat3 matrix = mat3(
+    a_matrix_abcd.x, a_matrix_abcd.y, 0,
+    a_matrix_abcd.z, a_matrix_abcd.w, 0,
+    a_matrix_txty.x, a_matrix_txty.y, 1
+  );
+
   if (a_point1 == a_point2) {
     // Avoid normalize a zero vector
-    gl_Position = vec4(u_matrix * vec3(a_origin, 1.0), 1.0);
+    gl_Position = vec4(matrix * vec3(a_origin, 1.0), 1.0);
     return;
   }
 
   vec2 normal = normalize(a_point2 - a_point1);
   vec2 tangent = vec2(-normal.y, normal.x);
-  vec2 pos = a_origin + tangent * u_half_thickness;
+  vec2 pos = a_origin + tangent * a_half_thickness;
 
-  gl_Position = vec4(u_matrix * vec3(pos, 1.0), 1.0);
+  gl_Position = vec4(matrix * vec3(pos, 1.0), 1.0);
 }
 `;
 
 const fragmentShaderSource = `
 precision mediump float;
 
-uniform vec4 u_colour;
+varying vec4 v_colour;
 
 void main() {
-  gl_FragColor = u_colour;
-  gl_FragColor.rgb *= u_colour.a;
+  gl_FragColor = v_colour;
+  gl_FragColor.rgb *= v_colour.a;
 }
 `;
 
-export function getDrawLine(gl: WebGLRenderingContext) {
+export function getDrawLineStrokes(
+  gl: WebGLRenderingContext,
+  glExt: ANGLE_instanced_arrays
+) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
   // Attributes
   const aPoint1Location = gl.getAttribLocation(program, "a_point1");
   const aPoint2Location = gl.getAttribLocation(program, "a_point2");
   const aOriginLocation = gl.getAttribLocation(program, "a_origin");
-
-  // Uniforms
-  const uMatrixLocation = gl.getUniformLocation(program, "u_matrix");
-  const uHalfThicknessLocation = gl.getUniformLocation(
+  const aMatrixABCDLocation = gl.getAttribLocation(program, "a_matrix_abcd");
+  const aMatrixTXTYLocation = gl.getAttribLocation(program, "a_matrix_txty");
+  const aColourLocation = gl.getAttribLocation(program, "a_colour");
+  const aHalfThicknessLocation = gl.getAttribLocation(
     program,
-    "u_half_thickness"
+    "a_half_thickness"
   );
-  const uColourLocation = gl.getUniformLocation(program, "u_colour");
 
   // Buffers
   const positionBuffer = gl.createBuffer();
+  const matrixBuffer = gl.createBuffer();
+  const coloursBuffer = gl.createBuffer();
+  const halfThicknessBuffer = gl.createBuffer();
 
-  return function drawLine(
+  return function drawLineStrokes(
     matrix: Matrix2D,
     path: [number, number][],
     lineWidth: number,
@@ -74,28 +90,67 @@ export function getDrawLine(gl: WebGLRenderingContext) {
     if (program !== prevProgram) {
       gl.useProgram(program);
 
-      // Setup the attributes to pull data from our buffers
+      // Attributes
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
       gl.enableVertexAttribArray(aOriginLocation);
+      glExt.vertexAttribDivisorANGLE(aOriginLocation, 0);
 
       gl.vertexAttribPointer(aPoint1Location, 2, gl.FLOAT, false, 24, 8);
+      glExt.vertexAttribDivisorANGLE(aPoint1Location, 0);
       gl.vertexAttribPointer(aPoint2Location, 2, gl.FLOAT, false, 24, 16);
+      glExt.vertexAttribDivisorANGLE(aPoint2Location, 0);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
+      gl.enableVertexAttribArray(aMatrixABCDLocation);
+      gl.vertexAttribPointer(aMatrixABCDLocation, 4, gl.FLOAT, false, 6 * 4, 0);
+      glExt.vertexAttribDivisorANGLE(aMatrixABCDLocation, 1);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
+      gl.enableVertexAttribArray(aMatrixTXTYLocation);
+      gl.vertexAttribPointer(
+        aMatrixTXTYLocation,
+        2,
+        gl.FLOAT,
+        false,
+        6 * 4,
+        4 * 4
+      );
+      glExt.vertexAttribDivisorANGLE(aMatrixTXTYLocation, 1);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, coloursBuffer);
+      gl.enableVertexAttribArray(aColourLocation);
+      gl.vertexAttribPointer(aColourLocation, 4, gl.FLOAT, false, 0, 0);
+      glExt.vertexAttribDivisorANGLE(aColourLocation, 1);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, halfThicknessBuffer);
+      gl.enableVertexAttribArray(aHalfThicknessLocation);
+      gl.vertexAttribPointer(aHalfThicknessLocation, 1, gl.FLOAT, false, 0, 0);
+      glExt.vertexAttribDivisorANGLE(aHalfThicknessLocation, 1);
     }
     // Add the path to GPU
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
       generatePathDataStroke(path),
       gl.DYNAMIC_DRAW
     );
 
-    // Set the matrix which will be u_matrix * a_position
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(matrix));
+    const {
+      matrices,
+      fillColours,
+      strokeColours,
+      halfThicknesses,
+    } = getBufferData(elements);
 
-    gl.uniform1f(uHalfThicknessLocation, lineWidth / 2);
+    gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, matrices, gl.DYNAMIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, halfThicknessBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, halfThicknesses, gl.DYNAMIC_DRAW);
 
     if (fillColor) {
-      // Set colour
-      gl.uniform4f(uColourLocation, ...hexToRGB(fillColor), opacity);
+      gl.bindBuffer(gl.ARRAY_BUFFER, coloursBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, colours, gl.DYNAMIC_DRAW);
 
       // Stride to skip
       gl.vertexAttribPointer(
