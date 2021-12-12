@@ -103,7 +103,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): TextTexture => {
     return {
       type: "text",
       props: mutateBaseProps(
@@ -136,7 +136,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): CircleTexture => {
     return {
       type: "circle",
       props: mutateBaseProps(
@@ -167,7 +167,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): RectangleTexture => {
     return {
       type: "rectangle",
       props: mutateBaseProps(
@@ -252,7 +252,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): LineTexture => {
     return {
       type: "line",
       props: mutateBaseProps(
@@ -286,7 +286,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): ImageTexture => {
     return {
       type: "image",
       props: mutateBaseProps(
@@ -353,7 +353,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): SpriteSheetTexture => {
     return {
       type: "spriteSheet",
       props: mutateBaseProps(

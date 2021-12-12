@@ -45,7 +45,11 @@ export function makeSprite<
   };
 }
 
-export interface CustomSprite<P, S, I> {
+export type CustomSprite<P, S, I> =
+  | NonMutableCustomSprite<P, S, I>
+  | MutableSprite<P, S, I>;
+
+interface NonMutableCustomSprite<P, S, I> {
   type: "custom";
   spriteObj: SpriteObj<P, S, I>;
   props: CustomSpriteProps<P>;
@@ -319,3 +323,48 @@ export type ContextSprite<T> = {
 export type Context<T> = {
   Sprite: (args: { context: T; sprites: Sprite[] }) => ContextSprite<T>;
 };
+
+/**
+ * Same as a custom sprite but you can mutate state. Good for reducing Garbage
+ * Collection.
+ */
+export function makeMutableSprite<
+  P extends ExcludeSpriteBaseProps<P>,
+  S = undefined,
+  I = {}
+>(
+  spriteObj: MutableSpriteObj<P, S, I>
+): (props: CustomSpriteProps<P>) => MutableSprite<P, S, I> {
+  return function makeSpriteCallback(props) {
+    return {
+      type: "custom",
+      spriteObj,
+      props,
+    };
+  };
+}
+
+interface MutableSprite<P, S, I> {
+  type: "custom";
+  spriteObj: MutableSpriteObj<P, S, I>;
+  props: CustomSpriteProps<P>;
+}
+
+type MutableSpriteObj<P, S, I> = S extends undefined
+  ? Partial<SpriteObjInit<P, S, I>> & MutableSpriteObjBase<P, S, I>
+  : SpriteObjInit<P, S, I> & MutableSpriteObjBase<P, S, I>;
+
+interface MutableSpriteObjBase<P, S, I> extends SpriteObjBase<P, S, I> {
+  /**
+   * Called every frame to update the state of the sprite.
+   */
+  loop?: (params: {
+    props: Readonly<P>;
+    state: S;
+    device: Device;
+    getInputs: () => I;
+    updateState: (update: (state: S) => S) => void;
+    getState: () => S;
+    getContext: <T>(context: Context<T>) => T;
+  }) => S;
+}
