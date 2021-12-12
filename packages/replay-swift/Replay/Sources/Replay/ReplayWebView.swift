@@ -11,7 +11,7 @@ public class ReplayWebView: WKWebView {
     
     public func jsBridge(messageId: String, jsArg: String) {
         self.evaluateJavaScript(
-            "window.__replayGlobalCallbacks__[`\(messageId)`](\(jsArg));"
+            "window.__replayGlobalCallbacks__[`\(messageId)`] && window.__replayGlobalCallbacks__[`\(messageId)`](\(jsArg));"
         )
     }
 }

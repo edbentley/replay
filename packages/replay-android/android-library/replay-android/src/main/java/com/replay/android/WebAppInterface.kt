@@ -43,40 +43,46 @@ class WebAppInterface(private val replayContext: ReplayActivity) {
     // -- Storage
 
     private fun getItem(messageId: String, key: String) {
-        try {
-            replayContext.openFileInput(key).bufferedReader().use { text ->
-                val value = text.readText()
-                replayContext.jsBridge(messageId, "{ value: `${value}` }")
+        Thread {
+            try {
+                replayContext.openFileInput(key).bufferedReader().use { text ->
+                    val value = text.readText()
+                    replayContext.jsBridge(messageId, "{ value: `${value}` }")
+                }
+            } catch (e: Exception) {
+                when (e) {
+                    is FileNotFoundException -> replayContext.jsBridge(messageId, "{ value: null }")
+                    else -> replayContext.jsBridge(messageId, "{ error: `${e.localizedMessage}` }")
+                }
             }
-        } catch (e: Exception) {
-            when (e) {
-                is FileNotFoundException -> replayContext.jsBridge(messageId, "{ value: null }")
-                else -> replayContext.jsBridge(messageId, "{ error: `${e.localizedMessage}` }")
-            }
-        }
+        }.start()
     }
 
     private fun removeItem(messageId: String, key: String) {
-        try {
-            val didDelete = replayContext.deleteFile(key)
-            if (didDelete) {
-                replayContext.jsBridge(messageId, "")
-            } else {
-                replayContext.jsBridge(messageId, "`Couldn't delete file`")
+        Thread {
+            try {
+                val didDelete = replayContext.deleteFile(key)
+                if (didDelete) {
+                    replayContext.jsBridge(messageId, "")
+                } else {
+                    replayContext.jsBridge(messageId, "`Couldn't delete file`")
+                }
+            } catch (e: Exception) {
+                replayContext.jsBridge(messageId, "`${e.localizedMessage}`")
             }
-        } catch (e: Exception) {
-            replayContext.jsBridge(messageId, "`${e.localizedMessage}`")
-        }
+        }.start()
     }
 
     private fun setItem(messageId: String, key: String, value: String) {
-        try {
-            replayContext.openFileOutput(key, Context.MODE_PRIVATE).use { output ->
-                output.write(value.toByteArray())
-                replayContext.jsBridge(messageId, "")
+        Thread {
+            try {
+                replayContext.openFileOutput(key, Context.MODE_PRIVATE).use { output ->
+                    output.write(value.toByteArray())
+                    replayContext.jsBridge(messageId, "")
+                }
+            } catch (e: Exception) {
+                replayContext.jsBridge(messageId, "`${e.localizedMessage}`")
             }
-        } catch (e: Exception) {
-            replayContext.jsBridge(messageId, "`${e.localizedMessage}`")
-        }
+        }.start()
     }
 }
