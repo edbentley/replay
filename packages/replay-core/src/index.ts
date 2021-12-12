@@ -7,6 +7,7 @@ export {
   makeSprite,
   makePureSprite,
   makeNativeSprite,
+  makeMutableSprite,
   NativeSpriteImplementation,
   NativeSpriteUtils,
   Context,

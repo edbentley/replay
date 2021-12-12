@@ -103,7 +103,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): TextTexture => {
     return {
       type: "text",
       props: {
@@ -134,7 +134,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): CircleTexture => {
     return {
       type: "circle",
       props: {
@@ -163,7 +163,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): RectangleTexture => {
     return {
       type: "rectangle",
       props: {
@@ -213,7 +213,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): LineTexture => {
     return {
       type: "line",
       props: {
@@ -245,7 +245,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): ImageTexture => {
     return {
       type: "image",
       props: {
@@ -277,7 +277,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): SpriteSheetTexture => {
     return {
       type: "spriteSheet",
       props: {
