@@ -112,27 +112,20 @@ export function getDrawImage(gl: WebGLRenderingContext) {
     // where
     // u_matrix = matrix * scale
     // scale converts position (which is -0.5 / 0.5 points) to the size of the image
-    const uMatrixValue = m2d.multiply(
-      matrix,
-      m2d.getScaleMatrix(width, height)
-    );
+    const uMatrix = m2d.scaleToUniform3fv(matrix, width, height);
 
     // Set the matrix which will be u_matrix * a_position
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(uMatrixValue));
+    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrix);
 
     // Because texture coordinates go from 0 to 1 and because our texture
     // coordinates are already a unit quad we can select an area of the texture
     // by scaling the unit quad down
-    const uTextureMatrixValue = spriteSheet
-      ? getSpriteSheetMatrix(spriteSheet)
-      : m2d.getIdentityMatrix();
+    const uTextureMatrix = spriteSheet
+      ? m2d.toUniform3fv(getSpriteSheetMatrix(spriteSheet))
+      : m2d.identityMatrix3fv;
 
     // Set the texture matrix.
-    gl.uniformMatrix3fv(
-      uTextureMatrixLocation,
-      false,
-      m2d.toUniform3fv(uTextureMatrixValue)
-    );
+    gl.uniformMatrix3fv(uTextureMatrixLocation, false, uTextureMatrix);
 
     // Tell the shader to get the texture from texture unit 0
     gl.uniform1i(uTextureLocation, 0);

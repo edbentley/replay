@@ -28,14 +28,12 @@ function getRotateMatrix(rotationRad: number): Matrix2D {
   ];
 }
 
-function getIdentityMatrix(): Matrix2D {
-  // prettier-ignore
-  return [
-    1, 0,
-    0, 1,
-    0, 0
-  ];
-}
+// prettier-ignore
+const identityMatrix3fv = new Float32Array([
+  1, 0, 0,
+  0, 1, 0,
+  0, 0, 1
+]);
 
 function getScaleMatrix(scaleX: number, scaleY: number): Matrix2D {
   // prettier-ignore
@@ -84,6 +82,34 @@ function multiplyMultiple(matrices: Matrix2D[]): Matrix2D | null {
     .reduce((prev, curr) => multiply(prev, curr), matrices[0]);
 }
 
+/**
+ * Optimise the number of matrices GC'd
+ */
+function scaleToUniform3fv(
+  matrix: Matrix2D,
+  scaleX: number,
+  scaleY: number
+): Float32Array {
+  const a0 = matrix[0],
+    a1 = matrix[1],
+    a2 = matrix[2],
+    a3 = matrix[3],
+    a4 = matrix[4],
+    a5 = matrix[5];
+
+  const out = new Float32Array(9);
+  out[0] = a0 * scaleX;
+  out[1] = a1 * scaleX;
+  out[2] = 0;
+  out[3] = a2 * scaleY;
+  out[4] = a3 * scaleY;
+  out[5] = 0;
+  out[6] = a4;
+  out[7] = a5;
+  out[8] = 1;
+  return out;
+}
+
 function toUniform3fv(matrix: Matrix2D): Float32Array {
   const out = new Float32Array(9);
   out[0] = matrix[0];
@@ -105,12 +131,13 @@ function getScale(matrix: Matrix2D): [scaleX: number, scaleY: number] {
 }
 
 export const m2d = {
-  getIdentityMatrix,
+  identityMatrix3fv,
   getRotateMatrix,
   getScaleMatrix,
   getTranslateMatrix,
   multiply,
   multiplyMultiple,
+  scaleToUniform3fv,
   toUniform3fv,
   getScale,
 };
