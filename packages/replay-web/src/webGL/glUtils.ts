@@ -61,7 +61,10 @@ const cssLevel1Colours: Record<string, string> = {
   aqua: "#00ffff",
 };
 
-export function hexToRGB(hex: string): [number, number, number] {
+export function hexToRGB(
+  hex: string,
+  premultiplyAlpha?: number
+): [number, number, number] {
   if (!hex.startsWith("#")) {
     hex = cssLevel1Colours[hex] || cssLevel1Colours.black;
   }
@@ -70,6 +73,14 @@ export function hexToRGB(hex: string): [number, number, number] {
   const red = number >> 16;
   const green = (number >> 8) & 255;
   const blue = number & 255;
+
+  if (premultiplyAlpha !== undefined) {
+    return [
+      premultiplyAlpha * (red / 255),
+      premultiplyAlpha * (green / 255),
+      premultiplyAlpha * (blue / 255),
+    ];
+  }
 
   return [red / 255, green / 255, blue / 255];
 }
