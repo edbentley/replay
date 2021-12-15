@@ -34,7 +34,6 @@ uniform vec4 u_colour;
 
 void main() {
   gl_FragColor = u_colour;
-  gl_FragColor.rgb *= u_colour.a;
 }
 `;
 
@@ -66,9 +65,9 @@ export function getDrawLine(gl: WebGLRenderingContext) {
     lineCap: "butt" | "round",
     opacity: number,
     prevProgram: WebGLProgram | null
-  ): { program: WebGLProgram; lineCaps: LineCaps[] } {
+  ): { program: WebGLProgram | null; lineCaps: LineCaps[] } {
     if (path.length <= 1) {
-      return { program: prevProgram || program, lineCaps: [] };
+      return { program: prevProgram, lineCaps: [] };
     }
 
     const lineCaps: LineCaps[] = [];
@@ -97,7 +96,7 @@ export function getDrawLine(gl: WebGLRenderingContext) {
 
     if (fillColor) {
       // Set colour
-      gl.uniform4f(uColourLocation, ...hexToRGB(fillColor), opacity);
+      gl.uniform4f(uColourLocation, ...hexToRGB(fillColor, opacity), opacity);
 
       // Stride to skip
       gl.vertexAttribPointer(
@@ -118,7 +117,7 @@ export function getDrawLine(gl: WebGLRenderingContext) {
       gl.drawArrays(gl.TRIANGLE_FAN, 0, path.length);
     }
     if (strokeColor) {
-      const rgb = hexToRGB(strokeColor);
+      const rgb = hexToRGB(strokeColor, opacity);
 
       // Set colour
       gl.uniform4f(uColourLocation, ...rgb, opacity);

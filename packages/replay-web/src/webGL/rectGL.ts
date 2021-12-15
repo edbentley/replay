@@ -19,7 +19,6 @@ uniform vec4 u_colour;
 
 void main() {
   gl_FragColor = u_colour;
-  gl_FragColor.rgb *= u_colour.a;
 }
 `;
 
@@ -79,7 +78,7 @@ export function getDrawRect(gl: WebGLRenderingContext) {
     gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(uMatrixValue));
 
     // Set colour
-    gl.uniform4f(uColourLocation, ...hexToRGB(colour), opacity);
+    gl.uniform4f(uColourLocation, ...hexToRGB(colour, opacity), opacity);
 
     // draw the quad (2 triangles, 6 vertices)
     gl.drawArrays(gl.TRIANGLES, 0, 6);

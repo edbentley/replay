@@ -33,7 +33,6 @@ uniform vec4 u_colour;
 
 void main() {
   gl_FragColor = u_colour;
-  gl_FragColor.rgb *= u_colour.a;
 }
 `;
 
@@ -95,7 +94,7 @@ export function getDrawCircle(gl: WebGLRenderingContext) {
     gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(matrix));
 
     // Set uniforms
-    gl.uniform4f(uColourLocation, ...hexToRGB(colour), opacity);
+    gl.uniform4f(uColourLocation, ...hexToRGB(colour, opacity), opacity);
     gl.uniform1f(uNumVertexLocation, numVertex);
     gl.uniform1f(uRadiusLocation, radius);
     gl.uniform1f(uAngleMultiplierLocation, semiCircle ? 0.5 : 1);
