@@ -47,46 +47,60 @@ class ReplayStorageProvider {
         
         switch message {
         case let x where x.starts(with: getItemKey):
-            let key = String(x.dropFirst(getItemKey.count))
-            let (value, error) = ReplayStorageProvider.getItem(key: key)
-            
-            let messageId = "\(internalMessageKey)\(getItemKey)\(key)"
-            
-            if let errorMessage = error?.localizedDescription {
-                webView.jsBridge(messageId: messageId, jsArg: "{ error: `\(errorMessage)` }")
-            } else if let jsString = value {
-                webView.jsBridge(messageId: messageId, jsArg: "{ value: `\(jsString)` }")
-            } else {
-                webView.jsBridge(messageId: messageId, jsArg: "{ value: null }")
+            // Background thread
+            DispatchQueue.global(qos: .background).async {
+                let key = String(x.dropFirst(getItemKey.count))
+                let (value, error) = ReplayStorageProvider.getItem(key: key)
+                
+                let messageId = "\(internalMessageKey)\(getItemKey)\(key)"
+                
+                // Back on UI thread
+                DispatchQueue.main.async {
+                    if let errorMessage = error?.localizedDescription {
+                        webView.jsBridge(messageId: messageId, jsArg: "{ error: `\(errorMessage)` }")
+                    } else if let jsString = value {
+                        webView.jsBridge(messageId: messageId, jsArg: "{ value: `\(jsString)` }")
+                    } else {
+                        webView.jsBridge(messageId: messageId, jsArg: "{ value: null }")
+                    }
+                }
             }
             
         case let x where x.starts(with: removeItemKey):
-            let key = String(x.dropFirst(removeItemKey.count))
-            
-            let error = ReplayStorageProvider.removeItem(key: key)
-            
-            let messageId = "\(internalMessageKey)\(removeItemKey)\(key)"
-            
-            if let errorMessage = error?.localizedDescription {
-                webView.jsBridge(messageId: messageId, jsArg: "`\(errorMessage)`")
-            } else {
-                webView.jsBridge(messageId: messageId, jsArg: "")
+            DispatchQueue.global(qos: .background).async {
+                let key = String(x.dropFirst(removeItemKey.count))
+                
+                let error = ReplayStorageProvider.removeItem(key: key)
+                
+                let messageId = "\(internalMessageKey)\(removeItemKey)\(key)"
+                
+                DispatchQueue.main.async {
+                    if let errorMessage = error?.localizedDescription {
+                        webView.jsBridge(messageId: messageId, jsArg: "`\(errorMessage)`")
+                    } else {
+                        webView.jsBridge(messageId: messageId, jsArg: "")
+                    }
+                }
             }
             
         case let x where x.starts(with: setItemKey):
-            let keyValue = String(x.dropFirst(setItemKey.count))
-                .components(separatedBy: setItemKeyValueSeparator)
-            let key = keyValue[0]
-            let value = keyValue[1]
-            
-            let error = ReplayStorageProvider.setItem(key: key, value: value)
-            
-            let messageId = "\(internalMessageKey)\(setItemKey)\(key)"
-            
-            if let errorMessage = error?.localizedDescription {
-                webView.jsBridge(messageId: messageId, jsArg: "`\(errorMessage)`")
-            } else {
-                webView.jsBridge(messageId: messageId, jsArg: "")
+            DispatchQueue.global(qos: .background).async {
+                let keyValue = String(x.dropFirst(setItemKey.count))
+                    .components(separatedBy: setItemKeyValueSeparator)
+                let key = keyValue[0]
+                let value = keyValue[1]
+                
+                let error = ReplayStorageProvider.setItem(key: key, value: value)
+                
+                let messageId = "\(internalMessageKey)\(setItemKey)\(key)"
+                
+                DispatchQueue.main.async {
+                    if let errorMessage = error?.localizedDescription {
+                        webView.jsBridge(messageId: messageId, jsArg: "`\(errorMessage)`")
+                    } else {
+                        webView.jsBridge(messageId: messageId, jsArg: "")
+                    }
+                }
             }
             
         default:

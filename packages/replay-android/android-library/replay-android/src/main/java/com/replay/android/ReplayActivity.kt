@@ -68,7 +68,7 @@ open class ReplayActivity : AppCompatActivity() {
     fun jsBridge(messageId: String, jsArg: String) {
         runOnUiThread {
             webView.evaluateJavascript(
-                "window.__replayGlobalCallbacks__[`${messageId}`](${jsArg});",
+                "window.__replayGlobalCallbacks__[`${messageId}`] && window.__replayGlobalCallbacks__[`${messageId}`](${jsArg});",
                 null
             )
         }
