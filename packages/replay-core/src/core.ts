@@ -91,10 +91,12 @@ export interface ReplayPlatform<I> {
 
 export type PlatformRender = {
   newFrame: () => void;
+  endFrame: () => void;
   startRenderSprite: (baseProps: SpriteBaseProps) => void;
   endRenderSprite: () => void;
   renderTexture: (texture: Texture) => void;
-  calledNativeSprite: () => void;
+  startNativeSprite: () => void;
+  endNativeSprite: () => void;
 };
 
 export type NativeSpriteMap = Record<
@@ -153,12 +155,16 @@ export function replayCore<S, I>(
     0
   );
 
+  platform.render.endFrame();
+
   const emptyRender: PlatformRender = {
     newFrame: () => null,
+    endFrame: () => null,
     startRenderSprite: () => null,
     endRenderSprite: () => null,
     renderTexture: () => null,
-    calledNativeSprite: () => null,
+    startNativeSprite: () => null,
+    endNativeSprite: () => null,
   };
 
   return {
@@ -199,6 +205,9 @@ export function replayCore<S, I>(
           0,
           0
         );
+
+        platformRender.endFrame();
+
         // reset inputs after each update
         resetInputs();
       }
@@ -422,6 +431,8 @@ function handleSprites<P, I>(
         lookupNativeSpriteContainer = newContainer;
       }
 
+      platformRender.startNativeSprite();
+
       lookupNativeSpriteContainer.state = nativeSpriteImplementation.loop({
         props: sprite.props,
         state: lookupNativeSpriteContainer.state,
@@ -431,7 +442,7 @@ function handleSprites<P, I>(
         parentY: spriteY,
       });
 
-      platformRender.calledNativeSprite();
+      platformRender.endNativeSprite();
     } else if (sprite.type === "pure") {
       addChildId(sprite.props.id);
 

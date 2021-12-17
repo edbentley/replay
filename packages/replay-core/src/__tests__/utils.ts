@@ -219,6 +219,7 @@ export function getTestPlatform(customSize?: DeviceSize) {
         textures.length = 0;
         masks.length = 0;
       },
+      endFrame: () => null,
       startRenderSprite: (baseProps) => {
         if (baseProps.mask) {
           masks.push(baseProps.mask);
@@ -264,7 +265,8 @@ export function getTestPlatform(customSize?: DeviceSize) {
           textures.push(texture);
         }
       },
-      calledNativeSprite: jest.fn(),
+      startNativeSprite: jest.fn(),
+      endNativeSprite: jest.fn(),
     },
   };
 

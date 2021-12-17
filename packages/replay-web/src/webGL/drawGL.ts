@@ -20,6 +20,7 @@ import { getDrawRectBatch } from "./rectBatchGL";
 export function draw(
   gl: WebGLRenderingContext,
   glInstArrays: ANGLE_instanced_arrays,
+  glVao: OES_vertex_array_object,
   offscreenCanvas: HTMLCanvasElement,
   gameWidth: number,
   gameHeight: number,
@@ -38,15 +39,15 @@ export function draw(
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const offscreenCanvasCtx = offscreenCanvas.getContext("2d")!;
 
-  const drawImage = getDrawImage(gl);
-  const drawImageBatch = getDrawImageBatch(gl, glInstArrays);
-  const drawRect = getDrawRect(gl);
-  const drawRectBatch = getDrawRectBatch(gl, glInstArrays);
-  const drawRectGrad = getDrawRectGrad(gl);
-  const drawLine = getDrawLine(gl);
-  const drawLineGrad = getDrawLineGrad(gl);
-  const drawCircle = getDrawCircle(gl);
-  const drawCanvas = getDrawCanvas(gl);
+  const drawImage = getDrawImage(gl, glVao);
+  const drawImageBatch = getDrawImageBatch(gl, glInstArrays, glVao);
+  const drawRect = getDrawRect(gl, glVao);
+  const drawRectBatch = getDrawRectBatch(gl, glInstArrays, glVao);
+  const drawRectGrad = getDrawRectGrad(gl, glVao);
+  const drawLine = getDrawLine(gl, glVao);
+  const drawLineGrad = getDrawLineGrad(gl, glVao);
+  const drawCircle = getDrawCircle(gl, glVao);
+  const drawCanvas = getDrawCanvas(gl, glVao);
 
   const stateStack: {
     opacity: number;
@@ -190,6 +191,12 @@ export function draw(
 
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    },
+    endFrame: () => {
+      // Reset for any Native Sprites rendering before next frame
+      glVao.bindVertexArrayOES(null);
+      prevProgram = null;
+      prevTexture = null;
     },
     startRenderSprite: (baseProps) => {
       const topStack = stateStack[0];
@@ -478,7 +485,11 @@ export function draw(
         clearMask();
       }
     },
-    calledNativeSprite: () => {
+    startNativeSprite: () => {
+      // Avoid other renderers changing attributes
+      glVao.bindVertexArrayOES(null);
+    },
+    endNativeSprite: () => {
       // Could have been reset by a Native Sprite rendering WebGL
       prevProgram = null;
       prevTexture = null;

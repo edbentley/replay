@@ -24,6 +24,7 @@ beforeAll(() => {
     gl.canvas.height = deviceSize.deviceHeight;
 
     const glInstArrays = gl.getExtension("ANGLE_instanced_arrays")!;
+    const glVao = gl.getExtension("OES_vertex_array_object")!;
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -31,6 +32,7 @@ beforeAll(() => {
     const renderTexture = draw(
       gl,
       glInstArrays,
+      glVao,
       offscreenCanvas,
       deviceSize.width,
       deviceSize.height,

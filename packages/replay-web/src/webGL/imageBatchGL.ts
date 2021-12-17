@@ -43,9 +43,13 @@ void main() {
 
 export function getDrawImageBatch(
   gl: WebGLRenderingContext,
-  glInstArrays: ANGLE_instanced_arrays
+  glInstArrays: ANGLE_instanced_arrays,
+  glVao: OES_vertex_array_object
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+
+  const vao = glVao.createVertexArrayOES();
+  glVao.bindVertexArrayOES(vao);
 
   // Attributes
   const aPositionLocation = gl.getAttribLocation(program, "a_position");
@@ -54,9 +58,13 @@ export function getDrawImageBatch(
   const aMatrixTXTYLocation = gl.getAttribLocation(program, "a_matrix_txty");
   const aOpacityLocation = gl.getAttribLocation(program, "a_opacity");
 
-  // Buffers
+  // -- Position Buffer
+
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+  gl.enableVertexAttribArray(aPositionLocation);
+  gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0);
 
   // Put a unit quad in the buffer translated to be centered
   // prettier-ignore
@@ -70,11 +78,14 @@ export function getDrawImageBatch(
   ];
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
-  // Create a buffer for texture coords
+  // -- Texture Coords Buffer
+
   const texcoordBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
 
-  // Put texcoords in the buffer
+  gl.enableVertexAttribArray(aTexcoordLocation);
+  gl.vertexAttribPointer(aTexcoordLocation, 2, gl.FLOAT, false, 0, 0);
+
   // prettier-ignore
   const texcoords = [
     0, 0,
@@ -86,8 +97,37 @@ export function getDrawImageBatch(
   ];
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texcoords), gl.STATIC_DRAW);
 
+  // -- Matrix Buffer
+
   const matrixBuffer = gl.createBuffer();
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
+  gl.enableVertexAttribArray(aMatrixABCDLocation);
+  gl.vertexAttribPointer(aMatrixABCDLocation, 4, gl.FLOAT, false, 24, 0); // 6 * 4
+  glInstArrays.vertexAttribDivisorANGLE(aMatrixABCDLocation, 1);
+
+  gl.enableVertexAttribArray(aMatrixTXTYLocation);
+  gl.vertexAttribPointer(
+    aMatrixTXTYLocation,
+    2,
+    gl.FLOAT,
+    false,
+    24, // 6 * 4
+    16 // 4 * 4
+  );
+  glInstArrays.vertexAttribDivisorANGLE(aMatrixTXTYLocation, 1);
+
+  // -- Opacities Buffer
+
   const opacitiesBuffer = gl.createBuffer();
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, opacitiesBuffer);
+  gl.enableVertexAttribArray(aOpacityLocation);
+  gl.vertexAttribPointer(aOpacityLocation, 1, gl.FLOAT, false, 0, 0);
+  glInstArrays.vertexAttribDivisorANGLE(aOpacityLocation, 1);
+
+  // -- Done
+  glVao.bindVertexArrayOES(null);
 
   return function drawImageBatch(
     texture: WebGLTexture,
@@ -103,33 +143,7 @@ export function getDrawImageBatch(
 
     if (program !== prevProgram) {
       gl.useProgram(program);
-
-      // Setup the attributes to pull data from our buffers
-      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      gl.enableVertexAttribArray(aPositionLocation);
-      gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0);
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-      gl.enableVertexAttribArray(aTexcoordLocation);
-      gl.vertexAttribPointer(aTexcoordLocation, 2, gl.FLOAT, false, 0, 0);
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
-      gl.enableVertexAttribArray(aMatrixABCDLocation);
-      gl.vertexAttribPointer(aMatrixABCDLocation, 4, gl.FLOAT, false, 24, 0); // 6 * 4
-
-      gl.enableVertexAttribArray(aMatrixTXTYLocation);
-      gl.vertexAttribPointer(
-        aMatrixTXTYLocation,
-        2,
-        gl.FLOAT,
-        false,
-        24, // 6 * 4
-        16 // 4 * 4
-      );
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, opacitiesBuffer);
-      gl.enableVertexAttribArray(aOpacityLocation);
-      gl.vertexAttribPointer(aOpacityLocation, 1, gl.FLOAT, false, 0, 0);
+      glVao.bindVertexArrayOES(vao);
     }
 
     const { matrices, opacities } = getMatricesOpacityData(
@@ -144,21 +158,12 @@ export function getDrawImageBatch(
     gl.bindBuffer(gl.ARRAY_BUFFER, opacitiesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, opacities, gl.DYNAMIC_DRAW);
 
-    glInstArrays.vertexAttribDivisorANGLE(aMatrixABCDLocation, 1);
-    glInstArrays.vertexAttribDivisorANGLE(aMatrixTXTYLocation, 1);
-    glInstArrays.vertexAttribDivisorANGLE(aOpacityLocation, 1);
-
     glInstArrays.drawArraysInstancedANGLE(
       gl.TRIANGLES,
       0, // offset
       6, // num vertices per instance
       elements.length // num instances
     );
-
-    // Reset state (can even affect programs not using extension)
-    glInstArrays.vertexAttribDivisorANGLE(aMatrixABCDLocation, 0);
-    glInstArrays.vertexAttribDivisorANGLE(aMatrixTXTYLocation, 0);
-    glInstArrays.vertexAttribDivisorANGLE(aOpacityLocation, 0);
 
     return { program, texture };
   };

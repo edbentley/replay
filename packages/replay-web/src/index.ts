@@ -128,6 +128,9 @@ export function renderCanvas<S>(
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const glInstArrays = gl.getExtension("ANGLE_instanced_arrays")!;
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const glVao = gl.getExtension("OES_vertex_array_object")!;
+
   // Enable alpha
   gl.enable(gl.BLEND);
   // Assumes premultiplied colours
@@ -242,6 +245,7 @@ export function renderCanvas<S>(
     const renderCanvasResult = draw(
       gl,
       glInstArrays,
+      glVao,
       offscreenCanvas,
       fullWidth,
       fullHeight,
@@ -255,10 +259,12 @@ export function renderCanvas<S>(
 
     // Mutate render
     mutRender.newFrame = renderCanvasResult.newFrame;
+    mutRender.endFrame = renderCanvasResult.endFrame;
     mutRender.startRenderSprite = renderCanvasResult.startRenderSprite;
     mutRender.endRenderSprite = renderCanvasResult.endRenderSprite;
     mutRender.renderTexture = renderCanvasResult.renderTexture;
-    mutRender.calledNativeSprite = renderCanvasResult.calledNativeSprite;
+    mutRender.startNativeSprite = renderCanvasResult.startNativeSprite;
+    mutRender.endNativeSprite = renderCanvasResult.endNativeSprite;
 
     nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
       canvasOffsetLeft: canvas.offsetLeft,
@@ -430,10 +436,12 @@ export function renderCanvas<S>(
 
   const mutRender: PlatformRender = {
     newFrame: () => null,
+    endFrame: () => null,
     startRenderSprite: () => null,
     endRenderSprite: () => null,
     renderTexture: () => null,
-    calledNativeSprite: () => null,
+    startNativeSprite: () => null,
+    endNativeSprite: () => null,
   };
 
   const mutDevice = mutDeviceCreator(

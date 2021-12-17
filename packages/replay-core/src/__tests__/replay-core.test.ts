@@ -113,7 +113,8 @@ test("can render simple game and runNextFrame", () => {
     },
   });
 
-  expect(platform.render.calledNativeSprite).not.toBeCalled();
+  expect(platform.render.startNativeSprite).not.toBeCalled();
+  expect(platform.render.endNativeSprite).not.toBeCalled();
 });
 
 test("can render simple game with sprites", () => {
@@ -1264,7 +1265,8 @@ test("supports Native Sprites", () => {
     width: 100,
   });
 
-  expect(platform.render.calledNativeSprite).toBeCalled();
+  expect(platform.render.startNativeSprite).toBeCalled();
+  expect(platform.render.endNativeSprite).toBeCalled();
 
   let time = 1;
   const nextFrame = () => {
