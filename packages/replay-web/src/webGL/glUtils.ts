@@ -167,30 +167,23 @@ function getRampData(gradient: Gradient) {
 
 export function applyTransform(
   matrix: Matrix2D,
-  baseProps: Omit<SpriteBaseProps, "mask">
+  baseProps: Omit<SpriteBaseProps, "mask">,
+  // These are for scaling vertices in image and rect shaders
+  withScaleX = 1,
+  withScaleY = 1
 ): Matrix2D {
-  const { x, y, rotation, scaleX, scaleY, anchorX, anchorY } = baseProps;
-
-  const matrices = [];
-  if (x !== 0 || y !== 0) {
-    matrices.push(m2d.getTranslateMatrix(baseProps.x, baseProps.y));
-  }
-  if (rotation !== 0) {
-    matrices.push(m2d.getRotateMatrix(-baseProps.rotation * toRad));
-  }
-  if (scaleX !== 1 || scaleY !== 1) {
-    matrices.push(m2d.getScaleMatrix(baseProps.scaleX, baseProps.scaleY));
-  }
-  if (anchorX !== 0 || anchorY !== 0) {
-    matrices.push(
-      m2d.getTranslateMatrix(-baseProps.anchorX, -baseProps.anchorY)
-    );
-  }
-  const transformMatrix = m2d.multiplyMultiple(matrices);
-
-  if (!transformMatrix) return matrix;
-
-  return m2d.multiply(matrix, transformMatrix);
+  return m2d.transform(
+    matrix,
+    baseProps.x,
+    baseProps.y,
+    baseProps.scaleX,
+    baseProps.scaleY,
+    -baseProps.rotation * toRad,
+    -baseProps.anchorX,
+    -baseProps.anchorY,
+    withScaleX,
+    withScaleY
+  );
 }
 
 const toRad = Math.PI / 180;
