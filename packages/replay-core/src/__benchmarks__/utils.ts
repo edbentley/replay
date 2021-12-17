@@ -138,10 +138,12 @@ function getBenchmarkPlatform() {
     mutDevice: mutableTestDevice,
     render: {
       newFrame: () => null,
+      endFrame: () => null,
       startRenderSprite: () => null,
       endRenderSprite: () => null,
       renderTexture: () => null,
-      calledNativeSprite: () => null,
+      startNativeSprite: () => null,
+      endNativeSprite: () => null,
     },
   };
 

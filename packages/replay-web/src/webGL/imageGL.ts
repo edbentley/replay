@@ -34,8 +34,14 @@ void main() {
 }
 `;
 
-export function getDrawImage(gl: WebGLRenderingContext) {
+export function getDrawImage(
+  gl: WebGLRenderingContext,
+  glVao: OES_vertex_array_object
+) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+
+  const vao = glVao.createVertexArrayOES();
+  glVao.bindVertexArrayOES(vao);
 
   // Attributes
   const aPositionLocation = gl.getAttribLocation(program, "a_position");
@@ -50,9 +56,13 @@ export function getDrawImage(gl: WebGLRenderingContext) {
   const uTextureLocation = gl.getUniformLocation(program, "u_texture");
   const uOpacityLocation = gl.getUniformLocation(program, "u_opacity");
 
-  // Buffers
+  // -- Position Buffer
+
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+  gl.enableVertexAttribArray(aPositionLocation);
+  gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0);
 
   // Put a unit quad in the buffer translated to be centered
   // prettier-ignore
@@ -66,9 +76,13 @@ export function getDrawImage(gl: WebGLRenderingContext) {
   ];
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
-  // Create a buffer for texture coords
+  // -- Texture Coords Buffer
+
   const texcoordBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+
+  gl.enableVertexAttribArray(aTexcoordLocation);
+  gl.vertexAttribPointer(aTexcoordLocation, 2, gl.FLOAT, false, 0, 0);
 
   // Put texcoords in the buffer
   // prettier-ignore
@@ -81,6 +95,9 @@ export function getDrawImage(gl: WebGLRenderingContext) {
     1, 1,
   ];
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texcoords), gl.STATIC_DRAW);
+
+  // -- Done
+  glVao.bindVertexArrayOES(null);
 
   return function drawImage(
     texture: WebGLTexture,
@@ -98,14 +115,7 @@ export function getDrawImage(gl: WebGLRenderingContext) {
 
     if (program !== prevProgram) {
       gl.useProgram(program);
-
-      // Setup the attributes to pull data from our buffers
-      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      gl.enableVertexAttribArray(aPositionLocation);
-      gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0);
-      gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-      gl.enableVertexAttribArray(aTexcoordLocation);
-      gl.vertexAttribPointer(aTexcoordLocation, 2, gl.FLOAT, false, 0, 0);
+      glVao.bindVertexArrayOES(vao);
     }
 
     // u_matrix * a_position

@@ -22,8 +22,15 @@ void main() {
 }
 `;
 
-export function getDrawRect(gl: WebGLRenderingContext) {
+export function getDrawRect(
+  gl: WebGLRenderingContext,
+
+  glVao: OES_vertex_array_object
+) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+
+  const vao = glVao.createVertexArrayOES();
+  glVao.bindVertexArrayOES(vao);
 
   // Attributes
   const aPositionLocation = gl.getAttribLocation(program, "a_position");
@@ -32,9 +39,12 @@ export function getDrawRect(gl: WebGLRenderingContext) {
   const uMatrixLocation = gl.getUniformLocation(program, "u_matrix");
   const uColourLocation = gl.getUniformLocation(program, "u_colour");
 
-  // Buffers
+  // -- Position Buffer
+
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  gl.enableVertexAttribArray(aPositionLocation);
+  gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0);
 
   // Put a unit quad in the buffer translated to be centered
   // prettier-ignore
@@ -48,6 +58,9 @@ export function getDrawRect(gl: WebGLRenderingContext) {
   ];
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
+  // -- Done
+  glVao.bindVertexArrayOES(null);
+
   return function drawRect(
     matrix: Matrix2D,
     colour: string,
@@ -58,11 +71,7 @@ export function getDrawRect(gl: WebGLRenderingContext) {
   ): WebGLProgram {
     if (program !== prevProgram) {
       gl.useProgram(program);
-
-      // Setup the attributes to pull data from our buffers
-      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      gl.enableVertexAttribArray(aPositionLocation);
-      gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0);
+      glVao.bindVertexArrayOES(vao);
     }
 
     // u_matrix * a_position
@@ -138,12 +147,18 @@ void main() {
 }
 `;
 
-export function getDrawRectGrad(gl: WebGLRenderingContext) {
+export function getDrawRectGrad(
+  gl: WebGLRenderingContext,
+  glVao: OES_vertex_array_object
+) {
   const program = createProgram(
     gl,
     vertexGradShaderSource,
     fragmentGradShaderSource
   );
+
+  const vao = glVao.createVertexArrayOES();
+  glVao.bindVertexArrayOES(vao);
 
   // Attributes
   const aPositionLocation = gl.getAttribLocation(program, "a_point");
@@ -159,9 +174,13 @@ export function getDrawRectGrad(gl: WebGLRenderingContext) {
   const uHorizontalLocation = gl.getUniformLocation(program, "u_horizontal");
   const uOpacityLocation = gl.getUniformLocation(program, "u_opacity");
 
-  // Buffers
+  // -- Position Buffer
+
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+  gl.enableVertexAttribArray(aPositionLocation);
+  gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0);
 
   // prettier-ignore
   const positions = [
@@ -173,6 +192,9 @@ export function getDrawRectGrad(gl: WebGLRenderingContext) {
     0.5, 0.5,
   ];
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+  // -- Done
+  glVao.bindVertexArrayOES(null);
 
   return function drawRectGrad(
     matrix: Matrix2D,
@@ -190,11 +212,7 @@ export function getDrawRectGrad(gl: WebGLRenderingContext) {
 
     if (program !== prevProgram) {
       gl.useProgram(program);
-
-      // Setup the attributes to pull data from our buffers
-      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      gl.enableVertexAttribArray(aPositionLocation);
-      gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0);
+      glVao.bindVertexArrayOES(vao);
     }
 
     const uMatrixValue = m2d.multiply(

@@ -36,8 +36,14 @@ void main() {
 }
 `;
 
-export function getDrawCircle(gl: WebGLRenderingContext) {
+export function getDrawCircle(
+  gl: WebGLRenderingContext,
+  glVao: OES_vertex_array_object
+) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+
+  const vao = glVao.createVertexArrayOES();
+  glVao.bindVertexArrayOES(vao);
 
   // Attributes
   const aVertexLocation = gl.getAttribLocation(program, "a_vertex");
@@ -52,8 +58,15 @@ export function getDrawCircle(gl: WebGLRenderingContext) {
   const uMatrixLocation = gl.getUniformLocation(program, "u_matrix");
   const uColourLocation = gl.getUniformLocation(program, "u_colour");
 
-  // Buffers
+  // -- Vertex Buffer
+
   const vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.enableVertexAttribArray(aVertexLocation);
+  gl.vertexAttribPointer(aVertexLocation, 1, gl.FLOAT, false, 0, 0);
+
+  // -- Done
+  glVao.bindVertexArrayOES(null);
 
   return function drawCircle(
     matrix: Matrix2D,
@@ -68,11 +81,10 @@ export function getDrawCircle(gl: WebGLRenderingContext) {
   ): WebGLProgram {
     if (program !== prevProgram) {
       gl.useProgram(program);
+      glVao.bindVertexArrayOES(vao);
 
-      // Setup the attributes to pull data from our buffers
+      // Only 1 buffer so don't have to rebind every time
       gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-      gl.enableVertexAttribArray(aVertexLocation);
-      gl.vertexAttribPointer(aVertexLocation, 1, gl.FLOAT, false, 0, 0);
     }
 
     // Calculate number points to draw based on one pixel resolution

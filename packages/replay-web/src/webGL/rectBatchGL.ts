@@ -33,9 +33,13 @@ void main() {
 
 export function getDrawRectBatch(
   gl: WebGLRenderingContext,
-  glInstArrays: ANGLE_instanced_arrays
+  glInstArrays: ANGLE_instanced_arrays,
+  glVao: OES_vertex_array_object
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+
+  const vao = glVao.createVertexArrayOES();
+  glVao.bindVertexArrayOES(vao);
 
   // Attributes
   const aPositionLocation = gl.getAttribLocation(program, "a_position");
@@ -43,9 +47,13 @@ export function getDrawRectBatch(
   const aMatrixTXTYLocation = gl.getAttribLocation(program, "a_matrix_txty");
   const aColourLocation = gl.getAttribLocation(program, "a_colour");
 
-  // Buffers
+  // -- Position Buffer
+
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+  gl.enableVertexAttribArray(aPositionLocation);
+  gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0);
 
   // Put a unit quad in the buffer translated to be centered
   // prettier-ignore
@@ -59,8 +67,37 @@ export function getDrawRectBatch(
   ];
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
+  // -- Matrix Buffer
+
   const matrixBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
+
+  gl.enableVertexAttribArray(aMatrixABCDLocation);
+  gl.vertexAttribPointer(aMatrixABCDLocation, 4, gl.FLOAT, false, 24, 0); // 6 * 4
+  glInstArrays.vertexAttribDivisorANGLE(aMatrixABCDLocation, 1);
+
+  gl.enableVertexAttribArray(aMatrixTXTYLocation);
+  gl.vertexAttribPointer(
+    aMatrixTXTYLocation,
+    2,
+    gl.FLOAT,
+    false,
+    24, // 6 * 4
+    16 // 4 * 4
+  );
+  glInstArrays.vertexAttribDivisorANGLE(aMatrixTXTYLocation, 1);
+
+  // -- Colours Buffer
+
   const coloursBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, coloursBuffer);
+
+  gl.enableVertexAttribArray(aColourLocation);
+  gl.vertexAttribPointer(aColourLocation, 4, gl.FLOAT, false, 0, 0);
+  glInstArrays.vertexAttribDivisorANGLE(aColourLocation, 1);
+
+  // -- Done
+  glVao.bindVertexArrayOES(null);
 
   return function drawRectBatch(
     matrix: Matrix2D,
@@ -70,29 +107,7 @@ export function getDrawRectBatch(
   ): WebGLProgram {
     if (program !== prevProgram) {
       gl.useProgram(program);
-
-      // Setup the attributes to pull data from our buffers
-      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      gl.enableVertexAttribArray(aPositionLocation);
-      gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0);
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
-      gl.enableVertexAttribArray(aMatrixABCDLocation);
-      gl.vertexAttribPointer(aMatrixABCDLocation, 4, gl.FLOAT, false, 24, 0); // 6 * 4
-
-      gl.enableVertexAttribArray(aMatrixTXTYLocation);
-      gl.vertexAttribPointer(
-        aMatrixTXTYLocation,
-        2,
-        gl.FLOAT,
-        false,
-        24, // 6 * 4
-        16 // 4 * 4
-      );
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, coloursBuffer);
-      gl.enableVertexAttribArray(aColourLocation);
-      gl.vertexAttribPointer(aColourLocation, 4, gl.FLOAT, false, 0, 0);
+      glVao.bindVertexArrayOES(vao);
     }
 
     const { matrices, colours } = getMatricesColoursData(
@@ -107,21 +122,12 @@ export function getDrawRectBatch(
     gl.bindBuffer(gl.ARRAY_BUFFER, coloursBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, colours, gl.DYNAMIC_DRAW);
 
-    glInstArrays.vertexAttribDivisorANGLE(aMatrixABCDLocation, 1);
-    glInstArrays.vertexAttribDivisorANGLE(aMatrixTXTYLocation, 1);
-    glInstArrays.vertexAttribDivisorANGLE(aColourLocation, 1);
-
     glInstArrays.drawArraysInstancedANGLE(
       gl.TRIANGLES,
       0, // offset
       6, // num vertices per instance
       elements.length // num instances
     );
-
-    // Reset state (can even affect programs not using extension)
-    glInstArrays.vertexAttribDivisorANGLE(aMatrixABCDLocation, 0);
-    glInstArrays.vertexAttribDivisorANGLE(aMatrixTXTYLocation, 0);
-    glInstArrays.vertexAttribDivisorANGLE(aColourLocation, 0);
 
     return program;
   };

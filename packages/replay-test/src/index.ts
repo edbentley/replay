@@ -420,6 +420,7 @@ export function testSprite<P, S, I>(
       newFrame: () => {
         textures.length = 0;
       },
+      endFrame: () => null,
       startRenderSprite: (baseProps) => {
         const getParentCoords = getParentCoordsForSprite(baseProps);
 
@@ -511,7 +512,8 @@ export function testSprite<P, S, I>(
           } as SingleTexture);
         }
       },
-      calledNativeSprite: () => null,
+      startNativeSprite: () => null,
+      endNativeSprite: () => null,
     },
   };
 

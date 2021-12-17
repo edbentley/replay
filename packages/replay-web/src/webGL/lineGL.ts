@@ -37,8 +37,14 @@ void main() {
 }
 `;
 
-export function getDrawLine(gl: WebGLRenderingContext) {
+export function getDrawLine(
+  gl: WebGLRenderingContext,
+  glVao: OES_vertex_array_object
+) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+
+  const vaoStroke = glVao.createVertexArrayOES();
+  const vaoFill = glVao.createVertexArrayOES();
 
   // Attributes
   const aPoint1Location = gl.getAttribLocation(program, "a_point1");
@@ -53,8 +59,47 @@ export function getDrawLine(gl: WebGLRenderingContext) {
   );
   const uColourLocation = gl.getUniformLocation(program, "u_colour");
 
-  // Buffers
+  // Buffer
   const positionBuffer = gl.createBuffer();
+
+  // -- 1st VAO (stroke)
+
+  glVao.bindVertexArrayOES(vaoStroke);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+  gl.enableVertexAttribArray(aPoint1Location);
+  gl.vertexAttribPointer(aPoint1Location, 2, gl.FLOAT, false, 24, 8);
+
+  gl.enableVertexAttribArray(aPoint2Location);
+  gl.vertexAttribPointer(aPoint2Location, 2, gl.FLOAT, false, 24, 16);
+
+  gl.enableVertexAttribArray(aOriginLocation);
+  gl.vertexAttribPointer(aOriginLocation, 2, gl.FLOAT, false, 24, 0);
+
+  // -- 2nd VAO (fill)
+
+  glVao.bindVertexArrayOES(vaoFill);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+  gl.enableVertexAttribArray(aOriginLocation);
+  gl.vertexAttribPointer(
+    aOriginLocation,
+    2,
+    gl.FLOAT,
+    false,
+    // 24 * 4 (24 floats per row, 4 bytes per float)
+    96,
+    0
+  );
+
+  // Not using these values
+  gl.disableVertexAttribArray(aPoint1Location);
+  gl.disableVertexAttribArray(aPoint2Location);
+
+  // -- Done
+  glVao.bindVertexArrayOES(null);
 
   return function drawLine(
     matrix: Matrix2D,
@@ -75,13 +120,10 @@ export function getDrawLine(gl: WebGLRenderingContext) {
     if (program !== prevProgram) {
       gl.useProgram(program);
 
-      // Setup the attributes to pull data from our buffers
+      // Only 1 buffer so don't have to rebind every time
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      gl.enableVertexAttribArray(aOriginLocation);
-
-      gl.vertexAttribPointer(aPoint1Location, 2, gl.FLOAT, false, 24, 8);
-      gl.vertexAttribPointer(aPoint2Location, 2, gl.FLOAT, false, 24, 16);
     }
+
     // Add the path to GPU
     gl.bufferData(
       gl.ARRAY_BUFFER,
@@ -98,20 +140,7 @@ export function getDrawLine(gl: WebGLRenderingContext) {
       // Set colour
       gl.uniform4f(uColourLocation, ...hexToRGB(fillColor, opacity), opacity);
 
-      // Stride to skip
-      gl.vertexAttribPointer(
-        aOriginLocation,
-        2,
-        gl.FLOAT,
-        false,
-        // 24 * 4 (24 floats per row, 4 bytes per float)
-        96,
-        0
-      );
-
-      // Not using these values
-      gl.disableVertexAttribArray(aPoint1Location);
-      gl.disableVertexAttribArray(aPoint2Location);
+      glVao.bindVertexArrayOES(vaoFill);
 
       // draw the line shape
       gl.drawArrays(gl.TRIANGLE_FAN, 0, path.length);
@@ -122,10 +151,7 @@ export function getDrawLine(gl: WebGLRenderingContext) {
       // Set colour
       gl.uniform4f(uColourLocation, ...rgb, opacity);
 
-      gl.vertexAttribPointer(aOriginLocation, 2, gl.FLOAT, false, 24, 0);
-
-      gl.enableVertexAttribArray(aPoint1Location);
-      gl.enableVertexAttribArray(aPoint2Location);
+      glVao.bindVertexArrayOES(vaoStroke);
 
       // draw the line shape
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, path.length * 4);
@@ -302,12 +328,18 @@ void main() {
 }
 `;
 
-export function getDrawLineGrad(gl: WebGLRenderingContext) {
+export function getDrawLineGrad(
+  gl: WebGLRenderingContext,
+  glVao: OES_vertex_array_object
+) {
   const program = createProgram(
     gl,
     vertexShaderGradSource,
     fragmentShaderGradSource
   );
+
+  const vao = glVao.createVertexArrayOES();
+  glVao.bindVertexArrayOES(vao);
 
   // Attributes
   const aPointLocation = gl.getAttribLocation(program, "a_point");
@@ -323,8 +355,15 @@ export function getDrawLineGrad(gl: WebGLRenderingContext) {
   const uHorizontalLocation = gl.getUniformLocation(program, "u_horizontal");
   const uOpacityLocation = gl.getUniformLocation(program, "u_opacity");
 
-  // Buffers
+  // -- Position Buffer
+
   const positionBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  gl.enableVertexAttribArray(aPointLocation);
+  gl.vertexAttribPointer(aPointLocation, 2, gl.FLOAT, false, 0, 0);
+
+  // -- Done
+  glVao.bindVertexArrayOES(null);
 
   return function drawLineGrad(
     matrix: Matrix2D,
@@ -334,11 +373,11 @@ export function getDrawLineGrad(gl: WebGLRenderingContext) {
     opacity: number,
     prevProgram: WebGLProgram | null,
     prevTexture: WebGLTexture | null
-  ): { program: WebGLProgram; texture: WebGLTexture } {
+  ): { program: WebGLProgram | null; texture: WebGLTexture | null } {
     if (path.length <= 1) {
       return {
-        program: prevProgram || program,
-        texture: prevTexture || gradTexture,
+        program: prevProgram,
+        texture: prevTexture,
       };
     }
     if (gradTexture !== prevTexture) {
@@ -347,13 +386,12 @@ export function getDrawLineGrad(gl: WebGLRenderingContext) {
 
     if (program !== prevProgram) {
       gl.useProgram(program);
+      glVao.bindVertexArrayOES(vao);
 
-      // Setup the attributes to pull data from our buffers
+      // Only 1 buffer so don't have to rebind every time
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      gl.enableVertexAttribArray(aPointLocation);
-      gl.vertexAttribPointer(aPointLocation, 2, gl.FLOAT, false, 0, 0);
     }
-    // Add the path to GPU
+
     gl.bufferData(gl.ARRAY_BUFFER, generatePathDataFill(path), gl.DYNAMIC_DRAW);
 
     // Set the matrix which will be u_matrix * a_position
