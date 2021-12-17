@@ -83,6 +83,56 @@ function multiplyMultiple(matrices: Matrix2D[]): Matrix2D | null {
 }
 
 /**
+ * Applies all of the common Sprite props matrices in one go.
+ *
+ * Equivalent to:
+ *
+ * m2d.multiplyMultiple([
+ *    matrix,
+ *    m2d.getTranslateMatrix(x, y),
+ *    m2d.getRotateMatrix(rotation),
+ *    m2d.getScaleMatrix(scaleX, scaleY,
+ *    m2d.getTranslateMatrix(anchorX, anchorY),
+ *    m2d.getScaleMatrix(initScaleX, initScaleY,
+ * ])
+ */
+function transform(
+  matrix: Matrix2D,
+  x: number,
+  y: number,
+  scaleX: number,
+  scaleY: number,
+  rotationRad: number,
+  anchorX: number,
+  anchorY: number,
+  initScaleX: number,
+  initScaleY: number
+): Matrix2D {
+  const thetaC = Math.cos(rotationRad);
+  const thetaS = Math.sin(rotationRad);
+
+  const a0 = matrix[0],
+    a1 = matrix[1],
+    a2 = matrix[2],
+    a3 = matrix[3],
+    a4 = matrix[4],
+    a5 = matrix[5];
+  const b0 = initScaleX * thetaC * scaleX,
+    b1 = initScaleX * thetaS * scaleX,
+    b2 = initScaleY * -thetaS * scaleY,
+    b3 = initScaleY * thetaC * scaleY,
+    b4 = thetaC * scaleX * anchorX - thetaS * scaleY * anchorY + x,
+    b5 = thetaS * scaleX * anchorX + thetaC * scaleY * anchorY + y;
+
+  // prettier-ignore
+  return [
+    a0 * b0 + a2 * b1, a1 * b0 + a3 * b1,
+    a0 * b2 + a2 * b3, a1 * b2 + a3 * b3,
+    a0 * b4 + a2 * b5 + a4, a1 * b4 + a3 * b5 + a5,
+  ];
+}
+
+/**
  * Optimise the number of matrices GC'd
  */
 function scaleToUniform3fv(
@@ -135,6 +185,7 @@ export const m2d = {
   getRotateMatrix,
   getScaleMatrix,
   getTranslateMatrix,
+  transform,
   multiply,
   multiplyMultiple,
   scaleToUniform3fv,

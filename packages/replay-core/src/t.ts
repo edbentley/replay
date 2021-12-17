@@ -1,4 +1,4 @@
-import { SpriteBaseProps, getDefaultProps } from "./props";
+import { SpriteBaseProps, mutateBaseProps } from "./props";
 import { MaskShape } from "./mask";
 
 export type TextureFont = {
@@ -106,16 +106,18 @@ export const t = {
   }): TextTexture => {
     return {
       type: "text",
-      props: {
-        testId: props.testId,
-        ...getDefaultProps(props),
-        font: props.font,
-        text: props.text,
-        color: props.color,
-        gradient: props.gradient,
-        strokeColor: props.strokeColor,
-        strokeThickness: props.strokeThickness,
-      },
+      props: mutateBaseProps(
+        {
+          testId: props.testId,
+          font: props.font,
+          text: props.text,
+          color: props.color,
+          gradient: props.gradient,
+          strokeColor: props.strokeColor,
+          strokeThickness: props.strokeThickness,
+        },
+        props
+      ),
     };
   },
   circle: (props: {
@@ -137,12 +139,14 @@ export const t = {
   }): CircleTexture => {
     return {
       type: "circle",
-      props: {
-        testId: props.testId,
-        ...getDefaultProps(props),
-        radius: props.radius,
-        color: props.color,
-      },
+      props: mutateBaseProps(
+        {
+          testId: props.testId,
+          radius: props.radius,
+          color: props.color,
+        },
+        props
+      ),
     };
   },
   rectangle: (props: {
@@ -166,14 +170,16 @@ export const t = {
   }): RectangleTexture => {
     return {
       type: "rectangle",
-      props: {
-        testId: props.testId,
-        ...getDefaultProps(props),
-        width: props.width,
-        height: props.height,
-        color: props.color,
-        gradient: props.gradient,
-      },
+      props: mutateBaseProps(
+        {
+          testId: props.testId,
+          width: props.width,
+          height: props.height,
+          color: props.color,
+          gradient: props.gradient,
+        },
+        props
+      ),
     };
   },
   rectangleArray: (arg: {
@@ -196,13 +202,17 @@ export const t = {
     return {
       type: "rectangleArray",
       mask: arg.mask || null,
-      props: arg.props.map((props) => ({
-        testId: props.testId,
-        ...getDefaultProps(props),
-        width: props.width,
-        height: props.height,
-        color: props.color,
-      })),
+      props: arg.props.map((props) =>
+        mutateBaseProps<RectangleProps>(
+          {
+            testId: props.testId,
+            width: props.width,
+            height: props.height,
+            color: props.color,
+          },
+          props
+        )
+      ),
     };
   },
   line: (props: {
@@ -245,16 +255,18 @@ export const t = {
   }): LineTexture => {
     return {
       type: "line",
-      props: {
-        testId: props.testId,
-        ...getDefaultProps(props),
-        color: props.color,
-        fillColor: props.fillColor,
-        thickness: props.thickness ?? 1,
-        lineCap: props.lineCap || "butt",
-        path: props.path,
-        fillGradient: props.fillGradient,
-      },
+      props: mutateBaseProps(
+        {
+          testId: props.testId,
+          color: props.color,
+          fillColor: props.fillColor,
+          thickness: props.thickness ?? 1,
+          lineCap: props.lineCap || "butt",
+          path: props.path,
+          fillGradient: props.fillGradient,
+        },
+        props
+      ),
     };
   },
   image: (props: {
@@ -277,13 +289,15 @@ export const t = {
   }): ImageTexture => {
     return {
       type: "image",
-      props: {
-        testId: props.testId,
-        ...getDefaultProps(props),
-        fileName: props.fileName,
-        width: props.width,
-        height: props.height,
-      },
+      props: mutateBaseProps(
+        {
+          testId: props.testId,
+          fileName: props.fileName,
+          width: props.width,
+          height: props.height,
+        },
+        props
+      ),
     };
   },
   imageArray: (arg: {
@@ -307,12 +321,16 @@ export const t = {
       type: "imageArray",
       fileName: arg.fileName,
       mask: arg.mask || null,
-      props: arg.props.map((props) => ({
-        testId: props.testId,
-        ...getDefaultProps(props),
-        width: props.width,
-        height: props.height,
-      })),
+      props: arg.props.map((props) =>
+        mutateBaseProps<Omit<ImageProps, "fileName">>(
+          {
+            testId: props.testId,
+            width: props.width,
+            height: props.height,
+          },
+          props
+        )
+      ),
     };
   },
   spriteSheet: (props: {
@@ -338,16 +356,18 @@ export const t = {
   }): SpriteSheetTexture => {
     return {
       type: "spriteSheet",
-      props: {
-        testId: props.testId,
-        ...getDefaultProps(props),
-        fileName: props.fileName,
-        columns: props.columns,
-        rows: props.rows,
-        index: props.index,
-        width: props.width,
-        height: props.height,
-      },
+      props: mutateBaseProps(
+        {
+          testId: props.testId,
+          fileName: props.fileName,
+          columns: props.columns,
+          rows: props.rows,
+          index: props.index,
+          width: props.width,
+          height: props.height,
+        },
+        props
+      ),
     };
   },
 };

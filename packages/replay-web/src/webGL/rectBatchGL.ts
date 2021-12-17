@@ -1,6 +1,6 @@
 import { RectangleArrayTexture } from "@replay/core/dist/t";
 import { applyTransform, createProgram, hexToRGB } from "./glUtils";
-import { m2d, Matrix2D } from "./matrix";
+import { Matrix2D } from "./matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_position;
@@ -144,11 +144,13 @@ function getMatricesColoursData(
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
 
-    const newMatrix = m2d.multiply(
-      applyTransform(matrix, element),
+    const newMatrix = applyTransform(
+      matrix,
+      element,
       // This converts vertices in shader (which is -0.5 / 0.5 points) to the
       // size of the rect
-      m2d.getScaleMatrix(element.width, element.height)
+      element.width,
+      element.height
     );
 
     const n = i * floatsPerMatrix;
