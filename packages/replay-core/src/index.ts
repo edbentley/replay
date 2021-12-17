@@ -1,6 +1,6 @@
 // All of the public APIs used in games (follows SemVer)
 
-export { t, Texture, TextureFont } from "./t";
+export { t, Texture, SingleTexture, TextureFont } from "./t";
 export {
   Sprite,
   PureSprite,

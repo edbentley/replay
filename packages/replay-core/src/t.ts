@@ -176,6 +176,35 @@ export const t = {
       },
     };
   },
+  rectangleArray: (arg: {
+    mask?: MaskShape;
+    props: {
+      width: number;
+      height: number;
+      color: string;
+      opacity?: number;
+      scaleX?: number;
+      scaleY?: number;
+      anchorX?: number;
+      anchorY?: number;
+      x?: number;
+      y?: number;
+      rotation?: number;
+      testId?: string;
+    }[];
+  }): RectangleArrayTexture => {
+    return {
+      type: "rectangleArray",
+      mask: arg.mask || null,
+      props: arg.props.map((props) => ({
+        testId: props.testId,
+        ...getDefaultProps(props),
+        width: props.width,
+        height: props.height,
+        color: props.color,
+      })),
+    };
+  },
   line: (props: {
     /**
      * A CSS colour (e.g. `#ff0000`, `rgba(0, 0, 0, 0)`, `green`) of the stroke
@@ -257,6 +286,35 @@ export const t = {
       },
     };
   },
+  imageArray: (arg: {
+    fileName: string;
+    mask?: MaskShape;
+    props: {
+      width: number;
+      height: number;
+      opacity?: number;
+      scaleX?: number;
+      scaleY?: number;
+      anchorX?: number;
+      anchorY?: number;
+      x?: number;
+      y?: number;
+      rotation?: number;
+      testId?: string;
+    }[];
+  }): ImageArrayTexture => {
+    return {
+      type: "imageArray",
+      fileName: arg.fileName,
+      mask: arg.mask || null,
+      props: arg.props.map((props) => ({
+        testId: props.testId,
+        ...getDefaultProps(props),
+        width: props.width,
+        height: props.height,
+      })),
+    };
+  },
   spriteSheet: (props: {
     /**
      * Check each platform for supported file types. PNG is preferred on iOS
@@ -303,13 +361,15 @@ type BaseProps = TestProps & SpriteBaseProps;
 /**
  * A Replay texture
  */
-export type Texture =
+export type SingleTexture =
   | TextTexture
   | CircleTexture
   | RectangleTexture
   | LineTexture
   | ImageTexture
   | SpriteSheetTexture;
+
+export type Texture = SingleTexture | RectangleArrayTexture | ImageArrayTexture;
 
 // -- Text
 type TextProps = BaseProps & {
@@ -348,6 +408,12 @@ export interface RectangleTexture {
   props: RectangleProps;
 }
 
+export interface RectangleArrayTexture {
+  type: "rectangleArray";
+  mask: MaskShape;
+  props: Omit<RectangleProps, "mask" | "gradient">[];
+}
+
 // -- Line
 type LineProps = BaseProps & {
   color?: string;
@@ -372,6 +438,13 @@ type ImageProps = BaseProps & {
 export interface ImageTexture {
   type: "image";
   props: ImageProps;
+}
+
+export interface ImageArrayTexture {
+  type: "imageArray";
+  fileName: string;
+  mask: MaskShape;
+  props: Omit<ImageProps, "fileName" | "mask">[];
 }
 
 // -- SpriteSheet

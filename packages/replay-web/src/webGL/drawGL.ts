@@ -1,6 +1,5 @@
 import { PlatformRender } from "@replay/core/dist/core";
 import { AssetMap } from "@replay/core/dist/device";
-import { SpriteBaseProps } from "@replay/core/dist/props";
 import { MaskShape } from "@replay/core/dist/mask";
 import { ImageFileData } from "../device";
 import { getDrawImage } from "./imageGL";
@@ -14,10 +13,13 @@ import { m2d, Matrix2D } from "./matrix";
 import { TextureFont } from "@replay/core/dist/t";
 import { getDrawLine, getDrawLineGrad } from "./lineGL";
 import { getDrawCircle } from "./circleGL";
-import { createGradTexture, hexToRGB } from "./glUtils";
+import { applyTransform, createGradTexture, hexToRGB } from "./glUtils";
+import { getDrawImageBatch } from "./imageBatchGL";
+import { getDrawRectBatch } from "./rectBatchGL";
 
 export function draw(
   gl: WebGLRenderingContext,
+  glInstArrays: ANGLE_instanced_arrays,
   offscreenCanvas: HTMLCanvasElement,
   gameWidth: number,
   gameHeight: number,
@@ -37,7 +39,9 @@ export function draw(
   const offscreenCanvasCtx = offscreenCanvas.getContext("2d")!;
 
   const drawImage = getDrawImage(gl);
+  const drawImageBatch = getDrawImageBatch(gl, glInstArrays);
   const drawRect = getDrawRect(gl);
+  const drawRectBatch = getDrawRectBatch(gl, glInstArrays);
   const drawRectGrad = getDrawRectGrad(gl);
   const drawLine = getDrawLine(gl);
   const drawLineGrad = getDrawLineGrad(gl);
@@ -57,34 +61,6 @@ export function draw(
       hasMask: false,
     },
   ];
-
-  function applyTransform(
-    matrix: Matrix2D,
-    baseProps: SpriteBaseProps
-  ): Matrix2D {
-    const { x, y, rotation, scaleX, scaleY, anchorX, anchorY } = baseProps;
-
-    const matrices = [];
-    if (x !== 0 || y !== 0) {
-      matrices.push(m2d.getTranslateMatrix(baseProps.x, baseProps.y));
-    }
-    if (rotation !== 0) {
-      matrices.push(m2d.getRotateMatrix(-baseProps.rotation * toRad));
-    }
-    if (scaleX !== 1 || scaleY !== 1) {
-      matrices.push(m2d.getScaleMatrix(baseProps.scaleX, baseProps.scaleY));
-    }
-    if (anchorX !== 0 || anchorY !== 0) {
-      matrices.push(
-        m2d.getTranslateMatrix(-baseProps.anchorX, -baseProps.anchorY)
-      );
-    }
-    const transformMatrix = m2d.multiplyMultiple(matrices);
-
-    if (!transformMatrix) return matrix;
-
-    return m2d.multiply(matrix, transformMatrix);
-  }
 
   function applyMask(
     mask: MaskShape,
@@ -236,6 +212,46 @@ export function draw(
     },
     renderTexture: (texture) => {
       const topStack = stateStack[0];
+
+      if (texture.type === "imageArray") {
+        if (texture.props.length === 0) return;
+
+        applyMask(texture.mask, topStack.transformation);
+
+        const imageInfo = getImage(imageElements, texture.fileName);
+        const result = drawImageBatch(
+          imageInfo.texture,
+          topStack.transformation,
+          topStack.opacity,
+          texture.props,
+          prevProgram,
+          prevTexture
+        );
+        prevProgram = result.program;
+        prevTexture = result.texture;
+
+        if (texture.mask) {
+          clearMask();
+        }
+        return;
+      }
+      if (texture.type === "rectangleArray") {
+        if (texture.props.length === 0) return;
+
+        applyMask(texture.mask, topStack.transformation);
+
+        prevProgram = drawRectBatch(
+          topStack.transformation,
+          topStack.opacity,
+          texture.props,
+          prevProgram
+        );
+
+        if (texture.mask) {
+          clearMask();
+        }
+        return;
+      }
 
       const newMatrix = applyTransform(topStack.transformation, texture.props);
       applyMask(
@@ -472,8 +488,6 @@ export function draw(
     },
   };
 }
-
-const toRad = Math.PI / 180;
 
 const getImage = (imageElements: AssetMap<ImageFileData>, fileName: string) => {
   const imageElement = imageElements[fileName];

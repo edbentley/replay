@@ -185,15 +185,18 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         opacity: 0.9,
       });
     });
-    const enemies = state.enemies.map(function enemiesMapTexture(e, i) {
-      return t.image({
-        x: e.x,
-        y: e.y,
-        testId: `enemy${i + 1}`,
-        fileName: "enemy.png",
-        width: 20,
-        height: 20,
-      });
+    const enemies = t.imageArray({
+      fileName: "enemy.png",
+      props: state.enemies.map(function enemiesMapTexture(e, i) {
+        return {
+          x: e.x,
+          y: e.y,
+          testId: `enemy${i + 1}`,
+          fileName: "enemy.png",
+          width: 20,
+          height: 20,
+        };
+      }),
     });
     return [
       // t.rectangle({
@@ -311,7 +314,7 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         scaleY: 0.5,
       }),
       ...bullets,
-      ...enemies,
+      enemies,
       t.circle({
         radius: 4,
         color: "green",

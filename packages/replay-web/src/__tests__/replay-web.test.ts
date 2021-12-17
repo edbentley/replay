@@ -73,6 +73,8 @@ test.skip("Can render image moving across screen", async () => {
   expect(canvasToImage(canvas)).toMatchImageSnapshot();
 });
 
+test.todo("Can batch render images");
+
 test("Canvas elements are drawn in order of sprites passed in", () => {
   const canvas = document.createElement("canvas");
   renderCanvas(TestGameLayeredSprites(testGameProps), {

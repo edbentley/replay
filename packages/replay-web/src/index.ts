@@ -125,6 +125,9 @@ export function renderCanvas<S>(
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const gl = canvas.getContext("webgl", { stencil: true })!;
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const glInstArrays = gl.getExtension("ANGLE_instanced_arrays")!;
+
   // Enable alpha
   gl.enable(gl.BLEND);
   // Assumes premultiplied colours
@@ -238,6 +241,7 @@ export function renderCanvas<S>(
     // also update render with new size
     const renderCanvasResult = draw(
       gl,
+      glInstArrays,
       offscreenCanvas,
       fullWidth,
       fullHeight,

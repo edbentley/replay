@@ -23,11 +23,14 @@ beforeAll(() => {
     gl.canvas.width = deviceSize.deviceWidth;
     gl.canvas.height = deviceSize.deviceHeight;
 
+    const glInstArrays = gl.getExtension("ANGLE_instanced_arrays")!;
+
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
     const renderTexture = draw(
       gl,
+      glInstArrays,
       offscreenCanvas,
       deviceSize.width,
       deviceSize.height,
@@ -119,6 +122,40 @@ test("Can draw rectangles", () => {
       width: 10,
       height: 10,
       color: "red",
+    }),
+  ]);
+
+  expect(canvasToImage(canvas)).toMatchImageSnapshot();
+});
+
+test("Can batch draw rectangles", () => {
+  render([
+    t.rectangleArray({
+      props: [
+        {
+          x: 0,
+          y: 50,
+          rotation: 45,
+          opacity: 0.5,
+          width: 50,
+          height: 50,
+          color: "blue",
+        },
+        {
+          x: 0,
+          y: -50,
+          rotation: 0,
+          opacity: 1,
+          width: 100,
+          height: 10,
+          color: "red",
+        },
+        {
+          width: 20,
+          height: 20,
+          color: "green",
+        },
+      ],
     }),
   ]);
 
