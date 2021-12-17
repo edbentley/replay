@@ -1,4 +1,6 @@
+import { SpriteBaseProps } from "@replay/core/dist/props";
 import { Gradient } from "@replay/core/dist/t";
+import { m2d, Matrix2D } from "./matrix";
 
 export function createProgram(
   gl: WebGLRenderingContext,
@@ -162,3 +164,33 @@ function getRampData(gradient: Gradient) {
 
   return new Uint8Array(array);
 }
+
+export function applyTransform(
+  matrix: Matrix2D,
+  baseProps: Omit<SpriteBaseProps, "mask">
+): Matrix2D {
+  const { x, y, rotation, scaleX, scaleY, anchorX, anchorY } = baseProps;
+
+  const matrices = [];
+  if (x !== 0 || y !== 0) {
+    matrices.push(m2d.getTranslateMatrix(baseProps.x, baseProps.y));
+  }
+  if (rotation !== 0) {
+    matrices.push(m2d.getRotateMatrix(-baseProps.rotation * toRad));
+  }
+  if (scaleX !== 1 || scaleY !== 1) {
+    matrices.push(m2d.getScaleMatrix(baseProps.scaleX, baseProps.scaleY));
+  }
+  if (anchorX !== 0 || anchorY !== 0) {
+    matrices.push(
+      m2d.getTranslateMatrix(-baseProps.anchorX, -baseProps.anchorY)
+    );
+  }
+  const transformMatrix = m2d.multiplyMultiple(matrices);
+
+  if (!transformMatrix) return matrix;
+
+  return m2d.multiply(matrix, transformMatrix);
+}
+
+const toRad = Math.PI / 180;

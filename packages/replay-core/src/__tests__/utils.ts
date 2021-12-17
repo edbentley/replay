@@ -7,7 +7,7 @@ import {
 } from "../sprite";
 import { mask, MaskShape } from "../mask";
 import { Assets } from "../device";
-import { Texture } from "../t";
+import { ImageTexture, RectangleTexture, SingleTexture } from "../t";
 import { makeContext } from "../context";
 
 export const gameProps: GameProps = {
@@ -204,7 +204,7 @@ export function getTestPlatform(customSize?: DeviceSize) {
     mutInputs.ref = getInitTestPlatformInputs();
   }
 
-  const textures: Texture[] = [];
+  const textures: SingleTexture[] = [];
 
   const masks: MaskShape[] = [];
 
@@ -226,10 +226,43 @@ export function getTestPlatform(customSize?: DeviceSize) {
       },
       endRenderSprite: () => null,
       renderTexture: (texture) => {
-        if (texture.props.mask) {
-          masks.push(texture.props.mask);
+        if (texture.type === "imageArray") {
+          masks.push(texture.mask);
+          textures.push(
+            ...texture.props.map(
+              (props): ImageTexture => {
+                return {
+                  type: "image",
+                  props: {
+                    fileName: texture.fileName,
+                    mask: texture.mask,
+                    ...props,
+                  },
+                };
+              }
+            )
+          );
+        } else if (texture.type === "rectangleArray") {
+          masks.push(texture.mask);
+          textures.push(
+            ...texture.props.map(
+              (props): RectangleTexture => {
+                return {
+                  type: "rectangle",
+                  props: {
+                    mask: texture.mask,
+                    ...props,
+                  },
+                };
+              }
+            )
+          );
+        } else {
+          if (texture.props.mask) {
+            masks.push(texture.props.mask);
+          }
+          textures.push(texture);
         }
-        textures.push(texture);
       },
       calledNativeSprite: jest.fn(),
     },

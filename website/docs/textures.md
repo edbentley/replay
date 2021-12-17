@@ -11,6 +11,10 @@ Textures are the basic building blocks of things to render on the screen, like a
 
 Textures share the same [common props as Sprites](sprites.md#common-props), except for `id` which isn't required. Textures also accept a `testId` prop which is used by [Replay Test](test.md).
 
+## Array Textures
+
+Using Array Textures (e.g. `t.rectangleArray`) enables batch rendering for improved performance. The elements in the `props` arrays share the same [common props as other Textures](#common-props) except for the `mask` prop, which is set once outside of the array.
+
 ## Circle
 
 #### Example
@@ -45,6 +49,36 @@ t.rectangle({
 - `height`: Height of the rectangle in game coordinates.
 - `color`: A [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`).
 - `gradient`: (Optional) Override the `color` prop with a [gradient](#gradient).
+
+## Rectangle Array
+
+#### Example
+
+```js
+t.rectangleArray({
+  props: [
+    {
+      width: 10,
+      height: 20,
+      color: "#FF0000",
+    },
+    {
+      width: 50,
+      height: 20,
+      color: "#0000FF",
+      x: 100,
+    },
+  ],
+})
+```
+
+#### Props
+
+- `mask`: (Optional) See [Mask](mask.md).
+- `props`: An array of the following:
+  - `width`: Width of the rectangle in game coordinates.
+  - `height`: Height of the rectangle in game coordinates.
+  - `color`: A [CSS Level 1 color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) or 6 char hex (e.g. `#ff0000`, `green`).
 
 ## Line
 
@@ -118,6 +152,35 @@ t.image({
 - `fileName`: The name of the file to render. Note that this file must be loaded using [`preloadFiles`](sprites.md#init) before you render the Texture.
 - `width`: Scale the image to this width in game coordinates.
 - `height`: Scale the image to this height in game coordinates.
+
+## Image Array
+
+#### Example
+
+```js
+t.imageArray({
+  fileName: "enemy.png",
+  props: [
+    {
+      width: 10,
+      height: 10,
+    },
+    {
+      width: 10,
+      height: 10,
+      x: 100,
+    },
+  ],
+})
+```
+
+#### Props
+
+- `fileName`: The name of the file to render. Note batching is only available per image file.
+- `mask`: (Optional) See [Mask](mask.md).
+- `props`: An array of the following:
+  - `width`: Scale the image to this width in game coordinates.
+  - `height`: Scale the image to this height in game coordinates.
 
 ## Sprite Sheet
 
