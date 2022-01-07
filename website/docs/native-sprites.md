@@ -99,6 +99,7 @@ Called on initial creation of Sprite. Use this to run anything you need on setup
   - `scale`: Ratio of the game and platform's screen size.
   - `gameXToPlatformX`: Function to convert a local game `x` coordinate to platform `x` coordinate.
   - `gameYToPlatformY`: Function to convert a local game `y` coordinate to platform `y` coordinate.
+  - `size`: Device size, see [Game Size](game-size.md).
 
 ### `loop`
 
@@ -115,11 +116,15 @@ Called 60 times a second. Returns the next frame's `state`.
 - `props`: The props passed in by the parent Sprite.
 - `state`: The current state of the Sprite.
 - `parentGlobalId`: A globally unique ID for the parent Sprite.
+- `parentX`: The parent Sprite's `x` game coordinate (assumes no rotations / scaling).
+- `parentY`: The parent Sprite's `y` game coordinate (assumes no rotations / scaling).
 - `utils`: An object with fields:
   - `didResize`: A boolean to check if the device was just resized.
   - `scale`: Ratio of the game and platform's screen size.
   - `gameXToPlatformX`: Function to convert a local game `x` coordinate to platform `x` coordinate.
   - `gameYToPlatformY`: Function to convert a local game `y` coordinate to platform `y` coordinate.
+  - `size`: Device size, see [Game Size](game-size.md).
+  - `isLastFrame`: A boolean indicating if this call of `loop` was the last one before rendering.
 
 ### `cleanup`
 

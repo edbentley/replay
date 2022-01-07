@@ -138,9 +138,12 @@ function getBenchmarkPlatform() {
     mutDevice: mutableTestDevice,
     render: {
       newFrame: () => null,
+      endFrame: () => null,
       startRenderSprite: () => null,
       endRenderSprite: () => null,
       renderTexture: () => null,
+      startNativeSprite: () => null,
+      endNativeSprite: () => null,
     },
   };
 
@@ -151,10 +154,19 @@ function getNativeSpriteSettings(): NativeSpriteSettings {
   return {
     nativeSpriteMap: {},
     nativeSpriteUtils: {
+      isLastFrame: true,
       didResize: false,
       scale: 1,
       gameXToPlatformX: (x) => x,
       gameYToPlatformY: (y) => y,
+      size: {
+        width: 300,
+        height: 200,
+        widthMargin: 0,
+        heightMargin: 0,
+        deviceWidth: 500,
+        deviceHeight: 300,
+      },
     },
   };
 }

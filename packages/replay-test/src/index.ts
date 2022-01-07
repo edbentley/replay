@@ -3,7 +3,12 @@
 import { GameProps, Texture, Device, DeviceSize, Context } from "@replay/core";
 import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
 import { CustomSprite, makeSprite, Sprite } from "@replay/core/dist/sprite";
-import { TextTexture } from "@replay/core/dist/t";
+import {
+  ImageTexture,
+  RectangleTexture,
+  SingleTexture,
+  TextTexture,
+} from "@replay/core/dist/t";
 import { getParentCoordsForSprite } from "./coords";
 import { NativeSpriteMock } from "./nativeSpriteMock";
 import { AssetMap } from "@replay/core/dist/device";
@@ -89,13 +94,13 @@ export interface TestSpriteOptions<I> {
 interface TestSpriteUtils<I> {
   nextFrame: () => void;
   jumpToFrame: (
-    condition: () => boolean | Texture,
+    condition: () => boolean | SingleTexture,
     maxFrames?: number
   ) => Promise<void>;
   setRandomNumbers: (numbers: number[]) => void;
   updateInputs: (newInputs: I) => void;
-  getTextures: () => Texture[];
-  getTexture: (testId: string) => Texture;
+  getTextures: () => SingleTexture[];
+  getTexture: (testId: string) => SingleTexture;
   textureExists: (testId: string) => boolean;
   getByText: (text: string) => TextTexture[];
   log: jest.Mock<any, any>;
@@ -361,7 +366,7 @@ export function testSprite<P, S, I>(
     },
   };
 
-  const textures: Texture[] = [];
+  const textures: SingleTexture[] = [];
 
   const timers: Timer[] = [];
 
@@ -415,6 +420,7 @@ export function testSprite<P, S, I>(
       newFrame: () => {
         textures.length = 0;
       },
+      endFrame: () => null,
       startRenderSprite: (baseProps) => {
         const getParentCoords = getParentCoordsForSprite(baseProps);
 
@@ -451,16 +457,63 @@ export function testSprite<P, S, I>(
           texture.props as Pos
         );
 
-        textures.push({
-          ...texture,
-          props: {
-            ...texture.props,
-            x: Math.round(x),
-            y: Math.round(y),
-            rotation: Math.round(rotation),
-          },
-        } as Texture);
+        if (texture.type === "imageArray") {
+          textures.push(
+            ...texture.props.map(
+              (props): ImageTexture => {
+                const { x, y, rotation } = getPosStack.reduce(
+                  (pos, posFn) => posFn(pos),
+                  props as Pos
+                );
+                return {
+                  type: "image",
+                  props: {
+                    fileName: texture.fileName,
+                    mask: texture.mask,
+                    ...props,
+                    x: Math.round(x),
+                    y: Math.round(y),
+                    rotation: Math.round(rotation),
+                  },
+                };
+              }
+            )
+          );
+        } else if (texture.type === "rectangleArray") {
+          textures.push(
+            ...texture.props.map(
+              (props): RectangleTexture => {
+                const { x, y, rotation } = getPosStack.reduce(
+                  (pos, posFn) => posFn(pos),
+                  props as Pos
+                );
+                return {
+                  type: "rectangle",
+                  props: {
+                    mask: texture.mask,
+                    ...props,
+                    x: Math.round(x),
+                    y: Math.round(y),
+                    rotation: Math.round(rotation),
+                  },
+                };
+              }
+            )
+          );
+        } else {
+          textures.push({
+            ...texture,
+            props: {
+              ...texture.props,
+              x: Math.round(x),
+              y: Math.round(y),
+              rotation: Math.round(rotation),
+            },
+          } as SingleTexture);
+        }
       },
+      startNativeSprite: () => null,
+      endNativeSprite: () => null,
     },
   };
 
@@ -487,10 +540,12 @@ export function testSprite<P, S, I>(
         {}
       ),
       nativeSpriteUtils: {
+        isLastFrame: true,
         scale: 1,
         didResize: false,
         gameXToPlatformX: (x) => x,
         gameYToPlatformY: (y) => y,
+        size,
       },
     },
     TestContainer(gameProps)
@@ -533,7 +588,7 @@ export function testSprite<P, S, I>(
    * event loop.
    */
   async function jumpToFrame(
-    condition: () => boolean | Texture,
+    condition: () => boolean | SingleTexture,
     maxFrames = 1800
   ) {
     let lastErrorMsg: string | null = null;
@@ -589,7 +644,7 @@ export function testSprite<P, S, I>(
    * Get a texture with matching test id. If multiple textures found, return the
    * first one. Throws if no matches found.
    */
-  function getTexture(testId: string) {
+  function getTexture(testId: string): SingleTexture {
     const match = textures.find((texture) => texture.props.testId === testId);
     if (!match) {
       throw Error(`No textures found with test id "${testId}"`);

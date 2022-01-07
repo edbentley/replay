@@ -167,7 +167,8 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
         ];
       case GameStage.Play:
         return [
-          PureCircleGroup({ id: "Circles" }),
+          PureRectGroup({ id: "Circles" }),
+
           PlayStage({
             id: "play-stage",
             bulletSpeed: state.bulletSpeed,
@@ -190,28 +191,23 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
   },
 });
 
-const PureCircleGroup = makePureSprite({
+const PureRectGroup = makePureSprite({
   shouldRerender() {
     return false;
   },
 
   render() {
-    return Array.from({ length: 2000 }).map(function mapCircles(_, index) {
-      return PureCircle({ id: `Circle-${index}` });
-    });
-  },
-});
-
-const PureCircle = makePureSprite({
-  shouldRerender() {
-    return false;
-  },
-
-  render() {
+    // Large batch
     return [
-      t.circle({
-        radius: 4,
-        color: "red",
+      t.rectangleArray({
+        props: Array.from({ length: 2000 }).map(function mapRects(_, index) {
+          return {
+            testId: `Rect-${index}`,
+            width: 4,
+            height: 4,
+            color: "red",
+          };
+        }),
       }),
     ];
   },

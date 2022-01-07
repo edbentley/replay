@@ -271,15 +271,20 @@ export type NativeSpriteImplementation<P, S> = {
     state: S;
     parentGlobalId: string;
     utils: NativeSpriteUtils;
+    // TODO: handle with shared matrices
+    parentX: number;
+    parentY: number;
   }) => S;
   cleanup: (params: { state: S; parentGlobalId: string }) => void;
 };
 
 export type NativeSpriteUtils = {
+  isLastFrame: boolean;
   didResize: boolean;
   scale: number;
   gameXToPlatformX: (x: number) => number;
   gameYToPlatformY: (y: number) => number;
+  size: DeviceSize;
 };
 
 /**

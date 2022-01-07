@@ -185,15 +185,18 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         opacity: 0.9,
       });
     });
-    const enemies = state.enemies.map(function enemiesMapTexture(e, i) {
-      return t.image({
-        x: e.x,
-        y: e.y,
-        testId: `enemy${i + 1}`,
-        fileName: "enemy.png",
-        width: 20,
-        height: 20,
-      });
+    const enemies = t.imageArray({
+      fileName: "enemy.png",
+      props: state.enemies.map(function enemiesMapTexture(e, i) {
+        return {
+          x: e.x,
+          y: e.y,
+          testId: `enemy${i + 1}`,
+          fileName: "enemy.png",
+          width: 20,
+          height: 20,
+        };
+      }),
     });
     return [
       // t.rectangle({
@@ -226,15 +229,77 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         }),
       }),
       t.line({
-        x: -100,
-        y: 0,
-        color: "red",
-        opacity: 0.5,
-        fillColor: "blue",
         path: [
-          [0, 10],
-          [0, -10],
-          [-5, -10],
+          [-30, -30],
+          [0, -60],
+          [30, -30],
+        ],
+        thickness: 3,
+        fillColor: "#000000",
+        color: "#FF0000",
+      }),
+      t.text({
+        text: "test",
+        color: "",
+        gradient: {
+          type: "linearVert",
+          colors: ["#FF0000", "#0000FF"],
+          opacities: [0, 1],
+          height: 5,
+        },
+      }),
+      t.text({
+        text: "test-left",
+        color: "#FF0000",
+        y: 20,
+        font: { align: "left" },
+      }),
+      t.text({
+        text: "test-right",
+        color: "#FF0000",
+        y: 40,
+        font: { align: "right" },
+      }),
+      t.rectangle({
+        x: 50,
+        color: "#FF0000",
+        gradient: {
+          type: "linearVert",
+          colors: ["#FF0000", "#0000FF"],
+          opacities: [0.5, 1],
+          height: 100,
+        },
+        width: 30,
+        height: 100,
+      }),
+      t.rectangle({
+        x: 100,
+        color: "#0000FF",
+        width: 50,
+        height: 100,
+      }),
+      t.rectangle({
+        x: 100,
+        color: "#FF0000",
+        width: 30,
+        height: 100,
+        opacity: 0,
+      }),
+      t.line({
+        x: -150,
+        y: 0,
+        opacity: 0.5,
+        fillGradient: {
+          type: "linearVert",
+          colors: ["#FF0000", "#0000FF"],
+          opacities: [0, 1],
+          height: 100,
+        },
+        path: [
+          [-30, -50],
+          [50, -50],
+          [50, 50],
+          [-50, 50],
         ],
         scaleX: -1,
       }),
@@ -249,7 +314,7 @@ export const PlayStage = makeSprite<Props, State, WebInputs | iOSInputs>({
         scaleY: 0.5,
       }),
       ...bullets,
-      ...enemies,
+      enemies,
       t.circle({
         radius: 4,
         color: "green",

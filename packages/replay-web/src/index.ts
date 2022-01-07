@@ -20,7 +20,6 @@ import {
   clientYToGameY,
   pointerCancelHandler,
 } from "./input";
-import { drawCanvas } from "./draw";
 import { calculateDeviceSize } from "./size";
 import { Dimensions } from "./dimensions";
 import { getGameXToWebX, getGameYToWebY } from "./coordinates";
@@ -35,6 +34,8 @@ import {
   getClipboard,
 } from "./device";
 import { isTouchDevice } from "./isTouchDevice";
+import { draw } from "./webGL/drawGL";
+import { createTextureInfo } from "./webGL/imageGL";
 
 export { Inputs as WebInputs, mapInputCoordinates } from "./input";
 export { Dimensions } from "./dimensions";
@@ -110,6 +111,10 @@ export function renderCanvas<S>(
   if (!userCanvas) {
     document.body.appendChild(canvas);
   }
+  canvas.id = "replay-canvas";
+
+  // Offscreen canvas isn't added to document body
+  const offscreenCanvas = document.createElement("canvas");
 
   // Support on mobile browsers that don't support this
   const pointerDownEv = window.PointerEvent ? "pointerdown" : "touchstart";
@@ -118,7 +123,21 @@ export function renderCanvas<S>(
   const pointerCancelEv = window.PointerEvent ? "pointercancel" : "touchcancel";
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const ctx = canvas.getContext("2d", { alpha: false })!;
+  const gl = canvas.getContext("webgl", { stencil: true })!;
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const glInstArrays = gl.getExtension("ANGLE_instanced_arrays")!;
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const glVao = gl.getExtension("OES_vertex_array_object")!;
+
+  // Enable alpha
+  gl.enable(gl.BLEND);
+  // Assumes premultiplied colours
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+  // Use premultiplied alpha on textures (avoids white edges on images)
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   const audioContext = new AudioContext();
@@ -183,14 +202,6 @@ export function renderCanvas<S>(
   let pointerMove: (e: PointerEvent | TouchEvent) => void;
   let pointerUp: (e: PointerEvent | TouchEvent) => void;
   let pointerCancel: (e: PointerEvent | TouchEvent) => void;
-  let scale: number;
-
-  const nativeSpriteUtils: NativeSpriteUtils = {
-    didResize: false,
-    scale: 1,
-    gameXToPlatformX: (x) => x,
-    gameYToPlatformY: (y) => y,
-  };
 
   function updateDeviceSize(
     opts?: { cleanup?: boolean; didScroll?: boolean } | Event
@@ -199,7 +210,6 @@ export function renderCanvas<S>(
     const didScroll = Boolean(opts && "didScroll" in opts && opts.didScroll);
 
     if (prevDeviceSize) {
-      ctx.restore();
       document.removeEventListener(pointerDownEv, pointerDown);
       document.removeEventListener(pointerMoveEv, pointerMove);
       document.removeEventListener(pointerUpEv, pointerUp);
@@ -228,22 +238,33 @@ export function renderCanvas<S>(
     const defaultFont = gameSprite.props.defaultFont || DEFAULT_FONT;
     const bgColor = gameSprite.props.backgroundColor || "white";
 
+    const fullWidth = mutDevice.size.width + mutDevice.size.widthMargin * 2;
+    const fullHeight = mutDevice.size.height + mutDevice.size.heightMargin * 2;
+
     // also update render with new size
-    const renderCanvasResult = drawCanvas(
-      ctx,
-      mutDevice.size,
-      devicePixelRatio,
+    const renderCanvasResult = draw(
+      gl,
+      glInstArrays,
+      glVao,
+      offscreenCanvas,
+      fullWidth,
+      fullHeight,
       imageElements,
       defaultFont,
-      bgColor
+      bgColor,
+      devicePixelRatio
     );
-    scale = renderCanvasResult.scale;
+    const deviceWidth = mutDevice.size.deviceWidth;
+    const scale = deviceWidth / fullWidth;
 
     // Mutate render
-    mutRender.newFrame = renderCanvasResult.render.newFrame;
-    mutRender.startRenderSprite = renderCanvasResult.render.startRenderSprite;
-    mutRender.endRenderSprite = renderCanvasResult.render.endRenderSprite;
-    mutRender.renderTexture = renderCanvasResult.render.renderTexture;
+    mutRender.newFrame = renderCanvasResult.newFrame;
+    mutRender.endFrame = renderCanvasResult.endFrame;
+    mutRender.startRenderSprite = renderCanvasResult.startRenderSprite;
+    mutRender.endRenderSprite = renderCanvasResult.endRenderSprite;
+    mutRender.renderTexture = renderCanvasResult.renderTexture;
+    mutRender.startNativeSprite = renderCanvasResult.startNativeSprite;
+    mutRender.endNativeSprite = renderCanvasResult.endNativeSprite;
 
     nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
       canvasOffsetLeft: canvas.offsetLeft,
@@ -261,6 +282,7 @@ export function renderCanvas<S>(
 
     nativeSpriteUtils.didResize = true;
     nativeSpriteUtils.scale = scale;
+    nativeSpriteUtils.size = mutDevice.size;
 
     const getX = clientXToGameX({
       canvasOffsetLeft: canvas.offsetLeft,
@@ -386,12 +408,12 @@ export function renderCanvas<S>(
         .then((buffer) => ({ buffer, volume: 1 }))
         .catch(noFileError("audio", fileName));
     },
-    loadImageFile: (fileName) => {
+    loadImageFile: (fileName, scaleSharp) => {
       return new Promise<ImageFileData>((resolve, reject) => {
         const image = new Image();
 
         image.addEventListener("load", () => {
-          resolve(image);
+          resolve(createTextureInfo(gl, image, scaleSharp));
         });
         image.addEventListener("error", reject);
         image.src = fileName;
@@ -405,14 +427,21 @@ export function renderCanvas<S>(
       data.playState.sample.disconnect();
       data.playState.sample.buffer = null;
     },
-    cleanupImageFile: () => null,
+    cleanupImageFile: (fileName) => {
+      const { data } = imageElements[fileName];
+      if ("then" in data) return;
+      gl.deleteTexture(data.texture);
+    },
   };
 
   const mutRender: PlatformRender = {
     newFrame: () => null,
+    endFrame: () => null,
     startRenderSprite: () => null,
     endRenderSprite: () => null,
     renderTexture: () => null,
+    startNativeSprite: () => null,
+    endNativeSprite: () => null,
   };
 
   const mutDevice = mutDeviceCreator(
@@ -431,6 +460,15 @@ export function renderCanvas<S>(
     mutDevice,
     getInputs,
     render: mutRender,
+  };
+
+  const nativeSpriteUtils: NativeSpriteUtils = {
+    isLastFrame: true,
+    didResize: false,
+    scale: 1,
+    gameXToPlatformX: (x) => x,
+    gameYToPlatformY: (y) => y,
+    size: mutDevice.size,
   };
 
   let isCleanedUp = false;

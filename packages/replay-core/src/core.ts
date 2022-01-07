@@ -91,9 +91,12 @@ export interface ReplayPlatform<I> {
 
 export type PlatformRender = {
   newFrame: () => void;
+  endFrame: () => void;
   startRenderSprite: (baseProps: SpriteBaseProps) => void;
   endRenderSprite: () => void;
   renderTexture: (texture: Texture) => void;
+  startNativeSprite: () => void;
+  endNativeSprite: () => void;
 };
 
 export type NativeSpriteMap = Record<
@@ -147,14 +150,21 @@ export function replayCore<S, I>(
     gameSprite.props.id,
     nativeSpriteSettings,
     platform.render,
-    []
+    [],
+    0,
+    0
   );
+
+  platform.render.endFrame();
 
   const emptyRender: PlatformRender = {
     newFrame: () => null,
+    endFrame: () => null,
     startRenderSprite: () => null,
     endRenderSprite: () => null,
     renderTexture: () => null,
+    startNativeSprite: () => null,
+    endNativeSprite: () => null,
   };
 
   return {
@@ -173,9 +183,12 @@ export function replayCore<S, I>(
 
         const renderMethod = getRenderMethod(mutDevice.size, gameSize);
 
+        const isLastFrame = framesToCatchup === 0;
+
         // Only draw on last frame
-        const platformRender =
-          framesToCatchup === 0 ? platform.render : emptyRender;
+        const platformRender = isLastFrame ? platform.render : emptyRender;
+
+        nativeSpriteSettings.nativeSpriteUtils.isLastFrame = isLastFrame;
 
         platformRender.newFrame();
 
@@ -191,8 +204,13 @@ export function replayCore<S, I>(
           gameSprite.props.id,
           nativeSpriteSettings,
           platformRender,
-          []
+          [],
+          0,
+          0
         );
+
+        platformRender.endFrame();
+
         // reset inputs after each update
         resetInputs();
       }
@@ -220,7 +238,9 @@ function traverseCustomSpriteContainer<P, I>(
   parentGlobalId: string,
   nativeSpriteSettings: NativeSpriteSettings,
   platformRender: PlatformRender,
-  contextValues: ContextValue[]
+  contextValues: ContextValue[],
+  parentX: number,
+  parentY: number
 ) {
   const { baseProps } = customSpriteContainer;
   mutateBaseProps(baseProps, spriteProps);
@@ -275,7 +295,9 @@ function traverseCustomSpriteContainer<P, I>(
     contextValues,
     addChildId,
     getInputs,
-    getLocalCoords
+    getLocalCoords,
+    customSpriteContainer.baseProps.x + parentX,
+    customSpriteContainer.baseProps.y + parentY
   );
 
   platformRender.endRenderSprite();
@@ -346,7 +368,9 @@ function handleSprites<P, I>(
   getLocalCoords: (globalCoords: {
     x: number;
     y: number;
-  }) => { x: number; y: number }
+  }) => { x: number; y: number },
+  spriteX: number,
+  spriteY: number
 ) {
   for (let i = 0; i < sprites.length; i++) {
     const sprite = sprites[i];
@@ -368,7 +392,9 @@ function handleSprites<P, I>(
         [...contextValues, sprite],
         addChildId,
         getInputs,
-        getLocalCoords
+        getLocalCoords,
+        spriteX,
+        spriteY
       );
     } else if (sprite.type === "native") {
       addChildId(sprite.props.id);
@@ -408,12 +434,18 @@ function handleSprites<P, I>(
         lookupNativeSpriteContainer = newContainer;
       }
 
+      platformRender.startNativeSprite();
+
       lookupNativeSpriteContainer.state = nativeSpriteImplementation.loop({
         props: sprite.props,
         state: lookupNativeSpriteContainer.state,
         parentGlobalId,
         utils: nativeSpriteUtils,
+        parentX: spriteX,
+        parentY: spriteY,
       });
+
+      platformRender.endNativeSprite();
     } else if (sprite.type === "pure") {
       addChildId(sprite.props.id);
 
@@ -480,7 +512,9 @@ function handleSprites<P, I>(
         globalId,
         nativeSpriteSettings,
         platformRender,
-        contextValues
+        contextValues,
+        spriteX + (sprite.props.x || 0),
+        spriteY + (sprite.props.y || 0)
       );
     } else {
       platformRender.renderTexture(sprite);
