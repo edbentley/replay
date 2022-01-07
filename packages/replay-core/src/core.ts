@@ -183,9 +183,12 @@ export function replayCore<S, I>(
 
         const renderMethod = getRenderMethod(mutDevice.size, gameSize);
 
+        const isLastFrame = framesToCatchup === 0;
+
         // Only draw on last frame
-        const platformRender =
-          framesToCatchup === 0 ? platform.render : emptyRender;
+        const platformRender = isLastFrame ? platform.render : emptyRender;
+
+        nativeSpriteSettings.nativeSpriteUtils.isLastFrame = isLastFrame;
 
         platformRender.newFrame();
 

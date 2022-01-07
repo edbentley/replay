@@ -463,6 +463,7 @@ export function renderCanvas<S>(
   };
 
   const nativeSpriteUtils: NativeSpriteUtils = {
+    isLastFrame: true,
     didResize: false,
     scale: 1,
     gameXToPlatformX: (x) => x,

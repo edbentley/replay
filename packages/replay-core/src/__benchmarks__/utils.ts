@@ -154,6 +154,7 @@ function getNativeSpriteSettings(): NativeSpriteSettings {
   return {
     nativeSpriteMap: {},
     nativeSpriteUtils: {
+      isLastFrame: true,
       didResize: false,
       scale: 1,
       gameXToPlatformX: (x) => x,

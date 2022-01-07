@@ -283,6 +283,7 @@ export function getTestPlatform(customSize?: DeviceSize) {
 export const nativeSpriteSettings: NativeSpriteSettings = {
   nativeSpriteMap: {},
   nativeSpriteUtils: {
+    isLastFrame: true,
     didResize: false,
     scale: 1,
     gameXToPlatformX: (x) => x,

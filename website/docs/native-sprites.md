@@ -124,6 +124,7 @@ Called 60 times a second. Returns the next frame's `state`.
   - `gameXToPlatformX`: Function to convert a local game `x` coordinate to platform `x` coordinate.
   - `gameYToPlatformY`: Function to convert a local game `y` coordinate to platform `y` coordinate.
   - `size`: Device size, see [Game Size](game-size.md).
+  - `isLastFrame`: A boolean indicating if this call of `loop` was the last one before rendering.
 
 ### `cleanup`
 

@@ -540,6 +540,7 @@ export function testSprite<P, S, I>(
         {}
       ),
       nativeSpriteUtils: {
+        isLastFrame: true,
         scale: 1,
         didResize: false,
         gameXToPlatformX: (x) => x,

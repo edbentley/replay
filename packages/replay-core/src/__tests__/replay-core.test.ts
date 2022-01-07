@@ -1227,6 +1227,7 @@ test("supports Native Sprites", () => {
   const { platform, mutInputs, textures } = getTestPlatform();
 
   const mutableNativeSpriteUtils: NativeSpriteUtils = {
+    isLastFrame: true,
     didResize: false,
     scale: 3,
     gameXToPlatformX: (x) => x + 10,

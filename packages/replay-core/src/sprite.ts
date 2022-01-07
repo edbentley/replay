@@ -279,6 +279,7 @@ export type NativeSpriteImplementation<P, S> = {
 };
 
 export type NativeSpriteUtils = {
+  isLastFrame: boolean;
   didResize: boolean;
   scale: number;
   gameXToPlatformX: (x: number) => number;
