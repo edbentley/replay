@@ -26,6 +26,7 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
     let alerter = ReplayAlerter()
     let onJsCallback: (String) -> Void // userland
     let onLogCallback: (String) -> Void // for testing
+    let onJsCrash: (String) -> Void
     let internalMessageKey = "__internalReplay"
     
     init(
@@ -33,13 +34,15 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
         userStyles: String,
         jsRun: String,
         onLogCallback: @escaping (String) -> Void = {_ in },
-        onJsCallback: @escaping (String) -> Void
+        onJsCallback: @escaping (String) -> Void,
+        onJsCrash: @escaping (String) -> Void
     ) {
         self.onLogCallback = onLogCallback
         self.onJsCallback = onJsCallback
         self.userStyles = userStyles
         self.jsRun = jsRun
         self.customGameJsString = customGameJsString
+        self.onJsCrash = onJsCrash
         super.init()
         
         let contentController = WKUserContentController()
@@ -106,7 +109,7 @@ class ReplayWebViewManager: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNa
         let messageBody = "\(message.body)"
         switch message.name {
         case ERROR:
-            fatalError(messageBody)
+            onJsCrash(messageBody)
         case CONSOLE_LOG:
             onLogCallback(messageBody)
             if #available(iOS 14.0, *) {
