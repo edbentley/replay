@@ -20,7 +20,7 @@ export const t = {
   },
   circle: (
     arg: Partial<CircleProps>,
-    update?: (arg: CircleProps, index: number) => void
+    update?: (arg: CircleProps) => void
   ): MutCircleTexture => {
     return {
       type: "mutCircle",
@@ -34,6 +34,52 @@ export const t = {
       update,
     };
   },
+  rectangle: (
+    props: Partial<RectangleProps>,
+    update?: (thisProps: RectangleProps) => void
+  ): MutRectangleTexture => {
+    return {
+      type: "mutRectangle",
+      props: mutateBaseProps(
+        {
+          width: props.width || 10,
+          height: props.height || 10,
+          color: props.color || "black",
+        },
+        props
+      ),
+      update,
+    };
+  },
+  rectangleArray: <ItemState>({
+    props,
+    update,
+    array,
+  }: {
+    // mask?: MaskShape;
+    props: Partial<RectangleProps>;
+    update: (
+      thisProps: RectangleProps,
+      itemState: ItemState,
+      index: number
+    ) => void;
+    array: ItemState[];
+  }): MutRectangleArrayTexture<ItemState> => {
+    return {
+      type: "mutRectangleArray",
+      // mask: arg.mask || null,
+      props: mutateBaseProps(
+        {
+          width: props.width || 10,
+          height: props.height || 10,
+          color: props.color || "black",
+        },
+        props
+      ),
+      update,
+      array,
+    };
+  },
 };
 
 interface TestProps {
@@ -45,9 +91,16 @@ type BaseProps = TestProps & SpriteBaseProps;
 /**
  * A Replay texture
  */
-export type MutSingleTexture = MutTextTexture | MutCircleTexture;
+export type MutSingleTexture =
+  | MutTextTexture
+  | MutCircleTexture
+  | MutRectangleTexture;
 
-export type MutTexture = MutSingleTexture;
+export type MutTexture = MutSingleTexture | MutArrayTexture;
+export type RenderableMutTexture = MutSingleTexture | MutArrayTextureRenderable;
+
+export type MutArrayTexture = MutRectangleArrayTexture<any>;
+export type MutArrayTextureRenderable = MutRectangleArrayTextureRender;
 
 // -- Text
 type TextProps = BaseProps & {
@@ -73,5 +126,34 @@ type CircleProps = BaseProps & {
 export interface MutCircleTexture {
   type: "mutCircle";
   props: CircleProps;
-  update?: (arg: CircleProps, index: number) => void;
+  update?: (arg: CircleProps) => void;
+}
+
+// -- Rectangle
+type RectangleProps = BaseProps & {
+  width: number;
+  height: number;
+  color: string;
+  gradient?: Gradient;
+};
+export interface MutRectangleTexture {
+  type: "mutRectangle";
+  props: RectangleProps;
+  update?: (thisProps: RectangleProps) => void;
+}
+export interface MutRectangleArrayTexture<ItemState> {
+  type: "mutRectangleArray";
+  // mask: MaskShape;
+  props: RectangleProps;
+  update: (
+    thisProps: RectangleProps,
+    itemState: ItemState,
+    index: number
+  ) => void;
+  array: ItemState[];
+}
+export interface MutRectangleArrayTextureRender {
+  type: "mutRectangleArrayRender";
+  mask: null;
+  props: RectangleProps[];
 }

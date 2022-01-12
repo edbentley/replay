@@ -326,8 +326,8 @@ export type Context<T> = {
 
 export type AllMutSprite =
   | MutableSprite<any, any, any>
+  | MutableSpriteArray<any, any, any, any>
   | MutTexture
-  | MutArrayItem<any>
   | MutConditionalItem;
 
 export type MutSpriteProps<P> = P &
@@ -346,16 +346,42 @@ export function makeMutableSprite<
   S = undefined,
   I = {}
 >(spriteObj: MutableSpriteObj<P, S, I>) {
-  return function makeSpriteCallback(
-    props: MutSpriteProps<P>,
-    update?: (arg: MutSpriteProps<P>, index: number) => void
-  ): MutableSprite<P, S, I> {
-    return {
-      type: "mutable",
-      spriteObj,
+  return {
+    Single: function makeSpriteCallback(
+      props: MutSpriteProps<P>,
+      update?: (arg: MutSpriteProps<P>, index: number) => void
+    ): MutableSprite<P, S, I> {
+      return {
+        type: "mutable",
+        spriteObj,
+        props,
+        update,
+      };
+    },
+    Array: function makeSpriteArrayCallback<ItemState>({
       props,
       update,
-    };
+      array,
+      key,
+    }: {
+      props: MutSpriteProps<P>;
+      update: (
+        thisProps: MutSpriteProps<P>,
+        itemState: ItemState,
+        index: number
+      ) => void;
+      array: ItemState[];
+      key?: keyof ItemState;
+    }): MutableSpriteArray<P, S, I, ItemState> {
+      return {
+        type: "mutableArray",
+        spriteObj,
+        props,
+        update,
+        array,
+        key,
+      };
+    },
   };
 }
 
@@ -364,6 +390,14 @@ export interface MutableSprite<P, S, I> {
   spriteObj: MutableSpriteObj<P, S, I>;
   props: MutSpriteProps<P>;
   update?: (arg: P, index: number) => void;
+}
+export interface MutableSpriteArray<P, S, I, ItemState> {
+  type: "mutableArray";
+  spriteObj: MutableSpriteObj<P, S, I>;
+  props: MutSpriteProps<P>;
+  update: (thisProps: P, itemState: ItemState, index: number) => void;
+  array: ItemState[];
+  key?: keyof ItemState;
 }
 
 type MutableSpriteObj<P, S, I> = S extends undefined
@@ -425,16 +459,6 @@ interface MutableSpriteObjBase<P, S, I> {
 }
 
 export const r = {
-  array: <Item extends AllMutSprite>(arg: {
-    item: Item;
-    id?: (index: number) => string;
-    length: () => number;
-  }): MutArrayItem<Item> => {
-    return {
-      type: "array",
-      ...arg,
-    };
-  },
   if: (
     condition: () => boolean,
     sprites: AllMutSprite[]
@@ -445,13 +469,6 @@ export const r = {
       sprites,
     };
   },
-};
-
-type MutArrayItem<Item extends AllMutSprite> = {
-  type: "array";
-  item: Item;
-  id?: (index: number) => string;
-  length: () => number;
 };
 
 type MutConditionalItem = {

@@ -1,5 +1,5 @@
 import { t } from "../../packages/replay-core/src/t2";
-import { makeMutableSprite, r } from "../../packages/replay-core/src/sprite";
+import { makeMutableSprite } from "../../packages/replay-core/src/sprite";
 
 type Props = {
   highScore: number;
@@ -14,8 +14,8 @@ export const MyMutSprite = makeMutableSprite<Props, State>({
     return {
       score: 0,
       enemies: [
-        { x: 10, y: 0, id: "1" },
-        { x: 40, y: 20, id: "2" },
+        { x: 40, y: 0, id: "1" },
+        { x: 10, y: 20, id: "2" },
       ],
     };
   },
@@ -26,12 +26,20 @@ export const MyMutSprite = makeMutableSprite<Props, State>({
     }
 
     if (state.score === 50) {
-      state.enemies.push({ x: -50, y: 0, id: "3" });
+      state.enemies.unshift({ x: -50, y: 0, id: "3" });
     }
 
-    state.enemies.forEach((enemy) => {
+    let indexToRemove = -1;
+    state.enemies.forEach((enemy, index) => {
       enemy.x++;
+      if (enemy.x > 75) {
+        indexToRemove = index;
+      }
     });
+
+    if (indexToRemove >= 0) {
+      state.enemies.splice(indexToRemove, 1);
+    }
   },
 
   render({ state }) {
@@ -44,29 +52,51 @@ export const MyMutSprite = makeMutableSprite<Props, State>({
       //   t.text({ text: "High score!", color: "black" }),
       // ]),
 
-      r.array({
-        item: t.circle({ radius: 3, color: "red" }, (arg, index) => {
-          arg.x = state.enemies[index].x;
-          arg.y = state.enemies[index].y;
-        }),
-        // id: (index) => state.enemies[index].id,
-        length: () => state.enemies.length,
+      t.circle({ radius: 3, color: "red" }, (arg) => {
+        arg.x++;
       }),
 
-      MyMutNestedSprite({ index: -1 }),
+      t.rectangle({ color: "red" }, (arg) => {
+        arg.x--;
+      }),
 
-      MyMutNestedSprite({ index: 20, y: -20 }, (arg) => {
-        if (arg.index > -100) {
-          arg.index--;
+      // t.rectangleArray({
+      //   props: { color: "red", height: 25 },
+      //   update: (thisProps, itemState) => {
+      //     thisProps.x = itemState.x;
+      //     thisProps.y = itemState.y;
+      //   },
+      //   array: state.enemies,
+      // }),
+
+      Enemy.Array({
+        props: {},
+        update: (thisProps, itemState) => {
+          thisProps.x = itemState.x;
+          thisProps.y = itemState.y;
+        },
+        array: state.enemies,
+        key: "id",
+      }),
+
+      MyMutNestedSprite.Single({ index: -1 }),
+
+      MyMutNestedSprite.Single({ index: 20, y: -20 }, (thisProps) => {
+        if (thisProps.index > -100) {
+          thisProps.index--;
         }
       }),
 
-      r.array({
-        item: MyMutNestedSprite({ index: -1 }, (arg, index) => {
-          arg.index = index;
-          arg.y = index * 30 + 50;
-        }),
-        length: () => 5,
+      MyMutNestedSprite.Array({
+        props: { index: -1 },
+        update: (thisProps, itemState, index) => {
+          thisProps.index = index;
+          thisProps.y = index * 30 + 50;
+        },
+        array: Array.from({ length: 5 }).map((_, index) => ({
+          index,
+        })),
+        key: "index",
       }),
     ];
   },
@@ -80,6 +110,29 @@ const MyMutNestedSprite = makeMutableSprite<NestedProps>({
     return [
       t.text({ color: "black" }, (arg) => {
         arg.text = `Nested index: ${props.index}`;
+      }),
+    ];
+  },
+});
+
+type EnemyProps = {};
+type EnemyState = {
+  size: number;
+};
+const Enemy = makeMutableSprite<EnemyProps, EnemyState>({
+  init() {
+    return {
+      size: 1,
+    };
+  },
+  loop({ state }) {
+    state.size++;
+  },
+  render({ state }) {
+    return [
+      t.rectangle({ color: "blue" }, (thisProps) => {
+        thisProps.width = state.size;
+        thisProps.height = state.size;
       }),
     ];
   },

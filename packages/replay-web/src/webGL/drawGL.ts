@@ -242,7 +242,10 @@ export function draw(
         }
         return;
       }
-      if (texture.type === "rectangleArray") {
+      if (
+        texture.type === "rectangleArray" ||
+        texture.type === "mutRectangleArrayRender"
+      ) {
         if (texture.props.length === 0) return;
 
         applyMask(texture.mask, topStack.transformation);
@@ -364,6 +367,7 @@ export function draw(
           break;
         }
 
+        case "mutRectangle":
         case "rectangle": {
           const gradient = texture.props.gradient;
           if (gradient) {

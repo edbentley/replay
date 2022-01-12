@@ -169,7 +169,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
       }
       case GameStage.Play:
         return [
-          MyMutSprite({
+          MyMutSprite.Single({
             id: "MyMutSprite",
             highScore: 5,
           }),
