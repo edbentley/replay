@@ -8,6 +8,7 @@ import { WebInputs, RenderCanvasOptions } from "../../packages/replay-web/src";
 import { iOSInputs } from "../../packages/replay-swift/src";
 import { PlayStage } from "./PlayStage";
 import { TextInput, TextInputWeb } from "../../packages/replay-text-input/src";
+import { MyMutSprite } from "./Mutable";
 
 interface State {
   stage: GameStage;
@@ -131,23 +132,6 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
   },
 
   render({ state, updateState, device }) {
-    const input = TextInput({
-      id: "TestInput",
-      fontName: "Calibri",
-      fontSize: 20,
-      text: state.text,
-      onChangeText: (text) => {
-        if (state.stage === GameStage.Play) {
-          updateState((s) => ({ ...s, text }));
-        }
-      },
-      width: 100,
-      x: -device.size.width / 2 + 100,
-      y: -device.size.height / 2 + 20,
-      numberOfLines: 3,
-      align: "left",
-      color: "red",
-    });
     switch (state.stage) {
       case GameStage.Loading:
         return [
@@ -156,7 +140,24 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
             text: "Loading game",
           }),
         ];
-      case GameStage.GameOver:
+      case GameStage.GameOver: {
+        const input = TextInput({
+          id: "TestInput",
+          fontName: "Calibri",
+          fontSize: 20,
+          text: state.text,
+          onChangeText: (text) => {
+            if (state.stage === GameStage.Play) {
+              updateState((s) => ({ ...s, text }));
+            }
+          },
+          width: 100,
+          x: -device.size.width / 2 + 100,
+          y: -device.size.height / 2 + 20,
+          numberOfLines: 3,
+          align: "left",
+          color: "red",
+        });
         return [
           t.text({
             color: "red",
@@ -165,27 +166,30 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
           }),
           input,
         ];
+      }
       case GameStage.Play:
         return [
-          PureRectGroup({ id: "Circles" }),
-
-          PlayStage({
-            id: "play-stage",
-            bulletSpeed: state.bulletSpeed,
-            gameOver: function gameOver(score) {
-              if (score > state.highScore) {
-                device.storage.setItem("highScore", String(score));
-              }
-
-              updateState((currState) => ({
-                ...currState,
-                stage: GameStage.GameOver,
-                highScore: Math.max(score, state.highScore),
-              }));
-            },
-            highScore: state.highScore,
+          MyMutSprite({
+            id: "MyMutSprite",
+            highScore: 5,
           }),
-          input,
+          // PureRectGroup({ id: "Circles" }),
+          // PlayStage({
+          //   id: "play-stage",
+          //   bulletSpeed: state.bulletSpeed,
+          //   gameOver: function gameOver(score) {
+          //     if (score > state.highScore) {
+          //       device.storage.setItem("highScore", String(score));
+          //     }
+          //     updateState((currState) => ({
+          //       ...currState,
+          //       stage: GameStage.GameOver,
+          //       highScore: Math.max(score, state.highScore),
+          //     }));
+          //   },
+          //   highScore: state.highScore,
+          // }),
+          // input,
         ];
     }
   },

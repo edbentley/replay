@@ -1,5 +1,6 @@
 import { Device, DeviceSize, Assets } from "./device";
 import { Texture } from "./t";
+import { MutTexture } from "./t2";
 import { SpriteBaseProps, ExcludeSpriteBaseProps } from "./props";
 
 /**
@@ -13,6 +14,7 @@ export type Sprite<P = any, S = any, I = any> =
   | NativeSprite<P>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | ContextSprite<any>
+  | MutableSprite<any, any, any>
   | Texture
   | null;
 
@@ -45,11 +47,7 @@ export function makeSprite<
   };
 }
 
-export type CustomSprite<P, S, I> =
-  | NonMutableCustomSprite<P, S, I>
-  | MutableSprite<P, S, I>;
-
-interface NonMutableCustomSprite<P, S, I> {
+export interface CustomSprite<P, S, I> {
   type: "custom";
   spriteObj: SpriteObj<P, S, I>;
   props: CustomSpriteProps<P>;
@@ -324,37 +322,73 @@ export type Context<T> = {
   Sprite: (args: { context: T; sprites: Sprite[] }) => ContextSprite<T>;
 };
 
+// -- Mutable
+
+export type AllMutSprite =
+  | MutableSprite<any, any, any>
+  | MutTexture
+  | MutArrayItem<any>
+  | MutConditionalItem;
+
+export type MutSpriteProps<P> = P &
+  Partial<SpriteBaseProps> & {
+    /**
+     * Only required if NOT in Mutable Sprite
+     */
+    id?: string;
+  };
+
 /**
- * Same as a custom sprite but you can mutate state. Good for reducing Garbage
- * Collection.
+ * Mutable
  */
 export function makeMutableSprite<
   P extends ExcludeSpriteBaseProps<P>,
   S = undefined,
   I = {}
->(
-  spriteObj: MutableSpriteObj<P, S, I>
-): (props: CustomSpriteProps<P>) => MutableSprite<P, S, I> {
-  return function makeSpriteCallback(props) {
+>(spriteObj: MutableSpriteObj<P, S, I>) {
+  return function makeSpriteCallback(
+    props: MutSpriteProps<P>,
+    update?: (arg: P, index: number) => void
+  ): MutableSprite<P, S, I> {
     return {
-      type: "custom",
+      type: "mutable",
       spriteObj,
       props,
+      update,
     };
   };
 }
 
-interface MutableSprite<P, S, I> {
-  type: "custom";
+export interface MutableSprite<P, S, I> {
+  type: "mutable";
   spriteObj: MutableSpriteObj<P, S, I>;
-  props: CustomSpriteProps<P>;
+  props: MutSpriteProps<P>;
+  update?: (arg: P, index: number) => void;
 }
 
 type MutableSpriteObj<P, S, I> = S extends undefined
-  ? Partial<SpriteObjInit<P, S, I>> & MutableSpriteObjBase<P, S, I>
-  : SpriteObjInit<P, S, I> & MutableSpriteObjBase<P, S, I>;
+  ? Partial<MutableSpriteObjInit<P, S, I>> & MutableSpriteObjBase<P, S, I>
+  : MutableSpriteObjInit<P, S, I> & MutableSpriteObjBase<P, S, I>;
 
-interface MutableSpriteObjBase<P, S, I> extends SpriteObjBase<P, S, I> {
+interface MutableSpriteObjInit<P, S, I> {
+  /**
+   * Called on sprite mount. Returns initial state.
+   */
+  init: (params: {
+    props: Readonly<P>;
+    getState: () => S;
+    device: Device;
+    getInputs: () => I;
+    /**
+     * Asset file names to preload for this Sprite. They'll be cleared from
+     * memory when the Sprite is unmounted.
+     */
+    preloadFiles: (assets: Assets) => Promise<void>;
+    getContext: <T>(context: Context<T>) => T;
+  }) => S;
+}
+
+interface MutableSpriteObjBase<P, S, I> {
   /**
    * Called every frame to update the state of the sprite.
    */
@@ -363,8 +397,63 @@ interface MutableSpriteObjBase<P, S, I> extends SpriteObjBase<P, S, I> {
     state: S;
     device: Device;
     getInputs: () => I;
-    updateState: (update: (state: S) => S) => void;
-    getState: () => S;
     getContext: <T>(context: Context<T>) => T;
-  }) => S;
+  }) => void;
+
+  /**
+   * Called on sprite unmount.
+   */
+  cleanup?: (params: {
+    state: Readonly<S>;
+    device: Device;
+    getInputs: () => I;
+  }) => void;
+
+  // -- render methods
+
+  /**
+   * Return an array of sprites to render. The minimum required for a custom
+   * sprite.
+   */
+  render: (params: {
+    props: Readonly<P>;
+    state: S;
+    device: Device;
+    getInputs: () => I;
+    getContext: <T>(context: Context<T>) => T;
+  }) => AllMutSprite[];
 }
+
+export const r = {
+  array: <Item extends AllMutSprite>(arg: {
+    item: Item;
+    length: () => number;
+  }): MutArrayItem<Item> => {
+    return {
+      type: "array",
+      ...arg,
+    };
+  },
+  if: (
+    condition: () => boolean,
+    sprites: AllMutSprite[]
+  ): MutConditionalItem => {
+    return {
+      type: "conditional",
+      condition,
+      sprites,
+    };
+  },
+};
+
+type MutArrayItem<Item extends AllMutSprite> = {
+  type: "array";
+  item: Item;
+  length: () => number;
+};
+
+type MutConditionalItem = {
+  type: "conditional";
+  condition: () => boolean;
+  sprites: AllMutSprite[];
+};

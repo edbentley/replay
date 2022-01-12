@@ -425,6 +425,7 @@ export function draw(
           );
           break;
 
+        case "mutText":
         case "text": {
           const { text, color, strokeColor, font } = texture.props;
           let cacheKey = `${text}-${color}-${strokeColor}`;
