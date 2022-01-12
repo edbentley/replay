@@ -9,6 +9,7 @@ import { iOSInputs } from "../../packages/replay-swift/src";
 import { PlayStage } from "./PlayStage";
 import { TextInput, TextInputWeb } from "../../packages/replay-text-input/src";
 import { MyMutSprite } from "./Mutable";
+import { MutPlayStage } from "./MutPlayStage";
 
 interface State {
   stage: GameStage;
@@ -169,10 +170,30 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
       }
       case GameStage.Play:
         return [
-          MyMutSprite.Single({
-            id: "MyMutSprite",
-            highScore: 5,
-          }),
+          // MyMutSprite.Single({
+          //   id: "MyMutSprite",
+          //   highScore: 80,
+          // }),
+          MutPlayStage.Single(
+            {
+              id: "play-stage",
+              bulletSpeed: state.bulletSpeed,
+              gameOver: function gameOver(score) {
+                if (score > state.highScore) {
+                  device.storage.setItem("highScore", String(score));
+                }
+                updateState((currState) => ({
+                  ...currState,
+                  stage: GameStage.GameOver,
+                  highScore: Math.max(score, state.highScore),
+                }));
+              },
+              highScore: state.highScore,
+            },
+            (thisProps) => {
+              thisProps.bulletSpeed = state.bulletSpeed;
+            }
+          ),
           // PureRectGroup({ id: "Circles" }),
           // PlayStage({
           //   id: "play-stage",

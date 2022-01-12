@@ -801,6 +801,16 @@ function handleAllMutableContainer<I>(
   } else if (container.type === "mutArrayTexture") {
     container.updateTextureArray();
     platformRender.renderTexture(container.texture);
+  } else if (container.type === "mutConditional") {
+    container.updateConditional();
+    container.containers.forEach((container) => {
+      handleAllMutableContainer(
+        container,
+        platformRender,
+        getInputs,
+        contextValues
+      );
+    });
   } else {
     throw Error("TODO");
   }
@@ -863,6 +873,33 @@ function createMutableSpriteContainer<P, S, I>(
             ) => void;
             update(props, this.array[index], index);
           });
+        },
+      };
+    }
+    if (sprite.type === "conditional") {
+      return {
+        type: "mutConditional",
+        condition: sprite.condition,
+        hide: true,
+        containers: [],
+        updateConditional() {
+          if (this.hide && sprite.condition()) {
+            this.hide = false;
+            this.containers = sprite.sprites.map((sprite) =>
+              createMutableSpriteContainer(
+                sprite,
+                mutDevice,
+                getInitInputs,
+                currentTime,
+                globalId,
+                contextValues,
+                platformRender
+              )
+            );
+          } else if (!this.hide && !sprite.condition()) {
+            this.hide = true;
+            this.containers = [];
+          }
         },
       };
     }
@@ -1128,10 +1165,19 @@ type MutableArrayContainer<I, Item extends AllMutableSpriteContainer<I>> = {
   updateArray: () => void;
 };
 
+type MutableConditionalContainer<I> = {
+  type: "mutConditional";
+  condition: () => boolean;
+  hide: boolean;
+  containers: AllMutableSpriteContainer<I>[];
+  updateConditional: () => void;
+};
+
 type AllMutableSpriteContainer<I> =
   | MutableSpriteContainer<any, any, I>
   | MutableSpriteArrayContainer<any, any, I, any>
   | MutableTextureContainer
+  | MutableConditionalContainer<I>
   | MutableArrayTextureContainer
   | MutableArrayContainer<I, any>;
 

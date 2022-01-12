@@ -1,5 +1,5 @@
 import { t } from "../../packages/replay-core/src/t2";
-import { makeMutableSprite } from "../../packages/replay-core/src/sprite";
+import { makeMutableSprite, r } from "../../packages/replay-core/src/sprite";
 
 type Props = {
   highScore: number;
@@ -42,15 +42,15 @@ export const MyMutSprite = makeMutableSprite<Props, State>({
     }
   },
 
-  render({ state }) {
+  render({ state, props }) {
     return [
       t.text({ color: "black", y: 25 }, (arg) => {
         arg.text = `Score: ${state.score}`;
       }),
 
-      // r.if(() => state.score > props.highScore, [
-      //   t.text({ text: "High score!", color: "black" }),
-      // ]),
+      r.if(() => state.score > props.highScore, [
+        t.text({ text: "High score!", color: "black", x: -100 }),
+      ]),
 
       t.circle({ radius: 3, color: "red" }, (arg) => {
         arg.x++;

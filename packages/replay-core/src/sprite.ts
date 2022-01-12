@@ -349,7 +349,7 @@ export function makeMutableSprite<
   return {
     Single: function makeSpriteCallback(
       props: MutSpriteProps<P>,
-      update?: (arg: MutSpriteProps<P>, index: number) => void
+      update?: (thisProps: MutSpriteProps<P>, index: number) => void
     ): MutableSprite<P, S, I> {
       return {
         type: "mutable",
@@ -471,7 +471,7 @@ export const r = {
   },
 };
 
-type MutConditionalItem = {
+export type MutConditionalItem = {
   type: "conditional";
   condition: () => boolean;
   sprites: AllMutSprite[];

@@ -4,7 +4,7 @@ import { Gradient, TextureFont } from "./t";
 export const t = {
   text: (
     arg: Partial<TextProps>,
-    update?: (arg: TextProps, index: number) => void
+    update?: (thisProps: TextProps, index: number) => void
   ): MutTextTexture => {
     return {
       type: "mutText",
@@ -20,7 +20,7 @@ export const t = {
   },
   circle: (
     arg: Partial<CircleProps>,
-    update?: (arg: CircleProps) => void
+    update?: (thisProps: CircleProps) => void
   ): MutCircleTexture => {
     return {
       type: "mutCircle",
