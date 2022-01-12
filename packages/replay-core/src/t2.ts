@@ -3,20 +3,15 @@ import { Gradient, TextureFont } from "./t";
 
 export const t = {
   text: (
-    arg: {
-      text: string;
-      color: string;
-      x?: number;
-      y?: number;
-    },
+    arg: Partial<TextProps>,
     update?: (arg: TextProps, index: number) => void
   ): MutTextTexture => {
     return {
       type: "mutText",
       props: mutateBaseProps(
         {
-          text: arg.text,
-          color: arg.color,
+          text: arg.text || "",
+          color: arg.color || "black",
         },
         arg
       ),
@@ -24,20 +19,15 @@ export const t = {
     };
   },
   circle: (
-    arg: {
-      radius: number;
-      color: string;
-      x?: number;
-      y?: number;
-    },
+    arg: Partial<CircleProps>,
     update?: (arg: CircleProps, index: number) => void
   ): MutCircleTexture => {
     return {
       type: "mutCircle",
       props: mutateBaseProps(
         {
-          radius: arg.radius,
-          color: arg.color,
+          radius: arg.radius || 10,
+          color: arg.color || "black",
         },
         arg
       ),

@@ -348,7 +348,7 @@ export function makeMutableSprite<
 >(spriteObj: MutableSpriteObj<P, S, I>) {
   return function makeSpriteCallback(
     props: MutSpriteProps<P>,
-    update?: (arg: P, index: number) => void
+    update?: (arg: MutSpriteProps<P>, index: number) => void
   ): MutableSprite<P, S, I> {
     return {
       type: "mutable",
@@ -427,6 +427,7 @@ interface MutableSpriteObjBase<P, S, I> {
 export const r = {
   array: <Item extends AllMutSprite>(arg: {
     item: Item;
+    id?: (index: number) => string;
     length: () => number;
   }): MutArrayItem<Item> => {
     return {
@@ -449,6 +450,7 @@ export const r = {
 type MutArrayItem<Item extends AllMutSprite> = {
   type: "array";
   item: Item;
+  id?: (index: number) => string;
   length: () => number;
 };
 

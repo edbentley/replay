@@ -772,6 +772,28 @@ function getRenderMethod(
   return supportsLandscapeAndPortrait && isPortrait ? "renderP" : "render";
 }
 
+function handleAllMutableContainer<I>(
+  container: AllMutableSpriteContainer<I>,
+  index: number,
+  platformRender: PlatformRender,
+  getInputs: () => I,
+  contextValues: ContextValue[]
+) {
+  if (container.type === "mutable") {
+    container.updateSprite(index); // update props
+    platformRender.startRenderSprite(container.props);
+    container.updateSprites(getInputs, contextValues);
+    platformRender.endRenderSprite();
+  } else if (container.type === "mutTexture") {
+    container.updateTexture(index);
+    platformRender.renderTexture(container.texture);
+  } else if (container.type === "mutArray") {
+    container.updateArray();
+  } else {
+    throw Error("TODO");
+  }
+}
+
 function createMutableSpriteContainer<P, S, I>(
   sprite: AllMutSprite,
   mutDevice: Device,
@@ -780,14 +802,79 @@ function createMutableSpriteContainer<P, S, I>(
   globalId: string,
   contextValues: ContextValue[],
   platformRender: PlatformRender
-): MutableSpriteContainer<P, S, I> | MutableTextureContainer {
+): AllMutableSpriteContainer<I> {
+  const getInputs = { ref: getInitInputs };
+
   if (sprite.type !== "mutable") {
-    if (sprite.type === "mutText") {
+    if (sprite.type === "mutText" || sprite.type === "mutCircle") {
       return {
         type: "mutTexture",
         texture: sprite,
-        updateTexture() {
-          sprite.update?.(sprite.props, 0);
+        updateTexture(index) {
+          const update = sprite.update as
+            | ((arg: any, index: number) => void)
+            | undefined;
+          update?.(sprite.props, index);
+        },
+      };
+    }
+    if (sprite.type === "array") {
+      const length = sprite.length();
+      const idFunc = sprite.id;
+      const prevIds = idFunc
+        ? Array.from({ length }).map((_, index) => idFunc(index))
+        : [];
+      return {
+        type: "mutArray",
+        prevIds,
+        prevIdsSet: new Set(prevIds),
+        items: Array.from({ length }).map(() =>
+          createMutableSpriteContainer(
+            sprite.item,
+            mutDevice,
+            getInitInputs,
+            currentTime,
+            globalId,
+            contextValues,
+            platformRender
+          )
+        ),
+        updateArray() {
+          const length = sprite.length();
+          const lengthChange = length - this.items.length;
+
+          if (sprite.id) {
+            // Handling of adding / removing items based on ID
+            // TODO
+          } else {
+            if (lengthChange > 0) {
+              for (let i = 0; i < lengthChange; i++) {
+                this.items.push(
+                  createMutableSpriteContainer(
+                    sprite.item,
+                    mutDevice,
+                    getInitInputs,
+                    currentTime,
+                    globalId,
+                    contextValues,
+                    platformRender
+                  )
+                );
+              }
+            } else if (lengthChange < 0) {
+              this.items.length = length;
+            }
+          }
+
+          this.items.forEach((item: AllMutableSpriteContainer<I>, index) => {
+            handleAllMutableContainer(
+              item,
+              index,
+              platformRender,
+              getInputs.ref,
+              contextValues
+            );
+          });
         },
       };
     }
@@ -808,8 +895,6 @@ function createMutableSpriteContainer<P, S, I>(
     }
     return contextValue.value as T;
   }
-
-  const getInputs = { ref: getInitInputs };
 
   const state = spriteObj.init?.({
     props,
@@ -857,8 +942,8 @@ function createMutableSpriteContainer<P, S, I>(
           platformRender
         )
       ),
-    updateSprite() {
-      sprite.update?.(sprite.props, 0);
+    updateSprite(index) {
+      sprite.update?.(props, index);
     },
     updateSprites(getInputsVal, contextValues) {
       getInputs.ref = getInputsVal;
@@ -872,15 +957,13 @@ function createMutableSpriteContainer<P, S, I>(
       });
 
       this.childContainers.forEach((container) => {
-        if (container.type === "mutable") {
-          container.updateSprite(); // update props
-          platformRender.startRenderSprite(container.props);
-          container.updateSprites(getInputs.ref, contextValues);
-          platformRender.endRenderSprite();
-        } else if (container.type === "mutTexture") {
-          container.updateTexture();
-          platformRender.renderTexture(container.texture);
-        }
+        handleAllMutableContainer(
+          container,
+          0,
+          platformRender,
+          getInputs.ref,
+          contextValues
+        );
       });
     },
     cleanup(getInputs) {
@@ -951,8 +1034,20 @@ type SpriteContainer<P, S, I> =
 type MutableTextureContainer = {
   type: "mutTexture";
   texture: MutTexture;
-  updateTexture: () => void;
+  updateTexture: (index: number) => void;
 };
+type MutableArrayContainer<I, Item extends AllMutableSpriteContainer<I>> = {
+  type: "mutArray";
+  items: Item[];
+  prevIds: string[];
+  prevIdsSet: Set<string>;
+  updateArray: () => void;
+};
+
+type AllMutableSpriteContainer<I> =
+  | MutableSpriteContainer<any, any, I>
+  | MutableTextureContainer
+  | MutableArrayContainer<I, any>;
 
 type CustomSpriteContainer<P, S, I> = {
   type: "custom";
@@ -983,14 +1078,11 @@ type MutableSpriteContainer<P, S, I> = {
   type: "mutable";
   props: P;
   state: S;
-  childContainers: (
-    | MutableSpriteContainer<any, any, I>
-    | MutableTextureContainer
-  )[];
+  childContainers: AllMutableSpriteContainer<I>[];
   prevTime: number;
   currentLag: number;
   loadFilesPromise: null | Promise<void>;
-  updateSprite: () => void;
+  updateSprite: (index: number) => void;
   updateSprites: (getInputs: () => I, contextValues: ContextValue[]) => void;
   cleanup: (getInputs: () => I) => void;
 };

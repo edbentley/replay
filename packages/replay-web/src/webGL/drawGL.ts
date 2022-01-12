@@ -411,6 +411,7 @@ export function draw(
           break;
         }
 
+        case "mutCircle":
         case "circle":
           prevProgram = drawCircle(
             newMatrix,
