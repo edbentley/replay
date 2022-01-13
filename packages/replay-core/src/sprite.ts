@@ -466,7 +466,20 @@ export const r = {
     return {
       type: "conditional",
       condition,
-      sprites,
+      trueSprites: sprites,
+      falseSprites: [],
+    };
+  },
+  ifElse: (
+    condition: () => boolean,
+    trueSprites: AllMutSprite[],
+    falseSprites: AllMutSprite[]
+  ): MutConditionalItem => {
+    return {
+      type: "conditional",
+      condition,
+      trueSprites,
+      falseSprites,
     };
   },
 };
@@ -474,5 +487,6 @@ export const r = {
 export type MutConditionalItem = {
   type: "conditional";
   condition: () => boolean;
-  sprites: AllMutSprite[];
+  trueSprites: AllMutSprite[];
+  falseSprites: AllMutSprite[];
 };

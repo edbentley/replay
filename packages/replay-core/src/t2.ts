@@ -80,6 +80,72 @@ export const t = {
       array,
     };
   },
+  image: (
+    props: Partial<ImageProps>,
+    update?: (thisProps: ImageProps) => void
+  ): MutImageTexture => {
+    return {
+      type: "mutImage",
+      props: mutateBaseProps(
+        {
+          width: props.width || 10,
+          height: props.height || 10,
+          fileName: "<not set>",
+        },
+        props
+      ),
+      update,
+    };
+  },
+  imageArray: <ItemState>({
+    props,
+    update,
+    array,
+  }: {
+    // mask?: MaskShape;
+    props: Partial<ImageProps>;
+    update: (
+      thisProps: Omit<ImageProps, "fileName" | "mask">,
+      itemState: ItemState,
+      index: number
+    ) => void;
+    array: ItemState[];
+  }): MutImageArrayTexture<ItemState> => {
+    return {
+      type: "mutImageArray",
+      // mask: arg.mask || null,
+      props: mutateBaseProps(
+        {
+          width: props.width || 10,
+          height: props.height || 10,
+          fileName: props.fileName || "<not set>",
+        },
+        props
+      ),
+      update,
+      array,
+    };
+  },
+  spriteSheet: (
+    props: Partial<SpriteSheetProps>,
+    update?: (thisProps: SpriteSheetProps) => void
+  ): MutSpriteSheetTexture => {
+    return {
+      type: "mutSpriteSheet",
+      props: mutateBaseProps(
+        {
+          fileName: props.fileName || "<not set>",
+          columns: props.columns || 1,
+          rows: props.rows || 1,
+          index: props.index || 0,
+          width: props.width || 10,
+          height: props.height || 10,
+        },
+        props
+      ),
+      update,
+    };
+  },
 };
 
 interface TestProps {
@@ -94,13 +160,19 @@ type BaseProps = TestProps & SpriteBaseProps;
 export type MutSingleTexture =
   | MutTextTexture
   | MutCircleTexture
-  | MutRectangleTexture;
+  | MutRectangleTexture
+  | MutImageTexture
+  | MutSpriteSheetTexture;
 
 export type MutTexture = MutSingleTexture | MutArrayTexture;
 export type RenderableMutTexture = MutSingleTexture | MutArrayTextureRenderable;
 
-export type MutArrayTexture = MutRectangleArrayTexture<any>;
-export type MutArrayTextureRenderable = MutRectangleArrayTextureRender;
+export type MutArrayTexture =
+  | MutRectangleArrayTexture<any>
+  | MutImageArrayTexture<any>;
+export type MutArrayTextureRenderable =
+  | MutRectangleArrayTextureRender
+  | MutImageArrayTextureRender;
 
 // -- Text
 type TextProps = BaseProps & {
@@ -156,4 +228,48 @@ export interface MutRectangleArrayTextureRender {
   type: "mutRectangleArrayRender";
   mask: null;
   props: RectangleProps[];
+}
+
+// -- Image
+type ImageProps = BaseProps & {
+  fileName: string;
+  width: number;
+  height: number;
+};
+export interface MutImageTexture {
+  type: "mutImage";
+  props: ImageProps;
+  update?: (thisProps: ImageProps) => void;
+}
+
+export interface MutImageArrayTexture<ItemState> {
+  type: "mutImageArray";
+  props: ImageProps;
+  update: (
+    thisProps: Omit<ImageProps, "fileName" | "mask">,
+    itemState: ItemState,
+    index: number
+  ) => void;
+  array: ItemState[];
+}
+export interface MutImageArrayTextureRender {
+  type: "mutImageArrayRender";
+  fileName: string;
+  mask: null;
+  props: ImageProps[];
+}
+
+// -- SpriteSheet
+type SpriteSheetProps = BaseProps & {
+  fileName: string;
+  columns: number;
+  rows: number;
+  index: number;
+  width: number;
+  height: number;
+};
+export interface MutSpriteSheetTexture {
+  type: "mutSpriteSheet";
+  props: SpriteSheetProps;
+  update?: (thisProps: SpriteSheetProps) => void;
 }

@@ -15,6 +15,7 @@ import { Device, DeviceSize, preloadFiles, cleanupFiles } from "./device";
 import { SpriteBaseProps, getDefaultProps, mutateBaseProps } from "./props";
 import { ContextValue } from "./context";
 import {
+  MutArrayTextureRenderable,
   MutRectangleArrayTextureRender,
   MutSingleTexture,
   RenderableMutTexture,
@@ -831,7 +832,9 @@ function createMutableSpriteContainer<P, S, I>(
     if (
       sprite.type === "mutText" ||
       sprite.type === "mutCircle" ||
-      sprite.type === "mutRectangle"
+      sprite.type === "mutRectangle" ||
+      sprite.type === "mutImage" ||
+      sprite.type === "mutSpriteSheet"
     ) {
       return {
         type: "mutTexture",
@@ -842,16 +845,29 @@ function createMutableSpriteContainer<P, S, I>(
         },
       };
     }
-    if (sprite.type === "mutRectangleArray") {
+    if (
+      sprite.type === "mutRectangleArray" ||
+      sprite.type === "mutImageArray"
+    ) {
       return {
         type: "mutArrayTexture",
-        texture: {
-          type: "mutRectangleArrayRender",
-          props: Array.from({ length: sprite.array.length }).map(() => ({
-            ...sprite.props,
-          })),
-          mask: null,
-        },
+        texture:
+          sprite.type === "mutRectangleArray"
+            ? {
+                type: "mutRectangleArrayRender",
+                props: Array.from({ length: sprite.array.length }).map(() => ({
+                  ...sprite.props,
+                })),
+                mask: null,
+              }
+            : {
+                type: "mutImageArrayRender",
+                fileName: sprite.props.fileName,
+                props: Array.from({ length: sprite.array.length }).map(() => ({
+                  ...sprite.props,
+                })),
+                mask: null,
+              },
         array: sprite.array,
         updateTextureArray() {
           const length = this.array.length;
@@ -859,13 +875,13 @@ function createMutableSpriteContainer<P, S, I>(
 
           if (lengthChange > 0) {
             for (let i = 0; i < lengthChange; i++) {
-              this.texture.props.push({ ...sprite.props });
+              this.texture.props.push({ ...sprite.props } as any);
             }
           } else if (lengthChange < 0) {
             this.texture.props.length = length;
           }
 
-          this.texture.props.forEach((props, index) => {
+          this.texture.props.forEach((props: any, index: number) => {
             const update = sprite.update as (
               arg: any,
               itemState: any,
@@ -877,15 +893,29 @@ function createMutableSpriteContainer<P, S, I>(
       };
     }
     if (sprite.type === "conditional") {
+      const isTrue = sprite.condition();
       return {
         type: "mutConditional",
         condition: sprite.condition,
-        hide: true,
-        containers: [],
+        isTrue,
+        containers: (isTrue
+          ? sprite.trueSprites
+          : sprite.falseSprites
+        ).map((sprite) =>
+          createMutableSpriteContainer(
+            sprite,
+            mutDevice,
+            getInitInputs,
+            currentTime,
+            globalId,
+            contextValues,
+            platformRender
+          )
+        ),
         updateConditional() {
-          if (this.hide && sprite.condition()) {
-            this.hide = false;
-            this.containers = sprite.sprites.map((sprite) =>
+          if (!this.isTrue && sprite.condition()) {
+            this.isTrue = true;
+            this.containers = sprite.trueSprites.map((sprite) =>
               createMutableSpriteContainer(
                 sprite,
                 mutDevice,
@@ -896,9 +926,19 @@ function createMutableSpriteContainer<P, S, I>(
                 platformRender
               )
             );
-          } else if (!this.hide && !sprite.condition()) {
-            this.hide = true;
-            this.containers = [];
+          } else if (this.isTrue && !sprite.condition()) {
+            this.isTrue = false;
+            this.containers = sprite.falseSprites.map((sprite) =>
+              createMutableSpriteContainer(
+                sprite,
+                mutDevice,
+                getInitInputs,
+                currentTime,
+                globalId,
+                contextValues,
+                platformRender
+              )
+            );
           }
         },
       };
@@ -1153,7 +1193,7 @@ type MutableTextureContainer = {
 };
 type MutableArrayTextureContainer = {
   type: "mutArrayTexture";
-  texture: MutRectangleArrayTextureRender;
+  texture: MutArrayTextureRenderable;
   array: any[];
   updateTextureArray: () => void;
 };
@@ -1168,7 +1208,7 @@ type MutableArrayContainer<I, Item extends AllMutableSpriteContainer<I>> = {
 type MutableConditionalContainer<I> = {
   type: "mutConditional";
   condition: () => boolean;
-  hide: boolean;
+  isTrue: boolean;
   containers: AllMutableSpriteContainer<I>[];
   updateConditional: () => void;
 };

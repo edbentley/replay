@@ -31,19 +31,21 @@ export const MutWalkingGreenCapChar = makeMutableSprite<{}, State>({
   render({ state }) {
     return [
       r.if(() => !state.loading, [
-        t2.text({}, (thisProps) => {
-          thisProps.text = `Spritesheet frame: ${state.frame}`;
-        }),
-        // t2.spriteSheet({
-        //   fileName: "spritesheet.png",
-        //   columns: 3,
-        //   rows: 4,
-        //   index: state.frame,
-        //   width: 48,
-        //   height: 54,
-        //   scaleX: -1,
-        //   anchorX: -24,
-        // }),
+        t2.spriteSheet(
+          {
+            fileName: "spritesheet.png",
+            columns: 3,
+            rows: 4,
+            index: state.frame,
+            width: 48,
+            height: 54,
+            scaleX: -1,
+            anchorX: -24,
+          },
+          (thisProps) => {
+            thisProps.index = state.frame;
+          }
+        ),
       ]),
     ];
   },

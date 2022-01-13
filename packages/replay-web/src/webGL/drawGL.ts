@@ -220,7 +220,10 @@ export function draw(
     renderTexture: (texture) => {
       const topStack = stateStack[0];
 
-      if (texture.type === "imageArray") {
+      if (
+        texture.type === "imageArray" ||
+        texture.type === "mutImageArrayRender"
+      ) {
         if (texture.props.length === 0) return;
 
         applyMask(texture.mask, topStack.transformation);
@@ -272,7 +275,9 @@ export function draw(
       );
 
       switch (texture.type) {
+        case "mutImage":
         case "image":
+        case "mutSpriteSheet":
         case "spriteSheet": {
           const imageInfo = getImage(imageElements, texture.props.fileName);
           const result = drawImage(
@@ -281,7 +286,7 @@ export function draw(
             texture.props.width,
             texture.props.height,
             texture.props.opacity * topStack.opacity,
-            texture.type === "spriteSheet"
+            texture.type === "spriteSheet" || texture.type === "mutSpriteSheet"
               ? {
                   columns: texture.props.columns,
                   rows: texture.props.rows,

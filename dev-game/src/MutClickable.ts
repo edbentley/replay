@@ -1,9 +1,11 @@
-import { Sprite, makeMutableSprite } from "../../packages/replay-core/src";
+import { makeMutableSprite, r } from "../../packages/replay-core/src";
 import { WebInputs } from "../../packages/replay-web/src";
 import { iOSInputs } from "../../packages/replay-swift/src";
+import { AllMutSprite } from "../../packages/replay-core/src/sprite";
 
 type ClickableProps = {
-  sprites: (isPressed: boolean) => Sprite[];
+  spritesPressed: AllMutSprite[];
+  spritesNotPressed?: AllMutSprite[];
   width: number;
   height: number;
   onPress: () => void;
@@ -11,17 +13,22 @@ type ClickableProps = {
 };
 export const MutClickable = makeMutableSprite<
   ClickableProps,
-  undefined,
+  { isPressed: boolean },
   WebInputs | iOSInputs
 >({
-  loop({ state, getInputs }) {
+  init() {
+    return { isPressed: false };
+  },
+
+  loop({ state, props, getInputs }) {
     const inputs = getInputs();
     const { x, y, justReleased, pressed } = inputs.pointer;
+    const { width, height, onPress, onPressOutside } = props;
 
     const isOnButton =
       x <= width / 2 && x >= -width / 2 && y <= height / 2 && y >= -height / 2;
 
-    const isPressed = pressed && isOnButton;
+    state.isPressed = pressed && isOnButton;
 
     if (justReleased && isOnButton) {
       onPress();
@@ -29,10 +36,14 @@ export const MutClickable = makeMutableSprite<
       onPressOutside();
     }
   },
-  render({
-    props: { sprites, width, height, onPress, onPressOutside },
-    getInputs,
-  }) {
-    return sprites(isPressed);
+
+  render({ state, props }) {
+    return [
+      r.ifElse(
+        () => state.isPressed,
+        props.spritesPressed,
+        props.spritesNotPressed || props.spritesPressed
+      ),
+    ];
   },
 });
