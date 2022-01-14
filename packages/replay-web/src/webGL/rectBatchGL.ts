@@ -167,7 +167,8 @@ function getMatricesColoursData(
     matrices[n + 4] = newMatrix[4];
     matrices[n + 5] = newMatrix[5];
 
-    const opacity = parentOpacity * element.opacity;
+    // TODO: more efficient hiding
+    const opacity = element.show ? parentOpacity * element.opacity : 0;
 
     const [r, g, b] = hexToRGB(element.color, opacity);
 

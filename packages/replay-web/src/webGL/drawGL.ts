@@ -266,6 +266,10 @@ export function draw(
         return;
       }
 
+      if (!texture.props.show) {
+        return;
+      }
+
       const newMatrix = applyTransform(topStack.transformation, texture.props);
       applyMask(
         texture.props.mask,

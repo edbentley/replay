@@ -55,6 +55,7 @@ export const t = {
     props,
     update,
     array,
+    updateArray,
   }: {
     // mask?: MaskShape;
     props: Partial<RectangleProps>;
@@ -64,6 +65,8 @@ export const t = {
       index: number
     ) => void;
     array: ItemState[];
+    // Only for stale arrays not mutated
+    updateArray?: () => ItemState[];
   }): MutRectangleArrayTexture<ItemState> => {
     return {
       type: "mutRectangleArray",
@@ -78,6 +81,7 @@ export const t = {
       ),
       update,
       array,
+      updateArray,
     };
   },
   image: (
@@ -101,6 +105,7 @@ export const t = {
     props,
     update,
     array,
+    updateArray,
   }: {
     // mask?: MaskShape;
     props: Partial<ImageProps>;
@@ -110,6 +115,8 @@ export const t = {
       index: number
     ) => void;
     array: ItemState[];
+    // Only for stale arrays not mutated
+    updateArray?: () => ItemState[];
   }): MutImageArrayTexture<ItemState> => {
     return {
       type: "mutImageArray",
@@ -124,6 +131,7 @@ export const t = {
       ),
       update,
       array,
+      updateArray,
     };
   },
   spriteSheet: (
@@ -222,6 +230,7 @@ export interface MutRectangleArrayTexture<ItemState> {
     itemState: ItemState,
     index: number
   ) => void;
+  updateArray?: () => ItemState[];
   array: ItemState[];
 }
 export interface MutRectangleArrayTextureRender {
@@ -251,6 +260,7 @@ export interface MutImageArrayTexture<ItemState> {
     index: number
   ) => void;
   array: ItemState[];
+  updateArray?: () => ItemState[];
 }
 export interface MutImageArrayTextureRender {
   type: "mutImageArrayRender";

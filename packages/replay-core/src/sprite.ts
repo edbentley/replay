@@ -361,7 +361,9 @@ export function makeMutableSprite<
     Array: function makeSpriteArrayCallback<ItemState>({
       props,
       update,
+      filter,
       array,
+      updateArray,
       key,
     }: {
       props: (itemState: ItemState, index: number) => MutSpriteProps<P>;
@@ -370,15 +372,19 @@ export function makeMutableSprite<
         itemState: ItemState,
         index: number
       ) => void;
+      filter?: (itemState: ItemState, index: number) => boolean;
       array: ItemState[];
-      key?: keyof ItemState;
+      key: (itemState: ItemState, index: number) => string | number;
+      updateArray?: () => ItemState[];
     }): MutableSpriteArray<P, S, I, ItemState> {
       return {
         type: "mutableArray",
         spriteObj,
         props,
         update,
+        filter,
         array,
+        updateArray,
         key,
       };
     },
@@ -396,8 +402,10 @@ export interface MutableSpriteArray<P, S, I, ItemState> {
   spriteObj: MutableSpriteObj<P, S, I>;
   props: (itemState: ItemState, index: number) => MutSpriteProps<P>;
   update?: (thisProps: P, itemState: ItemState, index: number) => void;
+  filter?: (itemState: ItemState, index: number) => boolean;
   array: ItemState[];
-  key?: keyof ItemState;
+  updateArray?: () => ItemState[];
+  key: (itemState: ItemState, index: number) => string | number;
 }
 
 type MutableSpriteObj<P, S, I> = S extends undefined

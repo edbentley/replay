@@ -202,7 +202,8 @@ function getMatricesOpacityData(
     matrices[n + 4] = newMatrix[4];
     matrices[n + 5] = newMatrix[5];
 
-    opacities[i] = element.opacity * opacity;
+    // TODO: more efficient hiding
+    opacities[i] = element.show ? element.opacity * opacity : 0;
   }
 
   return { matrices, opacities };
