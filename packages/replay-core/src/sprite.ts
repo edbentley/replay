@@ -364,8 +364,8 @@ export function makeMutableSprite<
       array,
       key,
     }: {
-      props: MutSpriteProps<P>;
-      update: (
+      props: (itemState: ItemState, index: number) => MutSpriteProps<P>;
+      update?: (
         thisProps: MutSpriteProps<P>,
         itemState: ItemState,
         index: number
@@ -394,8 +394,8 @@ export interface MutableSprite<P, S, I> {
 export interface MutableSpriteArray<P, S, I, ItemState> {
   type: "mutableArray";
   spriteObj: MutableSpriteObj<P, S, I>;
-  props: MutSpriteProps<P>;
-  update: (thisProps: P, itemState: ItemState, index: number) => void;
+  props: (itemState: ItemState, index: number) => MutSpriteProps<P>;
+  update?: (thisProps: P, itemState: ItemState, index: number) => void;
   array: ItemState[];
   key?: keyof ItemState;
 }

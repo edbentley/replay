@@ -70,7 +70,7 @@ export const MyMutSprite = makeMutableSprite<Props, State>({
       // }),
 
       Enemy.Array({
-        props: {},
+        props: () => ({}),
         update: (thisProps, itemState) => {
           thisProps.x = itemState.x;
           thisProps.y = itemState.y;
@@ -88,8 +88,8 @@ export const MyMutSprite = makeMutableSprite<Props, State>({
       }),
 
       MyMutNestedSprite.Array({
-        props: { index: -1 },
-        update: (thisProps, itemState, index) => {
+        props: () => ({ index: -1 }),
+        update: (thisProps, _, index) => {
           thisProps.index = index;
           thisProps.y = index * 30 + 50;
         },

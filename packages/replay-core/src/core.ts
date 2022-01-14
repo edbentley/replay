@@ -442,18 +442,20 @@ function handleSprites<P, I>(
         lookupNativeSpriteContainer = newContainer;
       }
 
-      platformRender.startNativeSprite();
+      // TODO: Native Sprites causing bugs
 
-      lookupNativeSpriteContainer.state = nativeSpriteImplementation.loop({
-        props: sprite.props,
-        state: lookupNativeSpriteContainer.state,
-        parentGlobalId,
-        utils: nativeSpriteUtils,
-        parentX: spriteX,
-        parentY: spriteY,
-      });
+      // platformRender.startNativeSprite();
 
-      platformRender.endNativeSprite();
+      // lookupNativeSpriteContainer.state = nativeSpriteImplementation.loop({
+      //   props: sprite.props,
+      //   state: lookupNativeSpriteContainer.state,
+      //   parentGlobalId,
+      //   utils: nativeSpriteUtils,
+      //   parentX: spriteX,
+      //   parentY: spriteY,
+      // });
+
+      // platformRender.endNativeSprite();
     } else if (sprite.type === "pure") {
       addChildId(sprite.props.id);
 
@@ -549,30 +551,22 @@ function handleSprites<P, I>(
           platformRender
         ) as MutableSpriteContainer<any, any, any>;
         if (lookupMutableSpriteContainer.type !== "mutable") {
-          throw Error("TODO");
+          throw Error("Can only render mutable Sprite");
         }
         customSpriteContainer.childContainers[
           sprite.props.id
         ] = lookupMutableSpriteContainer;
       }
 
+      for (const key in sprite.props) {
+        (lookupMutableSpriteContainer.props as any)[key] = sprite.props[key];
+      }
+
+      platformRender.startRenderSprite(
+        lookupMutableSpriteContainer.props as any
+      );
       lookupMutableSpriteContainer.updateSprites(getInputs, contextValues);
-      // traverseMutableSpriteContainer(
-      //   lookupMutableSpriteContainer,
-      //   sprite.props,
-      //   mutDevice,
-      //   getInputsPlatform,
-      //   getLocalCoords,
-      //   spriteInitCreation,
-      //   renderMethod,
-      //   extrapolateFactor,
-      //   globalId,
-      //   nativeSpriteSettings,
-      //   platformRender,
-      //   contextValues,
-      //   spriteX + (sprite.props.x || 0),
-      //   spriteY + (sprite.props.y || 0)
-      // );
+      platformRender.endRenderSprite();
     } else {
       platformRender.renderTexture(sprite);
     }
@@ -946,9 +940,7 @@ function createMutableSpriteContainer<P, S, I>(
     throw Error("TODO");
   }
 
-  const { spriteObj, props } = sprite;
-
-  mutateBaseProps(props, props);
+  const { spriteObj } = sprite;
 
   let loadFilesPromise: null | Promise<void> = null;
 
@@ -961,11 +953,18 @@ function createMutableSpriteContainer<P, S, I>(
   }
 
   if (sprite.type === "mutableArray") {
-    const newMutSprite = (): MutableSprite<any, any, I> => ({
-      type: "mutable",
-      spriteObj,
-      props: { ...props },
-    });
+    const newMutSprite = (
+      arrayEl: any,
+      index: number
+    ): MutableSprite<any, any, I> => {
+      const props = sprite.props(arrayEl, index);
+      mutateBaseProps(props, props);
+      return {
+        type: "mutable",
+        spriteObj,
+        props,
+      };
+    };
     const spriteContainer: MutableSpriteArrayContainer<P, S, I, any> = {
       type: "mutableArray",
       props: sprite.props,
@@ -980,7 +979,7 @@ function createMutableSpriteContainer<P, S, I>(
           [sprite.key
             ? arrayEl[sprite.key]
             : index]: createMutableSpriteContainer(
-            newMutSprite(),
+            newMutSprite(arrayEl, index),
             mutDevice,
             getInitInputs,
             currentTime,
@@ -1009,7 +1008,7 @@ function createMutableSpriteContainer<P, S, I>(
 
           if (!container) {
             container = createMutableSpriteContainer(
-              newMutSprite(),
+              newMutSprite(arrayEl, index),
               mutDevice,
               getInitInputs,
               currentTime,
@@ -1048,6 +1047,10 @@ function createMutableSpriteContainer<P, S, I>(
 
     return spriteContainer;
   }
+
+  const { props } = sprite;
+
+  mutateBaseProps(props, props);
 
   let spriteContainer: MutableSpriteContainer<P, S, I> | null = null;
 
@@ -1261,8 +1264,8 @@ type MutableSpriteContainer<P, S, I> = {
 
 type MutableSpriteArrayContainer<P, S, I, ItemState> = {
   type: "mutableArray";
-  props: P;
-  update: (thisProps: P, itemState: ItemState, index: number) => void;
+  props: (itemState: ItemState, index: number) => P;
+  update?: (thisProps: P, itemState: ItemState, index: number) => void;
   array: ItemState[];
   key?: keyof ItemState;
   containersArray: Record<string | number, MutableSpriteContainer<P, S, I>>;

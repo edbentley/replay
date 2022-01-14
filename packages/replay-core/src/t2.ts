@@ -90,7 +90,7 @@ export const t = {
         {
           width: props.width || 10,
           height: props.height || 10,
-          fileName: "<not set>",
+          fileName: props.fileName || "<not set>",
         },
         props
       ),
