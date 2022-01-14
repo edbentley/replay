@@ -305,6 +305,7 @@ export function draw(
           break;
         }
 
+        case "mutLine":
         case "line": {
           const gradient = texture.props.fillGradient;
           if (gradient) {

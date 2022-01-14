@@ -60,23 +60,14 @@ export const MyMutSprite = makeMutableSprite<Props, State>({
         arg.x--;
       }),
 
-      // t.rectangleArray({
-      //   props: { color: "red", height: 25 },
-      //   update: (thisProps, itemState) => {
-      //     thisProps.x = itemState.x;
-      //     thisProps.y = itemState.y;
-      //   },
-      //   array: state.enemies,
-      // }),
-
       Enemy.Array({
         props: () => ({}),
         update: (thisProps, itemState) => {
           thisProps.x = itemState.x;
           thisProps.y = itemState.y;
         },
-        array: state.enemies,
-        key: "id",
+        array: () => state.enemies,
+        key: (enemy) => enemy.id,
       }),
 
       MyMutNestedSprite.Single({ index: -1 }),
@@ -93,14 +84,14 @@ export const MyMutSprite = makeMutableSprite<Props, State>({
           thisProps.index = index;
           thisProps.y = index * 30 + 50;
         },
-        array: Array.from({ length: 5 }).map((_, index) => ({
-          index,
-        })),
-        key: "index",
+        array: () => lengthFiveArray,
+        key: (_, index) => index,
       }),
     ];
   },
 });
+
+const lengthFiveArray = Array.from({ length: 5 });
 
 type NestedProps = {
   index: number;

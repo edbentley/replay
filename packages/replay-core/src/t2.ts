@@ -55,7 +55,6 @@ export const t = {
     props,
     update,
     array,
-    updateArray,
   }: {
     // mask?: MaskShape;
     props: Partial<RectangleProps>;
@@ -64,9 +63,7 @@ export const t = {
       itemState: ItemState,
       index: number
     ) => void;
-    array: ItemState[];
-    // Only for stale arrays not mutated
-    updateArray?: () => ItemState[];
+    array: () => ItemState[];
   }): MutRectangleArrayTexture<ItemState> => {
     return {
       type: "mutRectangleArray",
@@ -81,7 +78,26 @@ export const t = {
       ),
       update,
       array,
-      updateArray,
+    };
+  },
+  line: (
+    props: Partial<LineProps>,
+    update?: (thisProps: LineProps) => void
+  ): MutLineTexture => {
+    return {
+      type: "mutLine",
+      props: mutateBaseProps(
+        {
+          color: props.color,
+          fillColor: props.fillColor,
+          thickness: props.thickness ?? 1,
+          lineCap: props.lineCap || "butt",
+          path: props.path || [],
+          fillGradient: props.fillGradient,
+        },
+        props
+      ),
+      update,
     };
   },
   image: (
@@ -105,7 +121,6 @@ export const t = {
     props,
     update,
     array,
-    updateArray,
   }: {
     // mask?: MaskShape;
     props: Partial<ImageProps>;
@@ -114,9 +129,7 @@ export const t = {
       itemState: ItemState,
       index: number
     ) => void;
-    array: ItemState[];
-    // Only for stale arrays not mutated
-    updateArray?: () => ItemState[];
+    array: () => ItemState[];
   }): MutImageArrayTexture<ItemState> => {
     return {
       type: "mutImageArray",
@@ -131,7 +144,6 @@ export const t = {
       ),
       update,
       array,
-      updateArray,
     };
   },
   spriteSheet: (
@@ -170,6 +182,7 @@ export type MutSingleTexture =
   | MutCircleTexture
   | MutRectangleTexture
   | MutImageTexture
+  | MutLineTexture
   | MutSpriteSheetTexture;
 
 export type MutTexture = MutSingleTexture | MutArrayTexture;
@@ -230,13 +243,28 @@ export interface MutRectangleArrayTexture<ItemState> {
     itemState: ItemState,
     index: number
   ) => void;
-  updateArray?: () => ItemState[];
-  array: ItemState[];
+  array: () => ItemState[];
 }
 export interface MutRectangleArrayTextureRender {
   type: "mutRectangleArrayRender";
   mask: null;
   props: RectangleProps[];
+}
+
+// -- Line
+type LineProps = BaseProps & {
+  color?: string;
+  thickness: number;
+  path: [number, number][];
+  fillColor?: string;
+  lineCap: "butt" | "round";
+  gradient?: Gradient;
+  fillGradient?: Gradient;
+};
+export interface MutLineTexture {
+  type: "mutLine";
+  props: LineProps;
+  update?: (thisProps: LineProps) => void;
 }
 
 // -- Image
@@ -259,8 +287,7 @@ export interface MutImageArrayTexture<ItemState> {
     itemState: ItemState,
     index: number
   ) => void;
-  array: ItemState[];
-  updateArray?: () => ItemState[];
+  array: () => ItemState[];
 }
 export interface MutImageArrayTextureRender {
   type: "mutImageArrayRender";

@@ -828,6 +828,7 @@ function createMutableSpriteContainer<P, S, I>(
       sprite.type === "mutCircle" ||
       sprite.type === "mutRectangle" ||
       sprite.type === "mutImage" ||
+      sprite.type === "mutLine" ||
       sprite.type === "mutSpriteSheet"
     ) {
       return {
@@ -863,13 +864,10 @@ function createMutableSpriteContainer<P, S, I>(
                 mask: null,
               },
         array: sprite.array,
-        updateArray: sprite.updateArray,
         updateTextureArray() {
-          if (this.updateArray) {
-            this.array = this.updateArray();
-          }
+          const array = this.array();
 
-          const length = this.array.length;
+          const length = array.length;
           const lengthChange = length - this.texture.props.length;
 
           if (lengthChange > 0) {
@@ -886,7 +884,7 @@ function createMutableSpriteContainer<P, S, I>(
               itemState: any,
               index: number
             ) => void;
-            update(props, this.array[index], index);
+            update(props, array[index], index);
           });
         },
       };
@@ -976,11 +974,10 @@ function createMutableSpriteContainer<P, S, I>(
       update: sprite.update,
       filter: sprite.filter,
       array: sprite.array,
-      updateArray: sprite.updateArray,
       key: sprite.key,
       prevIds: [],
       prevIdsSet: new Set(),
-      containersArray: sprite.array.reduce(
+      containersArray: sprite.array().reduce(
         (obj, arrayEl, index) => ({
           ...obj,
           [sprite.key(arrayEl, index)]: createMutableSpriteContainer(
@@ -996,15 +993,13 @@ function createMutableSpriteContainer<P, S, I>(
         {}
       ),
       updateSprites() {
-        if (this.updateArray) {
-          this.array = this.updateArray();
-        }
+        const array = this.array();
 
         const unusedIds = this.prevIdsSet;
         const ids = this.prevIds;
         let idIndex = 0;
 
-        this.array.forEach((arrayEl, index) => {
+        array.forEach((arrayEl, index) => {
           if (this.filter?.(arrayEl, index) === false) return;
 
           const id = sprite.key(arrayEl, index);
@@ -1033,7 +1028,7 @@ function createMutableSpriteContainer<P, S, I>(
             itemState: any,
             index: number
           ) => void;
-          update(container.props, this.array[index], index);
+          update(container.props, array[index], index);
         });
 
         if (idIndex < ids.length) {
@@ -1206,8 +1201,7 @@ type MutableTextureContainer = {
 type MutableArrayTextureContainer = {
   type: "mutArrayTexture";
   texture: MutArrayTextureRenderable;
-  array: any[];
-  updateArray?: () => any[];
+  array: () => any[];
   updateTextureArray: () => void;
 };
 type MutableArrayContainer<I, Item extends AllMutableSpriteContainer<I>> = {
@@ -1276,8 +1270,7 @@ type MutableSpriteArrayContainer<P, S, I, ItemState> = {
   type: "mutableArray";
   props: (itemState: ItemState, index: number) => P;
   update?: (thisProps: P, itemState: ItemState, index: number) => void;
-  array: ItemState[];
-  updateArray?: () => ItemState[];
+  array: () => ItemState[];
   filter?: (itemState: ItemState, index: number) => boolean;
   key: (itemState: ItemState, index: number) => string | number;
   containersArray: Record<string | number, MutableSpriteContainer<P, S, I>>;

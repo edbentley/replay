@@ -363,7 +363,6 @@ export function makeMutableSprite<
       update,
       filter,
       array,
-      updateArray,
       key,
     }: {
       props: (itemState: ItemState, index: number) => MutSpriteProps<P>;
@@ -373,9 +372,8 @@ export function makeMutableSprite<
         index: number
       ) => void;
       filter?: (itemState: ItemState, index: number) => boolean;
-      array: ItemState[];
+      array: () => ItemState[];
       key: (itemState: ItemState, index: number) => string | number;
-      updateArray?: () => ItemState[];
     }): MutableSpriteArray<P, S, I, ItemState> {
       return {
         type: "mutableArray",
@@ -384,7 +382,6 @@ export function makeMutableSprite<
         update,
         filter,
         array,
-        updateArray,
         key,
       };
     },
@@ -403,8 +400,7 @@ export interface MutableSpriteArray<P, S, I, ItemState> {
   props: (itemState: ItemState, index: number) => MutSpriteProps<P>;
   update?: (thisProps: P, itemState: ItemState, index: number) => void;
   filter?: (itemState: ItemState, index: number) => boolean;
-  array: ItemState[];
-  updateArray?: () => ItemState[];
+  array: () => ItemState[];
   key: (itemState: ItemState, index: number) => string | number;
 }
 

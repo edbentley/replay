@@ -170,16 +170,16 @@ export const MutPlayStage = makeMutableSprite<
             //   x: -24,
             // }),
           }),
-          // t.line({
-          //   path: [
-          //     [-30, -30],
-          //     [0, -60],
-          //     [30, -30],
-          //   ],
-          //   thickness: 3,
-          //   fillColor: "#000000",
-          //   color: "#FF0000",
-          // }),
+          t2.line({
+            path: [
+              [-30, -30],
+              [0, -60],
+              [30, -30],
+            ],
+            thickness: 3,
+            fillColor: "#000000",
+            color: "#FF0000",
+          }),
           t2.text({
             text: "test",
             color: "",
@@ -228,24 +228,24 @@ export const MutPlayStage = makeMutableSprite<
             height: 100,
             opacity: 0,
           }),
-          // t.line({
-          //   x: -150,
-          //   y: 0,
-          //   opacity: 0.5,
-          //   fillGradient: {
-          //     type: "linearVert",
-          //     colors: ["#FF0000", "#0000FF"],
-          //     opacities: [0, 1],
-          //     height: 100,
-          //   },
-          //   path: [
-          //     [-30, -50],
-          //     [50, -50],
-          //     [50, 50],
-          //     [-50, 50],
-          //   ],
-          //   scaleX: -1,
-          // }),
+          t2.line({
+            x: -150,
+            y: 0,
+            opacity: 0.5,
+            fillGradient: {
+              type: "linearVert",
+              colors: ["#FF0000", "#0000FF"],
+              opacities: [0, 1],
+              height: 100,
+            },
+            path: [
+              [-30, -50],
+              [50, -50],
+              [50, 50],
+              [-50, 50],
+            ],
+            scaleX: -1,
+          }),
           t2.rectangle(
             {
               testId: "player",
