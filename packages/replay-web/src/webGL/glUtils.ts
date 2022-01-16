@@ -1,6 +1,6 @@
 import { SpriteBaseProps } from "@replay/core/dist/props";
 import { Gradient } from "@replay/core/dist/t";
-import { m2d, Matrix2D } from "./matrix";
+import { m2d, m2dMut, Matrix2D } from "./matrix";
 
 export function createProgram(
   gl: WebGLRenderingContext,
@@ -85,6 +85,30 @@ export function hexToRGB(
   }
 
   return [red / 255, green / 255, blue / 255];
+}
+
+const rgbResult = { r: 0, g: 0, b: 0 };
+export function hexToRGBPooled(hex: string, premultiplyAlpha?: number) {
+  if (!hex.startsWith("#")) {
+    hex = cssLevel1Colours[hex] || cssLevel1Colours.black;
+  }
+
+  const number = Number.parseInt(hex.slice(1), 16);
+  const red = number >> 16;
+  const green = (number >> 8) & 255;
+  const blue = number & 255;
+
+  if (premultiplyAlpha !== undefined) {
+    rgbResult.r = premultiplyAlpha * (red / 255);
+    rgbResult.g = premultiplyAlpha * (green / 255);
+    rgbResult.b = premultiplyAlpha * (blue / 255);
+  } else {
+    rgbResult.r = red / 255;
+    rgbResult.g = green / 255;
+    rgbResult.b = blue / 255;
+  }
+
+  return rgbResult;
 }
 
 export function setupRampTexture(
@@ -186,4 +210,33 @@ export function applyTransform(
   );
 }
 
+const transformPool: Matrix2D = [0, 0, 0, 0, 0, 0];
+export function applyTransformPooled(
+  matrix: Matrix2D,
+  baseProps: Omit<SpriteBaseProps, "mask">,
+  // These are for scaling vertices in image and rect shaders
+  withScaleX = 1,
+  withScaleY = 1
+): Matrix2D {
+  m2dMut.transformMut(
+    matrix,
+    baseProps.x,
+    baseProps.y,
+    baseProps.scaleX,
+    baseProps.scaleY,
+    -baseProps.rotation * toRad,
+    -baseProps.anchorX,
+    -baseProps.anchorY,
+    withScaleX,
+    withScaleY,
+    transformPool
+  );
+  return transformPool;
+}
+
 const toRad = Math.PI / 180;
+
+export type RenderState = {
+  texture: WebGLTexture | null;
+  program: WebGLProgram | null;
+};

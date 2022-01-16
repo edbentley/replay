@@ -1,5 +1,10 @@
 import { RectangleArrayTexture } from "@replay/core/dist/t";
-import { applyTransform, createProgram, hexToRGB } from "./glUtils";
+import {
+  applyTransform,
+  createProgram,
+  hexToRGB,
+  RenderState,
+} from "./glUtils";
 import { Matrix2D } from "./matrix";
 
 const vertexShaderSource = `
@@ -34,7 +39,8 @@ void main() {
 export function getDrawRectBatch(
   gl: WebGLRenderingContext,
   glInstArrays: ANGLE_instanced_arrays,
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
@@ -102,11 +108,11 @@ export function getDrawRectBatch(
   return function drawRectBatch(
     matrix: Matrix2D,
     opacity: number,
-    elements: RectangleArrayTexture["props"],
-    prevProgram: WebGLProgram | null
-  ): WebGLProgram {
-    if (program !== prevProgram) {
+    elements: RectangleArrayTexture["props"]
+  ) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
     }
 
@@ -128,8 +134,6 @@ export function getDrawRectBatch(
       6, // num vertices per instance
       elements.length // num instances
     );
-
-    return program;
   };
 }
 

@@ -1,4 +1,4 @@
-import { createProgram, hexToRGB } from "./glUtils";
+import { createProgram, hexToRGB, RenderState } from "./glUtils";
 import { m2d, Matrix2D } from "./matrix";
 
 const vertexShaderSource = `
@@ -38,7 +38,8 @@ void main() {
 
 export function getDrawCircle(
   gl: WebGLRenderingContext,
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
@@ -76,11 +77,11 @@ export function getDrawCircle(
     gameHeight: number,
     pxPerPoint: number,
     opacity: number,
-    semiCircle: boolean,
-    prevProgram: WebGLProgram | null
-  ): WebGLProgram {
-    if (program !== prevProgram) {
+    semiCircle: boolean
+  ) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
 
       // Only 1 buffer so don't have to rebind every time
@@ -113,7 +114,5 @@ export function getDrawCircle(
 
     // draw
     gl.drawArrays(gl.TRIANGLE_FAN, 0, numVertex + 2);
-
-    return program;
   };
 }

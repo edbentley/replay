@@ -18,6 +18,7 @@ import {
   MutArrayTextureRenderable,
   MutRectangleArrayTextureRender,
   MutSingleTexture,
+  MutTexture,
   RenderableMutTexture,
 } from "./t2";
 
@@ -102,7 +103,10 @@ export type PlatformRender = {
   endFrame: () => void;
   startRenderSprite: (baseProps: SpriteBaseProps) => void;
   endRenderSprite: () => void;
-  renderTexture: (texture: Texture | RenderableMutTexture) => void;
+  renderTexture: (
+    texture: Texture | RenderableMutTexture,
+    texureState: any
+  ) => void;
   startNativeSprite: () => void;
   endNativeSprite: () => void;
 };
@@ -568,7 +572,7 @@ function handleSprites<P, I>(
       lookupMutableSpriteContainer.updateSprites(getInputs, contextValues);
       platformRender.endRenderSprite();
     } else {
-      platformRender.renderTexture(sprite);
+      platformRender.renderTexture(sprite, null);
     }
   }
 }
@@ -792,10 +796,10 @@ function handleAllMutableContainer<I>(
     }
   } else if (container.type === "mutTexture") {
     container.updateTexture();
-    platformRender.renderTexture(container.texture);
+    platformRender.renderTexture(container.texture, null);
   } else if (container.type === "mutArrayTexture") {
     container.updateTextureArray();
-    platformRender.renderTexture(container.texture);
+    platformRender.renderTexture(container.texture, container.textureState);
   } else if (container.type === "mutConditional") {
     container.updateConditional();
     container.containers.forEach((container) => {
@@ -834,6 +838,7 @@ function createMutableSpriteContainer<P, S, I>(
       return {
         type: "mutTexture",
         texture: sprite,
+        textureState: getInitTextureState(sprite),
         updateTexture() {
           const update = sprite.update as ((arg: any) => void) | undefined;
           update?.(sprite.props);
@@ -864,6 +869,7 @@ function createMutableSpriteContainer<P, S, I>(
                 mask: null,
               },
         array: sprite.array,
+        textureState: getInitTextureState(sprite),
         updateTextureArray() {
           const array = this.array();
 
@@ -1038,7 +1044,10 @@ function createMutableSpriteContainer<P, S, I>(
           delete this.containersArray[id];
         });
 
-        this.prevIdsSet = new Set(ids);
+        this.prevIdsSet.clear();
+        ids.forEach((id) => {
+          this.prevIdsSet.add(id);
+        });
 
         if (this.prevIdsSet.size < ids.length) {
           const duplicate = ids.find(
@@ -1081,6 +1090,14 @@ function createMutableSpriteContainer<P, S, I>(
     },
   }) as S;
 
+  const loopObject = {
+    props,
+    state,
+    device: mutDevice,
+    getInputs: getInputs.ref,
+    getContext,
+  };
+
   spriteContainer = {
     type: "mutable",
     props,
@@ -1110,13 +1127,8 @@ function createMutableSpriteContainer<P, S, I>(
     updateSprites(getInputsVal, contextValues) {
       getInputs.ref = getInputsVal;
 
-      spriteObj.loop?.({
-        props,
-        state,
-        device: mutDevice,
-        getInputs: getInputs.ref,
-        getContext,
-      });
+      loopObject.getInputs = getInputs.ref;
+      spriteObj.loop?.(loopObject);
 
       this.childContainers.forEach((container) => {
         handleAllMutableContainer(
@@ -1196,12 +1208,14 @@ type SpriteContainer<P, S, I> =
 type MutableTextureContainer = {
   type: "mutTexture";
   texture: MutSingleTexture;
+  textureState: any;
   updateTexture: () => void;
 };
 type MutableArrayTextureContainer = {
   type: "mutArrayTexture";
   texture: MutArrayTextureRenderable;
   array: () => any[];
+  textureState: any;
   updateTextureArray: () => void;
 };
 type MutableArrayContainer<I, Item extends AllMutableSpriteContainer<I>> = {
@@ -1438,7 +1452,7 @@ function traversePureCustomSpriteContainerNotCached<P>(
       );
       cacheItemIndex++;
     } else {
-      platformRender.renderTexture(sprite);
+      platformRender.renderTexture(sprite, null);
 
       cacheItems[cacheItemIndex] = sprite;
       cacheItemIndex++;
@@ -1490,7 +1504,7 @@ function traversePureSpriteCache(
     if (item.type === "cache") {
       traversePureSpriteCache(item, platformRender);
     } else {
-      platformRender.renderTexture(item);
+      platformRender.renderTexture(item, null);
     }
   }
 
@@ -1540,3 +1554,33 @@ export function getLocalCoordsForSprite(baseProps: SpriteBaseProps) {
 }
 
 type UnknownObject = Record<string, unknown>;
+
+// TODO: this func from replay-web
+function getInitTextureState(texture: MutTexture): null | Record<any, any> {
+  switch (texture.type) {
+    case "mutImageArray":
+      return {
+        matrices: new Float32Array(),
+        opacities: new Float32Array(),
+      };
+
+    case "mutLine":
+      return {
+        lineCaps: null,
+        linePath: new Float32Array(),
+        strokePath: new Float32Array(),
+      };
+
+    // TODO
+    case "mutCircle":
+    case "mutLine":
+    case "mutRectangle":
+    case "mutRectangleArray":
+    case "mutSpriteSheet":
+    case "mutText":
+      return null;
+
+    case "mutImage":
+      return null;
+  }
+}

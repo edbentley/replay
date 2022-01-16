@@ -1,5 +1,10 @@
 import { Gradient } from "@replay/core/dist/t";
-import { createProgram, hexToRGB, setupRampTexture } from "./glUtils";
+import {
+  createProgram,
+  hexToRGB,
+  RenderState,
+  setupRampTexture,
+} from "./glUtils";
 import { m2d, Matrix2D } from "./matrix";
 
 const vertexShaderSource = `
@@ -25,7 +30,8 @@ void main() {
 export function getDrawRect(
   gl: WebGLRenderingContext,
 
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
@@ -66,11 +72,11 @@ export function getDrawRect(
     colour: string,
     width: number,
     height: number,
-    opacity: number,
-    prevProgram: WebGLProgram | null
-  ): WebGLProgram {
-    if (program !== prevProgram) {
+    opacity: number
+  ) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
     }
 
@@ -91,8 +97,6 @@ export function getDrawRect(
 
     // draw the quad (2 triangles, 6 vertices)
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-    return program;
   };
 }
 
@@ -149,7 +153,8 @@ void main() {
 
 export function getDrawRectGrad(
   gl: WebGLRenderingContext,
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(
     gl,
@@ -202,16 +207,16 @@ export function getDrawRectGrad(
     gradient: Gradient,
     width: number,
     height: number,
-    opacity: number,
-    prevProgram: WebGLProgram | null,
-    prevTexture: WebGLTexture | null
-  ): { program: WebGLProgram; texture: WebGLTexture } {
-    if (gradTexture !== prevTexture) {
+    opacity: number
+  ) {
+    if (gradTexture !== mutRenderState.texture) {
       gl.bindTexture(gl.TEXTURE_2D, gradTexture);
+      mutRenderState.texture = gradTexture;
     }
 
-    if (program !== prevProgram) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
     }
 
@@ -236,7 +241,5 @@ export function getDrawRectGrad(
     );
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-    return { program, texture: gradTexture };
   };
 }

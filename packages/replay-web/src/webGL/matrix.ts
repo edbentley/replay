@@ -29,11 +29,21 @@ function getRotateMatrix(rotationRad: number): Matrix2D {
 }
 
 // prettier-ignore
+const identityMatrix: Matrix2D = [
+  1, 0,
+  0, 1,
+  0, 0,
+];
+
+// prettier-ignore
 const identityMatrix3fv = new Float32Array([
   1, 0, 0,
   0, 1, 0,
   0, 0, 1
 ]);
+function getNewIdentity3fv() {
+  return new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+}
 
 function getScaleMatrix(scaleX: number, scaleY: number): Matrix2D {
   // prettier-ignore
@@ -132,14 +142,52 @@ function transform(
   ];
 }
 
+function transformMut(
+  matrix: Matrix2D,
+  x: number,
+  y: number,
+  scaleX: number,
+  scaleY: number,
+  rotationRad: number,
+  anchorX: number,
+  anchorY: number,
+  initScaleX: number,
+  initScaleY: number,
+  mutOutput: Matrix2D
+) {
+  const thetaC = Math.cos(rotationRad);
+  const thetaS = Math.sin(rotationRad);
+
+  const a0 = matrix[0],
+    a1 = matrix[1],
+    a2 = matrix[2],
+    a3 = matrix[3],
+    a4 = matrix[4],
+    a5 = matrix[5];
+  const b0 = initScaleX * thetaC * scaleX,
+    b1 = initScaleX * thetaS * scaleX,
+    b2 = initScaleY * -thetaS * scaleY,
+    b3 = initScaleY * thetaC * scaleY,
+    b4 = thetaC * scaleX * anchorX - thetaS * scaleY * anchorY + x,
+    b5 = thetaS * scaleX * anchorX + thetaC * scaleY * anchorY + y;
+
+  mutOutput[0] = a0 * b0 + a2 * b1;
+  mutOutput[1] = a1 * b0 + a3 * b1;
+  mutOutput[2] = a0 * b2 + a2 * b3;
+  mutOutput[3] = a1 * b2 + a3 * b3;
+  mutOutput[4] = a0 * b4 + a2 * b5 + a4;
+  mutOutput[5] = a1 * b4 + a3 * b5 + a5;
+}
+
 /**
  * Optimise the number of matrices GC'd
  */
-function scaleToUniform3fv(
+function scaleToUniform3fvMut(
   matrix: Matrix2D,
   scaleX: number,
-  scaleY: number
-): Float32Array {
+  scaleY: number,
+  mutOutput: Float32Array
+) {
   const a0 = matrix[0],
     a1 = matrix[1],
     a2 = matrix[2],
@@ -147,17 +195,15 @@ function scaleToUniform3fv(
     a4 = matrix[4],
     a5 = matrix[5];
 
-  const out = new Float32Array(9);
-  out[0] = a0 * scaleX;
-  out[1] = a1 * scaleX;
-  out[2] = 0;
-  out[3] = a2 * scaleY;
-  out[4] = a3 * scaleY;
-  out[5] = 0;
-  out[6] = a4;
-  out[7] = a5;
-  out[8] = 1;
-  return out;
+  mutOutput[0] = a0 * scaleX;
+  mutOutput[1] = a1 * scaleX;
+  mutOutput[2] = 0;
+  mutOutput[3] = a2 * scaleY;
+  mutOutput[4] = a3 * scaleY;
+  mutOutput[5] = 0;
+  mutOutput[6] = a4;
+  mutOutput[7] = a5;
+  mutOutput[8] = 1;
 }
 
 function toUniform3fv(matrix: Matrix2D): Float32Array {
@@ -181,14 +227,74 @@ function getScale(matrix: Matrix2D): [scaleX: number, scaleY: number] {
 }
 
 export const m2d = {
+  identityMatrix,
   identityMatrix3fv,
+  getNewIdentity3fv,
   getRotateMatrix,
   getScaleMatrix,
   getTranslateMatrix,
   transform,
   multiply,
   multiplyMultiple,
-  scaleToUniform3fv,
   toUniform3fv,
   getScale,
+};
+
+function toUniform3fvMut(matrix: Matrix2D, out: Float32Array) {
+  out[0] = matrix[0];
+  out[1] = matrix[1];
+  out[2] = 0;
+  out[3] = matrix[2];
+  out[4] = matrix[3];
+  out[5] = 0;
+  out[6] = matrix[4];
+  out[7] = matrix[5];
+  out[8] = 1;
+}
+
+const multiplyResult: Matrix2D = [0, 0, 0, 0, 0, 0];
+function multiplyPooled(matrixA: Matrix2D, matrixB: Matrix2D): Matrix2D {
+  const a0 = matrixA[0],
+    a1 = matrixA[1],
+    a2 = matrixA[2],
+    a3 = matrixA[3],
+    a4 = matrixA[4],
+    a5 = matrixA[5];
+  const b0 = matrixB[0],
+    b1 = matrixB[1],
+    b2 = matrixB[2],
+    b3 = matrixB[3],
+    b4 = matrixB[4],
+    b5 = matrixB[5];
+
+  multiplyResult[0] = a0 * b0 + a2 * b1;
+  multiplyResult[1] = a1 * b0 + a3 * b1;
+  multiplyResult[2] = a0 * b2 + a2 * b3;
+  multiplyResult[3] = a1 * b2 + a3 * b3;
+  multiplyResult[4] = a0 * b4 + a2 * b5 + a4;
+  multiplyResult[5] = a1 * b4 + a3 * b5 + a5;
+  return multiplyResult;
+}
+
+const translateResult: Matrix2D = [1, 0, 0, 1, 0, 0];
+function getTranslateMatrixPooled(x: number, y: number): Matrix2D {
+  translateResult[4] = x;
+  translateResult[5] = y;
+  return translateResult;
+}
+
+const scaleResult: Matrix2D = [0, 0, 0, 0, 0, 0];
+function getScaleMatrixPooled(scaleX: number, scaleY: number): Matrix2D {
+  scaleResult[0] = scaleX;
+  scaleResult[3] = scaleY;
+  return scaleResult;
+}
+
+export const m2dMut = {
+  transformMut,
+  toUniform3fvMut,
+  scaleToUniform3fvMut,
+  multiplyPooled,
+  getTranslateMatrixPooled,
+  getScaleMatrixPooled,
 };

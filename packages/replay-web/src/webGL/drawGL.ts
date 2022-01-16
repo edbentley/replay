@@ -13,7 +13,12 @@ import { m2d, Matrix2D } from "./matrix";
 import { TextureFont } from "@replay/core/dist/t";
 import { getDrawLine, getDrawLineGrad } from "./lineGL";
 import { getDrawCircle } from "./circleGL";
-import { applyTransform, createGradTexture, hexToRGB } from "./glUtils";
+import {
+  applyTransform,
+  createGradTexture,
+  hexToRGB,
+  RenderState,
+} from "./glUtils";
 import { getDrawImageBatch } from "./imageBatchGL";
 import { getDrawRectBatch } from "./rectBatchGL";
 
@@ -39,15 +44,30 @@ export function draw(
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const offscreenCanvasCtx = offscreenCanvas.getContext("2d")!;
 
-  const drawImage = getDrawImage(gl, glVao);
-  const drawImageBatch = getDrawImageBatch(gl, glInstArrays, glVao);
-  const drawRect = getDrawRect(gl, glVao);
-  const drawRectBatch = getDrawRectBatch(gl, glInstArrays, glVao);
-  const drawRectGrad = getDrawRectGrad(gl, glVao);
-  const drawLine = getDrawLine(gl, glVao);
-  const drawLineGrad = getDrawLineGrad(gl, glVao);
-  const drawCircle = getDrawCircle(gl, glVao);
-  const drawCanvas = getDrawCanvas(gl, glVao);
+  const mutRenderState: RenderState = {
+    texture: null,
+    program: null,
+  };
+
+  const drawImage = getDrawImage(gl, glVao, mutRenderState);
+  const drawImageBatch = getDrawImageBatch(
+    gl,
+    glInstArrays,
+    glVao,
+    mutRenderState
+  );
+  const drawRect = getDrawRect(gl, glVao, mutRenderState);
+  const drawRectBatch = getDrawRectBatch(
+    gl,
+    glInstArrays,
+    glVao,
+    mutRenderState
+  );
+  const drawRectGrad = getDrawRectGrad(gl, glVao, mutRenderState);
+  const drawLine = getDrawLine(gl, glVao, mutRenderState);
+  const drawLineGrad = getDrawLineGrad(gl, glVao, mutRenderState);
+  const drawCircle = getDrawCircle(gl, glVao, mutRenderState);
+  const drawCanvas = getDrawCanvas(gl, glVao, mutRenderState);
 
   const stateStack: {
     opacity: number;
@@ -105,7 +125,7 @@ export function draw(
 
     switch (mask.type) {
       case "circleMask":
-        prevProgram = drawCircle(
+        drawCircle(
           newMatrix,
           "",
           mask.radius,
@@ -113,33 +133,30 @@ export function draw(
           gameHeight,
           devicePixelRatio,
           1,
-          false,
-          prevProgram
+          false
         );
         break;
 
       case "lineMask":
-        prevProgram = drawLine(
+        drawLine(
           newMatrix,
+          // mutTODO: mask state
+          {
+            lineCaps: null,
+            linePath: new Float32Array(),
+            strokePath: new Float32Array(),
+          },
           mask.path,
           0,
           undefined,
           " ", // Non empty string
           "butt",
-          1,
-          prevProgram
+          1
         );
         break;
 
       case "rectangleMask":
-        prevProgram = drawRect(
-          newMatrix,
-          "",
-          mask.width,
-          mask.height,
-          1,
-          prevProgram
-        );
+        drawRect(newMatrix, "", mask.width, mask.height, 1);
         break;
     }
 
@@ -172,9 +189,6 @@ export function draw(
   > = {};
   let unusedTextures = new Set<string>();
 
-  let prevTexture: WebGLTexture | null = null;
-  let prevProgram: WebGLProgram | null = null;
-
   const [bgR, bgG, bgB] = hexToRGB(bgColor);
 
   return {
@@ -195,8 +209,8 @@ export function draw(
     endFrame: () => {
       // Reset for any Native Sprites rendering before next frame
       glVao.bindVertexArrayOES(null);
-      prevProgram = null;
-      prevTexture = null;
+      mutRenderState.program = null;
+      mutRenderState.texture = null;
     },
     startRenderSprite: (baseProps) => {
       const topStack = stateStack[0];
@@ -217,7 +231,7 @@ export function draw(
         clearMask();
       }
     },
-    renderTexture: (texture) => {
+    renderTexture: (texture, textureState) => {
       const topStack = stateStack[0];
 
       if (
@@ -229,16 +243,13 @@ export function draw(
         applyMask(texture.mask, topStack.transformation);
 
         const imageInfo = getImage(imageElements, texture.fileName);
-        const result = drawImageBatch(
+        drawImageBatch(
           imageInfo.texture,
+          textureState,
           topStack.transformation,
           topStack.opacity,
-          texture.props,
-          prevProgram,
-          prevTexture
+          texture.props
         );
-        prevProgram = result.program;
-        prevTexture = result.texture;
 
         if (texture.mask) {
           clearMask();
@@ -253,12 +264,7 @@ export function draw(
 
         applyMask(texture.mask, topStack.transformation);
 
-        prevProgram = drawRectBatch(
-          topStack.transformation,
-          topStack.opacity,
-          texture.props,
-          prevProgram
-        );
+        drawRectBatch(topStack.transformation, topStack.opacity, texture.props);
 
         if (texture.mask) {
           clearMask();
@@ -284,24 +290,16 @@ export function draw(
         case "mutSpriteSheet":
         case "spriteSheet": {
           const imageInfo = getImage(imageElements, texture.props.fileName);
-          const result = drawImage(
+          drawImage(
             imageInfo.texture,
             newMatrix,
             texture.props.width,
             texture.props.height,
             texture.props.opacity * topStack.opacity,
             texture.type === "spriteSheet" || texture.type === "mutSpriteSheet"
-              ? {
-                  columns: texture.props.columns,
-                  rows: texture.props.rows,
-                  index: texture.props.index,
-                }
-              : null,
-            prevProgram,
-            prevTexture
+              ? texture.props
+              : null
           );
-          prevProgram = result.program;
-          prevTexture = result.texture;
           break;
         }
 
@@ -328,35 +326,41 @@ export function draw(
               unusedTextures.delete(gradCacheKey);
             }
 
-            const result = drawLineGrad(
+            drawLineGrad(
               newMatrix,
+              // Default for non-mut line
+              textureState || {
+                lineCaps: null,
+                linePath: new Float32Array(),
+                strokePath: new Float32Array(),
+              },
               cacheValue.texture,
               texture.props.path,
               gradient,
-              texture.props.opacity * topStack.opacity,
-              prevProgram,
-              prevTexture
+              texture.props.opacity * topStack.opacity
             );
-            prevProgram = result.program;
-            prevTexture = result.texture;
           }
           if (texture.props.color || texture.props.fillColor) {
-            const result = drawLine(
+            const tState = textureState || {
+              lineCaps: null,
+              linePath: new Float32Array(),
+              strokePath: new Float32Array(),
+            };
+            drawLine(
               newMatrix,
+              tState,
               texture.props.path,
               texture.props.thickness,
               texture.props.color,
               texture.props.fillColor,
               texture.props.lineCap,
-              texture.props.opacity * topStack.opacity,
-              prevProgram
+              texture.props.opacity * topStack.opacity
             );
-            prevProgram = result.program;
 
             const capColor = texture.props.color;
-            if (capColor) {
-              result.lineCaps.forEach((circle) => {
-                prevProgram = drawCircle(
+            if (tState.lineCaps && capColor) {
+              tState.lineCaps.forEach((circle: any) => {
+                drawCircle(
                   m2d.multiplyMultiple([
                     newMatrix,
                     m2d.getTranslateMatrix(circle.x, circle.y),
@@ -368,8 +372,7 @@ export function draw(
                   gameHeight,
                   pxPerPoint,
                   texture.props.opacity * topStack.opacity,
-                  true,
-                  prevProgram
+                  true
                 );
               });
             }
@@ -400,26 +403,21 @@ export function draw(
               unusedTextures.delete(gradCacheKey);
             }
 
-            const result = drawRectGrad(
+            drawRectGrad(
               newMatrix,
               cacheValue.texture,
               gradient,
               texture.props.width,
               texture.props.height,
-              texture.props.opacity * topStack.opacity,
-              prevProgram,
-              prevTexture
+              texture.props.opacity * topStack.opacity
             );
-            prevProgram = result.program;
-            prevTexture = result.texture;
           } else {
-            prevProgram = drawRect(
+            drawRect(
               newMatrix,
               texture.props.color,
               texture.props.width,
               texture.props.height,
-              texture.props.opacity * topStack.opacity,
-              prevProgram
+              texture.props.opacity * topStack.opacity
             );
           }
           break;
@@ -427,7 +425,7 @@ export function draw(
 
         case "mutCircle":
         case "circle":
-          prevProgram = drawCircle(
+          drawCircle(
             newMatrix,
             texture.props.color,
             texture.props.radius,
@@ -435,8 +433,7 @@ export function draw(
             gameHeight,
             pxPerPoint,
             texture.props.opacity * topStack.opacity,
-            false,
-            prevProgram
+            false
           );
           break;
 
@@ -473,7 +470,7 @@ export function draw(
 
           const { align, width, height } = cacheValue;
 
-          const result = drawCanvas(
+          drawCanvas(
             cacheValue.texture,
             align === "center"
               ? newMatrix
@@ -488,11 +485,8 @@ export function draw(
             width,
             height,
             texture.props.opacity * topStack.opacity,
-            devicePixelRatio,
-            prevProgram
+            devicePixelRatio
           );
-          prevProgram = result.program;
-          prevTexture = result.texture;
           break;
         }
       }
@@ -507,8 +501,8 @@ export function draw(
     },
     endNativeSprite: () => {
       // Could have been reset by a Native Sprite rendering WebGL
-      prevProgram = null;
-      prevTexture = null;
+      mutRenderState.program = null;
+      mutRenderState.texture = null;
 
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);

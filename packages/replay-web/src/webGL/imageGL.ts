@@ -1,6 +1,6 @@
 import { ImageFileData } from "../device";
-import { createProgram } from "./glUtils";
-import { m2d, Matrix2D } from "./matrix";
+import { createProgram, RenderState } from "./glUtils";
+import { m2d, m2dMut, Matrix2D } from "./matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_position;
@@ -36,7 +36,8 @@ void main() {
 
 export function getDrawImage(
   gl: WebGLRenderingContext,
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
@@ -99,22 +100,25 @@ export function getDrawImage(
   // -- Done
   glVao.bindVertexArrayOES(null);
 
+  const uMatrixPooled = m2d.getNewIdentity3fv();
+  const uTextureMatrixPooled = m2d.getNewIdentity3fv();
+
   return function drawImage(
     texture: WebGLTexture,
     matrix: Matrix2D,
     width: number,
     height: number,
     opacity: number,
-    spriteSheet: SpriteSheetInfo | null,
-    prevProgram: WebGLProgram | null,
-    prevTexture: WebGLTexture | null
-  ): { program: WebGLProgram; texture: WebGLTexture } {
-    if (texture !== prevTexture) {
+    spriteSheet: SpriteSheetInfo | null
+  ) {
+    if (texture !== mutRenderState.texture) {
       gl.bindTexture(gl.TEXTURE_2D, texture);
+      mutRenderState.texture = texture;
     }
 
-    if (program !== prevProgram) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
     }
 
@@ -122,20 +126,18 @@ export function getDrawImage(
     // where
     // u_matrix = matrix * scale
     // scale converts position (which is -0.5 / 0.5 points) to the size of the image
-    const uMatrix = m2d.scaleToUniform3fv(matrix, width, height);
+    m2dMut.scaleToUniform3fvMut(matrix, width, height, uMatrixPooled);
 
     // Set the matrix which will be u_matrix * a_position
-    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrix);
+    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     // Because texture coordinates go from 0 to 1 and because our texture
     // coordinates are already a unit quad we can select an area of the texture
     // by scaling the unit quad down
-    const uTextureMatrix = spriteSheet
-      ? m2d.toUniform3fv(getSpriteSheetMatrix(spriteSheet))
-      : m2d.identityMatrix3fv;
+    setSpriteSheetMatrix(spriteSheet, uTextureMatrixPooled);
 
     // Set the texture matrix.
-    gl.uniformMatrix3fv(uTextureMatrixLocation, false, uTextureMatrix);
+    gl.uniformMatrix3fv(uTextureMatrixLocation, false, uTextureMatrixPooled);
 
     // Tell the shader to get the texture from texture unit 0
     gl.uniform1i(uTextureLocation, 0);
@@ -145,8 +147,6 @@ export function getDrawImage(
 
     // draw the quad (2 triangles, 6 vertices)
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-    return { program, texture };
   };
 }
 
@@ -182,14 +182,26 @@ export function createTextureInfo(
 
 type SpriteSheetInfo = { columns: number; rows: number; index: number };
 
-function getSpriteSheetMatrix(info: SpriteSheetInfo): Matrix2D {
+function setSpriteSheetMatrix(
+  info: SpriteSheetInfo | null,
+  uTextureMatrix: Float32Array
+) {
+  if (!info) {
+    m2dMut.toUniform3fvMut(m2d.identityMatrix, uTextureMatrix);
+    return;
+  }
+
   const { columns, rows, index } = info;
 
   const columnIndex = index % columns;
   const rowIndex = Math.floor(index / columns) % rows;
 
-  return m2d.multiply(
-    m2d.getTranslateMatrix(columnIndex / columns, (rows - 1 - rowIndex) / rows),
-    m2d.getScaleMatrix(1 / columns, 1 / rows)
+  const matrix = m2dMut.multiplyPooled(
+    m2dMut.getTranslateMatrixPooled(
+      columnIndex / columns,
+      (rows - 1 - rowIndex) / rows
+    ),
+    m2dMut.getScaleMatrixPooled(1 / columns, 1 / rows)
   );
+  m2dMut.toUniform3fvMut(matrix, uTextureMatrix);
 }

@@ -1,7 +1,7 @@
 import { Gradient, TextTexture, TextureFont } from "@replay/core/dist/t";
 import { MutTextTexture } from "@replay/core/dist/t2";
-import { createProgram, hexToRGB } from "./glUtils";
-import { m2d, Matrix2D } from "./matrix";
+import { createProgram, hexToRGB, RenderState } from "./glUtils";
+import { m2d, m2dMut, Matrix2D } from "./matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_position;
@@ -36,7 +36,8 @@ void main() {
 
 export function getDrawCanvas(
   gl: WebGLRenderingContext,
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
@@ -95,19 +96,22 @@ export function getDrawCanvas(
   // -- Done
   glVao.bindVertexArrayOES(null);
 
+  const uMatrixPooled = m2d.getNewIdentity3fv();
+
   return function drawCanvas(
     offscreenTexture: WebGLTexture,
     matrix: Matrix2D,
     width: number,
     height: number,
     opacity: number,
-    devicePixelRatio: number,
-    prevProgram: WebGLProgram | null
-  ): { program: WebGLProgram; texture: WebGLTexture } {
+    devicePixelRatio: number
+  ) {
     gl.bindTexture(gl.TEXTURE_2D, offscreenTexture);
+    mutRenderState.texture = offscreenTexture;
 
-    if (program !== prevProgram) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
     }
 
@@ -115,13 +119,17 @@ export function getDrawCanvas(
     // where
     // u_matrix = matrix * scale
     // scale converts position (which is -0.5 / 0.5 points) to the size of the image
-    const uMatrixValue = m2d.multiply(
+    const uMatrixValue = m2dMut.multiplyPooled(
       matrix,
-      m2d.getScaleMatrix(width / devicePixelRatio, height / devicePixelRatio)
+      m2dMut.getScaleMatrixPooled(
+        width / devicePixelRatio,
+        height / devicePixelRatio
+      )
     );
+    m2dMut.toUniform3fvMut(uMatrixValue, uMatrixPooled);
 
     // Set the matrix which will be u_matrix * a_position
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(uMatrixValue));
+    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     // Tell the shader to get the texture from texture unit 0
     gl.uniform1i(uTextureLocation, 0);
@@ -131,8 +139,6 @@ export function getDrawCanvas(
 
     // draw the quad (2 triangles, 6 vertices)
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-    return { program, texture: offscreenTexture };
   };
 }
 
