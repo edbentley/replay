@@ -15,6 +15,8 @@ import { getDrawLine, getDrawLineGrad } from "./lineGL";
 import { getDrawCircle } from "./circleGL";
 import {
   applyTransform,
+  applyTransformMut,
+  applyTransformPooled,
   createGradTexture,
   hexToRGB,
   RenderState,
@@ -69,7 +71,7 @@ export function draw(
   const drawCircle = getDrawCircle(gl, glVao, mutRenderState);
   const drawCanvas = getDrawCanvas(gl, glVao, mutRenderState);
 
-  const stateStack: {
+  const stateStackPool: {
     opacity: number;
     transformation: Matrix2D;
     hasMask: boolean;
@@ -82,6 +84,7 @@ export function draw(
       hasMask: false,
     },
   ];
+  let stateStackIndex = 0;
 
   function applyMask(
     mask: MaskShape,
@@ -187,7 +190,9 @@ export function draw(
       align: "center" | "left" | "right";
     }
   > = {};
-  let unusedTextures = new Set<string>();
+  const unusedTextures = new Set<string>();
+
+  const newMatrix: Matrix2D = [0, 0, 0, 0, 0, 0];
 
   const [bgR, bgG, bgB] = hexToRGB(bgColor);
 
@@ -201,7 +206,10 @@ export function draw(
         gl.deleteTexture(textureMap[key].texture);
         delete textureMap[key];
       });
-      unusedTextures = new Set(Object.keys(textureMap));
+      unusedTextures.clear();
+      for (const key in textureMap) {
+        unusedTextures.add(key);
+      }
 
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -213,26 +221,38 @@ export function draw(
       mutRenderState.texture = null;
     },
     startRenderSprite: (baseProps) => {
-      const topStack = stateStack[0];
-      const newMatrix = applyTransform(topStack.transformation, baseProps);
+      const topStack = stateStackPool[stateStackIndex];
+      applyTransformMut(topStack.transformation, newMatrix, baseProps);
 
       applyMask(baseProps.mask, newMatrix);
 
-      stateStack.unshift({
-        opacity: topStack.opacity * baseProps.opacity,
-        transformation: newMatrix,
-        hasMask: baseProps.mask !== null,
-      });
+      stateStackIndex++;
+      const stackItem = stateStackPool[stateStackIndex];
+
+      if (!stackItem) {
+        stateStackPool.push({
+          opacity: topStack.opacity * baseProps.opacity,
+          hasMask: baseProps.mask !== null,
+          transformation: [...newMatrix],
+        });
+      } else {
+        stackItem.opacity = topStack.opacity * baseProps.opacity;
+        stackItem.hasMask = baseProps.mask !== null;
+        for (let i = 0; i < newMatrix.length; i++) {
+          stackItem.transformation[i] = newMatrix[i];
+        }
+      }
     },
     endRenderSprite: () => {
-      const state = stateStack.shift();
+      const stackItem = stateStackPool[stateStackIndex];
+      stateStackIndex--;
 
-      if (state?.hasMask) {
+      if (stackItem?.hasMask) {
         clearMask();
       }
     },
     renderTexture: (texture, textureState) => {
-      const topStack = stateStack[0];
+      const topStack = stateStackPool[stateStackIndex];
 
       if (
         texture.type === "imageArray" ||
@@ -276,7 +296,7 @@ export function draw(
         return;
       }
 
-      const newMatrix = applyTransform(topStack.transformation, texture.props);
+      applyTransformMut(topStack.transformation, newMatrix, texture.props);
       applyMask(
         texture.props.mask,
         topStack.transformation,

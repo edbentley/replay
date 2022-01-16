@@ -234,6 +234,29 @@ export function applyTransformPooled(
   return transformPool;
 }
 
+export function applyTransformMut(
+  matrix: Matrix2D,
+  mutOutput: Matrix2D,
+  baseProps: Omit<SpriteBaseProps, "mask">,
+  // These are for scaling vertices in image and rect shaders
+  withScaleX = 1,
+  withScaleY = 1
+) {
+  m2dMut.transformMut(
+    matrix,
+    baseProps.x,
+    baseProps.y,
+    baseProps.scaleX,
+    baseProps.scaleY,
+    -baseProps.rotation * toRad,
+    -baseProps.anchorX,
+    -baseProps.anchorY,
+    withScaleX,
+    withScaleY,
+    mutOutput
+  );
+}
+
 const toRad = Math.PI / 180;
 
 export type RenderState = {
