@@ -318,8 +318,19 @@ export type ContextSprite<T> = {
   sprites: Sprite[];
 };
 
+export type MutContextSprite<T> = {
+  type: "mutContext";
+  context: Context<T>;
+  value: T;
+  sprites: AllMutSprite[];
+};
+
 export type Context<T> = {
   Sprite: (args: { context: T; sprites: Sprite[] }) => ContextSprite<T>;
+  Single: (args: {
+    context: T;
+    sprites: AllMutSprite[];
+  }) => MutContextSprite<T>;
 };
 
 // -- Mutable
@@ -328,7 +339,8 @@ export type AllMutSprite =
   | MutableSprite<any, any, any>
   | MutableSpriteArray<any, any, any, any>
   | MutTexture
-  | MutConditionalItem;
+  | MutConditionalItem
+  | MutContextSprite<any>;
 
 export type MutSpriteProps<P> = P &
   Partial<SpriteBaseProps> & {
@@ -465,19 +477,19 @@ interface MutableSpriteObjBase<P, S, I> {
 export const r = {
   if: (
     condition: () => boolean,
-    sprites: AllMutSprite[]
+    sprites: () => AllMutSprite[]
   ): MutConditionalItem => {
     return {
       type: "conditional",
       condition,
       trueSprites: sprites,
-      falseSprites: [],
+      falseSprites: () => [],
     };
   },
   ifElse: (
     condition: () => boolean,
-    trueSprites: AllMutSprite[],
-    falseSprites: AllMutSprite[]
+    trueSprites: () => AllMutSprite[],
+    falseSprites: () => AllMutSprite[]
   ): MutConditionalItem => {
     return {
       type: "conditional",
@@ -491,6 +503,6 @@ export const r = {
 export type MutConditionalItem = {
   type: "conditional";
   condition: () => boolean;
-  trueSprites: AllMutSprite[];
-  falseSprites: AllMutSprite[];
+  trueSprites: () => AllMutSprite[];
+  falseSprites: () => AllMutSprite[];
 };

@@ -178,6 +178,7 @@ export type LineCaps = {
   x: number;
   y: number;
   angleRad: number;
+  textureState: { points: Float32Array };
 };
 
 type WebLineTextureState = {
@@ -308,6 +309,7 @@ function generateLineCaps(
         y: first[1],
         angleRad:
           Math.atan2(second[1] - first[1], second[0] - first[0]) + Math.PI / 2,
+        textureState: { points: new Float32Array() },
       },
       {
         x: last[0],
@@ -315,6 +317,7 @@ function generateLineCaps(
         angleRad:
           Math.atan2(last[1] - secondLast[1], last[0] - secondLast[0]) -
           Math.PI / 2,
+        textureState: { points: new Float32Array() },
       },
     ];
   }

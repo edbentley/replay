@@ -220,12 +220,6 @@ function toUniform3fv(matrix: Matrix2D): Float32Array {
   return out;
 }
 
-function getScale(matrix: Matrix2D): [scaleX: number, scaleY: number] {
-  const scaleX = Math.hypot(matrix[0], matrix[2]);
-  const scaleY = Math.hypot(matrix[1], matrix[3]);
-  return [scaleX, scaleY];
-}
-
 export const m2d = {
   identityMatrix,
   identityMatrix3fv,
@@ -237,7 +231,6 @@ export const m2d = {
   multiply,
   multiplyMultiple,
   toUniform3fv,
-  getScale,
 };
 
 function toUniform3fvMut(matrix: Matrix2D, out: Float32Array) {
@@ -290,6 +283,26 @@ function getScaleMatrixPooled(scaleX: number, scaleY: number): Matrix2D {
   return scaleResult;
 }
 
+const rotateResult: Matrix2D = [0, 0, 0, 0, 0, 0];
+function getRotateMatrixPooled(rotationRad: number): Matrix2D {
+  const s = Math.sin(rotationRad);
+  const c = Math.cos(rotationRad);
+
+  rotateResult[0] = c;
+  rotateResult[1] = s;
+  rotateResult[2] = -s;
+  rotateResult[4] = c;
+
+  return rotateResult;
+}
+
+const calcScaleResult = { scaleX: 0, scaleY: 0 };
+function getScalePooled(matrix: Matrix2D) {
+  calcScaleResult.scaleX = Math.hypot(matrix[0], matrix[2]);
+  calcScaleResult.scaleY = Math.hypot(matrix[1], matrix[3]);
+  return calcScaleResult;
+}
+
 export const m2dMut = {
   transformMut,
   toUniform3fvMut,
@@ -297,4 +310,6 @@ export const m2dMut = {
   multiplyPooled,
   getTranslateMatrixPooled,
   getScaleMatrixPooled,
+  getRotateMatrixPooled,
+  getScalePooled,
 };

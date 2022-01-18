@@ -9,14 +9,12 @@ import {
   getDrawCanvas,
   handleTextTexture,
 } from "./canvasGL";
-import { m2d, Matrix2D } from "./matrix";
+import { m2d, m2dMut, Matrix2D } from "./matrix";
 import { TextureFont } from "@replay/core/dist/t";
 import { getDrawLine, getDrawLineGrad } from "./lineGL";
 import { getDrawCircle } from "./circleGL";
 import {
-  applyTransform,
   applyTransformMut,
-  applyTransformPooled,
   createGradTexture,
   hexToRGB,
   RenderState,
@@ -130,6 +128,7 @@ export function draw(
       case "circleMask":
         drawCircle(
           newMatrix,
+          { points: new Float32Array() }, // mutTODO
           "",
           mask.radius,
           gameWidth,
@@ -380,12 +379,14 @@ export function draw(
             const capColor = texture.props.color;
             if (tState.lineCaps && capColor) {
               tState.lineCaps.forEach((circle: any) => {
+                const m1 = m2dMut.multiplyPooled(
+                  m2dMut.getTranslateMatrixPooled(circle.x, circle.y),
+                  m2dMut.getRotateMatrixPooled(circle.angleRad)
+                );
+                const m2 = m2dMut.multiplyPooled(newMatrix, m1);
                 drawCircle(
-                  m2d.multiplyMultiple([
-                    newMatrix,
-                    m2d.getTranslateMatrix(circle.x, circle.y),
-                    m2d.getRotateMatrix(circle.angleRad),
-                  ]) || newMatrix,
+                  m2,
+                  circle.textureState,
                   capColor,
                   texture.props.thickness / 2,
                   gameWidth,
@@ -444,9 +445,13 @@ export function draw(
         }
 
         case "mutCircle":
-        case "circle":
+        case "circle": {
+          const tState = textureState || {
+            points: new Float32Array(),
+          };
           drawCircle(
             newMatrix,
+            tState,
             texture.props.color,
             texture.props.radius,
             gameWidth,
@@ -456,6 +461,7 @@ export function draw(
             false
           );
           break;
+        }
 
         case "mutText":
         case "text": {

@@ -16,7 +16,6 @@ import { SpriteBaseProps, getDefaultProps, mutateBaseProps } from "./props";
 import { ContextValue } from "./context";
 import {
   MutArrayTextureRenderable,
-  MutRectangleArrayTextureRender,
   MutSingleTexture,
   MutTexture,
   RenderableMutTexture,
@@ -796,12 +795,21 @@ function handleAllMutableContainer<I>(
     }
   } else if (container.type === "mutTexture") {
     container.updateTexture();
-    platformRender.renderTexture(container.texture, null);
+    platformRender.renderTexture(container.texture, container.textureState);
   } else if (container.type === "mutArrayTexture") {
     container.updateTextureArray();
     platformRender.renderTexture(container.texture, container.textureState);
   } else if (container.type === "mutConditional") {
     container.updateConditional();
+    container.containers.forEach((container) => {
+      handleAllMutableContainer(
+        container,
+        platformRender,
+        getInputs,
+        contextValues
+      );
+    });
+  } else if (container.type === "mutContext") {
     container.containers.forEach((container) => {
       handleAllMutableContainer(
         container,
@@ -902,8 +910,8 @@ function createMutableSpriteContainer<P, S, I>(
         condition: sprite.condition,
         isTrue,
         containers: (isTrue
-          ? sprite.trueSprites
-          : sprite.falseSprites
+          ? sprite.trueSprites()
+          : sprite.falseSprites()
         ).map((sprite) =>
           createMutableSpriteContainer(
             sprite,
@@ -918,32 +926,53 @@ function createMutableSpriteContainer<P, S, I>(
         updateConditional() {
           if (!this.isTrue && sprite.condition()) {
             this.isTrue = true;
-            this.containers = sprite.trueSprites.map((sprite) =>
-              createMutableSpriteContainer(
-                sprite,
-                mutDevice,
-                getInitInputs,
-                currentTime,
-                globalId,
-                contextValues,
-                platformRender
-              )
-            );
+            this.containers = sprite
+              .trueSprites()
+              .map((sprite) =>
+                createMutableSpriteContainer(
+                  sprite,
+                  mutDevice,
+                  getInitInputs,
+                  currentTime,
+                  globalId,
+                  contextValues,
+                  platformRender
+                )
+              );
           } else if (this.isTrue && !sprite.condition()) {
             this.isTrue = false;
-            this.containers = sprite.falseSprites.map((sprite) =>
-              createMutableSpriteContainer(
-                sprite,
-                mutDevice,
-                getInitInputs,
-                currentTime,
-                globalId,
-                contextValues,
-                platformRender
-              )
-            );
+            this.containers = sprite
+              .falseSprites()
+              .map((sprite) =>
+                createMutableSpriteContainer(
+                  sprite,
+                  mutDevice,
+                  getInitInputs,
+                  currentTime,
+                  globalId,
+                  contextValues,
+                  platformRender
+                )
+              );
           }
         },
+      };
+    }
+    if (sprite.type === "mutContext") {
+      const newContextValues = [...contextValues, sprite];
+      return {
+        type: "mutContext",
+        containers: sprite.sprites.map((sprite) =>
+          createMutableSpriteContainer(
+            sprite,
+            mutDevice,
+            getInitInputs,
+            currentTime,
+            globalId,
+            newContextValues,
+            platformRender
+          )
+        ),
       };
     }
     throw Error("TODO");
@@ -1218,13 +1247,6 @@ type MutableArrayTextureContainer = {
   textureState: any;
   updateTextureArray: () => void;
 };
-type MutableArrayContainer<I, Item extends AllMutableSpriteContainer<I>> = {
-  type: "mutArray";
-  items: Item[];
-  prevIds: string[];
-  prevIdsSet: Set<string>;
-  updateArray: () => void;
-};
 
 type MutableConditionalContainer<I> = {
   type: "mutConditional";
@@ -1240,7 +1262,7 @@ type AllMutableSpriteContainer<I> =
   | MutableTextureContainer
   | MutableConditionalContainer<I>
   | MutableArrayTextureContainer
-  | MutableArrayContainer<I, any>;
+  | MutableContextContainer<I>;
 
 type CustomSpriteContainer<P, S, I> = {
   type: "custom";
@@ -1265,6 +1287,11 @@ type CustomSpriteContainer<P, S, I> = {
     contextValues: ContextValue[]
   ) => Sprite[];
   cleanup: (getInputs: () => I) => void;
+};
+
+type MutableContextContainer<I> = {
+  type: "mutContext";
+  containers: AllMutableSpriteContainer<I>[];
 };
 
 type MutableSpriteContainer<P, S, I> = {
@@ -1571,16 +1598,19 @@ function getInitTextureState(texture: MutTexture): null | Record<any, any> {
         strokePath: new Float32Array(),
       };
 
-    // TODO
     case "mutCircle":
-    case "mutLine":
+      return {
+        points: new Float32Array(),
+      };
+
+    // TODO
     case "mutRectangle":
     case "mutRectangleArray":
     case "mutSpriteSheet":
-    case "mutText":
       return null;
 
     case "mutImage":
+    case "mutText":
       return null;
   }
 }

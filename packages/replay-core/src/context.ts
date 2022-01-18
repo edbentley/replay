@@ -20,6 +20,12 @@ export function makeContext<T>(): Context<T> {
       sprites,
       context: contextThis,
     }),
+    Single: ({ context, sprites }) => ({
+      type: "mutContext",
+      value: context,
+      sprites,
+      context: contextThis,
+    }),
   };
   return contextThis;
 }
