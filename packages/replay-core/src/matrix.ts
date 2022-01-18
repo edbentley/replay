@@ -312,4 +312,30 @@ export const m2dMut = {
   getScaleMatrixPooled,
   getRotateMatrixPooled,
   getScalePooled,
+  invertPooled,
 };
+
+const invertResult: Matrix2D = [0, 0, 0, 0, 0, 0];
+function invertPooled(matrix: Matrix2D) {
+  const aa = matrix[0],
+    ab = matrix[1],
+    ac = matrix[2],
+    ad = matrix[3];
+  const atx = matrix[4],
+    aty = matrix[5];
+
+  let det = aa * ad - ab * ac;
+  if (!det) {
+    return null;
+  }
+  det = 1.0 / det;
+
+  invertResult[0] = ad * det;
+  invertResult[1] = -ab * det;
+  invertResult[2] = -ac * det;
+  invertResult[3] = aa * det;
+  invertResult[4] = (ac * aty - ad * atx) * det;
+  invertResult[5] = (ab * atx - aa * aty) * det;
+
+  return invertResult;
+}

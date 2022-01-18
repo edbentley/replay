@@ -1,7 +1,7 @@
 import { Gradient, TextTexture, TextureFont } from "@replay/core/dist/t";
 import { MutTextTexture } from "@replay/core/dist/t2";
 import { createProgram, hexToRGB, RenderState } from "./glUtils";
-import { m2d, m2dMut, Matrix2D } from "./matrix";
+import { m2d, m2dMut, Matrix2D } from "@replay/core/dist/matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_position;

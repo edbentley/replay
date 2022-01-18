@@ -1,11 +1,7 @@
+import { Matrix2D } from "@replay/core/dist/matrix";
+import { applyTransform } from "@replay/core/dist/transform";
 import { RectangleArrayTexture } from "@replay/core/dist/t";
-import {
-  applyTransform,
-  createProgram,
-  hexToRGB,
-  RenderState,
-} from "./glUtils";
-import { Matrix2D } from "./matrix";
+import { createProgram, hexToRGB, RenderState } from "./glUtils";
 
 const vertexShaderSource = `
 attribute vec2 a_position;

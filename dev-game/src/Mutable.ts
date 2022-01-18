@@ -48,9 +48,10 @@ export const MyMutSprite = makeMutableSprite<Props, State>({
         arg.text = `Score: ${state.score}`;
       }),
 
-      r.if(() => state.score > props.highScore, [
-        t.text({ text: "High score!", color: "black", x: -100 }),
-      ]),
+      r.if(
+        () => state.score > props.highScore,
+        () => [t.text({ text: "High score!", color: "black", x: -100 })]
+      ),
 
       t.circle({ radius: 3, color: "red" }, (arg) => {
         arg.x++;

@@ -9,18 +9,14 @@ import {
   getDrawCanvas,
   handleTextTexture,
 } from "./canvasGL";
-import { m2d, m2dMut, Matrix2D } from "./matrix";
+import { m2d, m2dMut, Matrix2D } from "@replay/core/dist/matrix";
 import { TextureFont } from "@replay/core/dist/t";
 import { getDrawLine, getDrawLineGrad } from "./lineGL";
 import { getDrawCircle } from "./circleGL";
-import {
-  applyTransformMut,
-  createGradTexture,
-  hexToRGB,
-  RenderState,
-} from "./glUtils";
+import { createGradTexture, hexToRGB, RenderState } from "./glUtils";
 import { getDrawImageBatch } from "./imageBatchGL";
 import { getDrawRectBatch } from "./rectBatchGL";
+import { applyTransformMut } from "@replay/core/dist/transform";
 
 export function draw(
   gl: WebGLRenderingContext,
@@ -68,21 +64,6 @@ export function draw(
   const drawLineGrad = getDrawLineGrad(gl, glVao, mutRenderState);
   const drawCircle = getDrawCircle(gl, glVao, mutRenderState);
   const drawCanvas = getDrawCanvas(gl, glVao, mutRenderState);
-
-  const stateStackPool: {
-    opacity: number;
-    transformation: Matrix2D;
-    hasMask: boolean;
-  }[] = [
-    {
-      opacity: 1,
-      // Game coordinates to clip space -1/+1
-      // This is the last matrix applied
-      transformation: m2d.getScaleMatrix(2 / gameWidth, 2 / gameHeight),
-      hasMask: false,
-    },
-  ];
-  let stateStackIndex = 0;
 
   function applyMask(
     mask: MaskShape,
@@ -219,40 +200,15 @@ export function draw(
       mutRenderState.program = null;
       mutRenderState.texture = null;
     },
-    startRenderSprite: (baseProps) => {
-      const topStack = stateStackPool[stateStackIndex];
-      applyTransformMut(topStack.transformation, newMatrix, baseProps);
-
-      applyMask(baseProps.mask, newMatrix);
-
-      stateStackIndex++;
-      const stackItem = stateStackPool[stateStackIndex];
-
-      if (!stackItem) {
-        stateStackPool.push({
-          opacity: topStack.opacity * baseProps.opacity,
-          hasMask: baseProps.mask !== null,
-          transformation: [...newMatrix],
-        });
-      } else {
-        stackItem.opacity = topStack.opacity * baseProps.opacity;
-        stackItem.hasMask = baseProps.mask !== null;
-        for (let i = 0; i < newMatrix.length; i++) {
-          stackItem.transformation[i] = newMatrix[i];
-        }
-      }
+    startRenderSprite: (baseProps, stackItem) => {
+      applyMask(baseProps.mask, stackItem.transformation);
     },
-    endRenderSprite: () => {
-      const stackItem = stateStackPool[stateStackIndex];
-      stateStackIndex--;
-
-      if (stackItem?.hasMask) {
+    endRenderSprite: (stackItem) => {
+      if (stackItem.hasMask) {
         clearMask();
       }
     },
-    renderTexture: (texture, textureState) => {
-      const topStack = stateStackPool[stateStackIndex];
-
+    renderTexture: (topStack, texture, textureState) => {
       if (
         texture.type === "imageArray" ||
         texture.type === "mutImageArrayRender"

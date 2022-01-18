@@ -106,11 +106,7 @@ interface SpriteObjBase<P, S, I> {
   /**
    * Called on sprite unmount.
    */
-  cleanup?: (params: {
-    state: Readonly<S>;
-    device: Device;
-    getInputs: () => I;
-  }) => void;
+  cleanup?: (params: { state: Readonly<S>; device: Device }) => void;
 
   // -- render methods
 
@@ -453,11 +449,7 @@ interface MutableSpriteObjBase<P, S, I> {
   /**
    * Called on sprite unmount.
    */
-  cleanup?: (params: {
-    state: Readonly<S>;
-    device: Device;
-    getInputs: () => I;
-  }) => void;
+  cleanup?: (params: { state: Readonly<S>; device: Device }) => void;
 
   // -- render methods
 

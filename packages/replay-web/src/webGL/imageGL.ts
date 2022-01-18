@@ -1,6 +1,6 @@
 import { ImageFileData } from "../device";
 import { createProgram, RenderState } from "./glUtils";
-import { m2d, m2dMut, Matrix2D } from "./matrix";
+import { m2d, m2dMut, Matrix2D } from "@replay/core/dist/matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_position;

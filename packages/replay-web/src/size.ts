@@ -32,6 +32,8 @@ export function calculateDeviceSize(
       height,
       widthMargin: 0,
       heightMargin: 0,
+      fullWidth: width,
+      fullHeight: height,
       deviceWidth: width,
       deviceHeight: height,
     };
@@ -51,14 +53,18 @@ export function calculateDeviceSize(
       innerHeight,
       noMarginScaledHeight + scaledMaxHeightMargin * 2
     );
+    const heightMargin =
+      ((scaledHeight - noMarginScaledHeight) / 2) *
+      (height / noMarginScaledHeight);
+
     return {
       width,
       height,
       widthMargin: 0,
       // height margin in px, then convert to game coordinates
-      heightMargin:
-        ((scaledHeight - noMarginScaledHeight) / 2) *
-        (height / noMarginScaledHeight),
+      heightMargin,
+      fullWidth: width,
+      fullHeight: height + heightMargin * 2,
       deviceWidth: scaledWidth,
       deviceHeight: scaledHeight,
     };
@@ -72,13 +78,16 @@ export function calculateDeviceSize(
       innerWidth,
       noMarginScaledWidth + scaledMaxWidthMargin * 2
     );
+    const widthMargin =
+      ((scaledWidth - noMarginScaledWidth) / 2) * (width / noMarginScaledWidth);
+
     return {
       width,
       height,
-      widthMargin:
-        ((scaledWidth - noMarginScaledWidth) / 2) *
-        (width / noMarginScaledWidth),
+      widthMargin,
       heightMargin: 0,
+      fullWidth: width + widthMargin * 2,
+      fullHeight: height,
       deviceWidth: scaledWidth,
       deviceHeight: scaledHeight,
     };

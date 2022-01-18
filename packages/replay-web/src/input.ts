@@ -1,3 +1,5 @@
+import { Matrix2D, m2dMut } from "@replay/core/dist/matrix";
+
 /**
  * Keys pressed based on the `key` value of browser keyboard events.
  *
@@ -21,18 +23,7 @@ export interface Inputs {
   };
 }
 
-let mutableInputs: Inputs = {
-  keysDown: {},
-  keysJustPressed: {},
-  pointer: {
-    pressed: false,
-    numberPressed: 0,
-    justPressed: false,
-    justReleased: false,
-    x: 0,
-    y: 0,
-  },
-};
+let mutableInputs = newInputs();
 
 let pointerIds: number[] = [];
 
@@ -42,30 +33,54 @@ let pointerIds: number[] = [];
  */
 export function mapInputCoordinates<
   I extends { pointer: { x: number; y: number } }
->(
-  getLocalCoords: (globalCoords: {
-    x: number;
-    y: number;
-  }) => {
-    x: number;
-    y: number;
-  },
-  inputs: I
-): I {
-  const localPointer = getLocalCoords(inputs.pointer);
+>(matrix: Matrix2D, inputs: I): I {
+  const invertMatrix = m2dMut.invertPooled(matrix);
+  if (!invertMatrix) return inputs;
+
+  pooledInputMatrix[4] = inputs.pointer.x;
+  pooledInputMatrix[5] = inputs.pointer.y;
+  const result = m2dMut.multiplyPooled(invertMatrix, pooledInputMatrix);
+
   return {
     ...inputs,
-    pointer: { ...inputs.pointer, x: localPointer.x, y: localPointer.y },
+    pointer: { ...inputs.pointer, x: result[4], y: result[5] },
   };
 }
+const pooledInputMatrix: Matrix2D = [0, 0, 0, 0, 0, 0];
 
-export function getInputs(
-  getLocalCoords: (globalCoords: {
-    x: number;
-    y: number;
-  }) => { x: number; y: number }
-) {
-  return mapInputCoordinates(getLocalCoords, mutableInputs);
+export function getInputsMut(matrix: Matrix2D, localMutInputs: Inputs): Inputs {
+  localMutInputs.keysDown = mutableInputs.keysDown;
+  localMutInputs.keysJustPressed = mutableInputs.keysJustPressed;
+  localMutInputs.pointer.pressed = mutableInputs.pointer.pressed;
+  localMutInputs.pointer.numberPressed = mutableInputs.pointer.numberPressed;
+  localMutInputs.pointer.justPressed = mutableInputs.pointer.justPressed;
+  localMutInputs.pointer.justReleased = mutableInputs.pointer.justReleased;
+
+  const invertMatrix = m2dMut.invertPooled(matrix);
+  if (!invertMatrix) return localMutInputs;
+
+  pooledInputMatrix[4] = mutableInputs.pointer.x;
+  pooledInputMatrix[5] = mutableInputs.pointer.y;
+  const result = m2dMut.multiplyPooled(invertMatrix, pooledInputMatrix);
+
+  localMutInputs.pointer.x = result[4];
+  localMutInputs.pointer.y = result[5];
+  return localMutInputs;
+}
+
+export function newInputs(): Inputs {
+  return {
+    keysDown: {},
+    keysJustPressed: {},
+    pointer: {
+      pressed: false,
+      numberPressed: 0,
+      justPressed: false,
+      justReleased: false,
+      x: 0,
+      y: 0,
+    },
+  };
 }
 
 export function keyDownHandler(e: KeyboardEvent) {

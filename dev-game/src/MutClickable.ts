@@ -41,8 +41,8 @@ export const MutClickable = makeMutableSprite<
     return [
       r.ifElse(
         () => state.isPressed,
-        props.spritesPressed,
-        props.spritesNotPressed || props.spritesPressed
+        () => props.spritesPressed,
+        () => props.spritesNotPressed || props.spritesPressed
       ),
     ];
   },

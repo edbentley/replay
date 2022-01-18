@@ -160,8 +160,8 @@ export const MutPlayStage = makeMutableSprite<
       // TODO: else loading
       r.ifElse(
         () => state.loading,
-        [t2.text({ text: "Loading level", color: "black" })],
-        [
+        () => [t2.text({ text: "Loading level", color: "black" })],
+        () => [
           MutWalkingGreenCapChar.Single({
             x: -100,
             y: 0,
@@ -262,7 +262,7 @@ export const MutPlayStage = makeMutableSprite<
           ),
           t2.rectangleArray({
             props: { width: 4, height: 4, color: "#0095DD", opacity: 0.9 },
-            array: state.bullets,
+            array: () => state.bullets,
             update: (thisProps, bullet) => {
               thisProps.x = bulletX(
                 bullet,
@@ -277,7 +277,7 @@ export const MutPlayStage = makeMutableSprite<
           }),
           t2.imageArray({
             props: { width: 20, height: 20, fileName: "enemy.png" },
-            array: state.enemies,
+            array: () => state.enemies,
             update: (thisProps, enemy) => {
               thisProps.x = enemy.x;
               thisProps.y = enemy.y;
@@ -308,12 +308,15 @@ export const MutPlayStage = makeMutableSprite<
             }
           ),
           MutPosLogger.Single({ x: 100, y: 200 }),
-          r.if(() => state.paused, [
-            t2.text({
-              text: "Paused",
-              color: "red",
-            }),
-          ]),
+          r.if(
+            () => state.paused,
+            () => [
+              t2.text({
+                text: "Paused",
+                color: "red",
+              }),
+            ]
+          ),
           MutClickable.Single({
             id: "PauseButton",
             spritesPressed: [

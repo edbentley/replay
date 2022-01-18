@@ -8,7 +8,8 @@ import {
 import { CustomSprite, NativeSpriteUtils } from "@replay/core/dist/sprite";
 import { AssetUtils, AssetMap } from "@replay/core/dist/device";
 import {
-  getInputs,
+  getInputsMut,
+  newInputs,
   keyUpHandler as inputKeyUpHandler,
   keyDownHandler as inputKeyDownHandler,
   resetInputs,
@@ -458,7 +459,8 @@ export function renderCanvas<S>(
 
   const domPlatform: ReplayPlatform<Inputs> = {
     mutDevice,
-    getInputs,
+    getInputs: getInputsMut,
+    newInputs,
     render: mutRender,
   };
 

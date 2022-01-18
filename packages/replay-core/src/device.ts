@@ -157,6 +157,14 @@ export interface DeviceSize {
    */
   heightMargin: number;
   /**
+   * The actual width of the device.
+   */
+  fullWidth: number;
+  /**
+   * The actual height of the device.
+   */
+  fullHeight: number;
+  /**
    * The device width in px
    */
   deviceWidth: number;

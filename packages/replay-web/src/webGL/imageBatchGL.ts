@@ -1,6 +1,7 @@
+import { Matrix2D } from "@replay/core/dist/matrix";
 import { ImageArrayTexture } from "@replay/core/dist/t";
-import { applyTransformPooled, createProgram, RenderState } from "./glUtils";
-import { Matrix2D } from "./matrix";
+import { applyTransformPooled } from "@replay/core/dist/transform";
+import { createProgram, RenderState } from "./glUtils";
 
 const vertexShaderSource = `
 attribute vec2 a_position;
