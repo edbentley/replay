@@ -6,6 +6,7 @@ import { MutScore } from "./MutScore";
 import { MutWalkingGreenCapChar } from "./MutSpriteSheet";
 import { MutPosLogger } from "./MutPosLogger";
 import { MutClickable } from "./MutClickable";
+import { testContext, TestContextChild, TestContext } from "./TestContext";
 
 interface State {
   loading: boolean;
@@ -17,6 +18,7 @@ interface State {
     y: number;
   };
   score: number;
+  testContext: TestContext;
   spawnEnemyTimerId: string;
   paused: boolean;
 }
@@ -76,6 +78,7 @@ export const MutPlayStage = makeMutableSprite<
       score: 0,
       spawnEnemyTimerId: "",
       paused: false,
+      testContext: { val: 0 },
     };
   },
 
@@ -83,6 +86,8 @@ export const MutPlayStage = makeMutableSprite<
     if (state.paused || state.loading) return;
 
     const inputs = getInputs();
+
+    state.testContext = { val: state.testContext.val + 1 };
 
     const {
       size: { width, height, heightMargin, widthMargin },
@@ -157,11 +162,14 @@ export const MutPlayStage = makeMutableSprite<
     const fullWidth = width + widthMargin * 2;
 
     return [
-      // TODO: else loading
       r.ifElse(
         () => state.loading,
         () => [t2.text({ text: "Loading level", color: "black" })],
         () => [
+          testContext.Single({
+            context: () => state.testContext,
+            sprites: [TestContextChild.Single({})],
+          }),
           MutWalkingGreenCapChar.Single({
             x: -100,
             y: 0,

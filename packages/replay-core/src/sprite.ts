@@ -317,14 +317,14 @@ export type ContextSprite<T> = {
 export type MutContextSprite<T> = {
   type: "mutContext";
   context: Context<T>;
-  value: T;
+  value: () => T;
   sprites: AllMutSprite[];
 };
 
 export type Context<T> = {
   Sprite: (args: { context: T; sprites: Sprite[] }) => ContextSprite<T>;
   Single: (args: {
-    context: T;
+    context: () => T;
     sprites: AllMutSprite[];
   }) => MutContextSprite<T>;
 };

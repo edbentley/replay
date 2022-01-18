@@ -13,7 +13,7 @@ import {
 } from "./sprite";
 import { Device, DeviceSize, preloadFiles, cleanupFiles } from "./device";
 import { SpriteBaseProps, getDefaultProps, mutateBaseProps } from "./props";
-import { ContextValue } from "./context";
+import { ContextValue, MutContextValue } from "./context";
 import {
   MutArrayTextureRenderable,
   MutSingleTexture,
@@ -662,7 +662,7 @@ function handleSprites<P, I>(
           newInputs,
           customSpriteContainer.prevTime,
           globalId,
-          contextValues,
+          [],
           platformRender
         ) as MutableSpriteContainer<any, any, any>;
         if (lookupMutableSpriteContainer.type !== "mutable") {
@@ -684,7 +684,7 @@ function handleSprites<P, I>(
         lookupMutableSpriteContainer.props as SpriteBaseProps,
         stackItem
       );
-      lookupMutableSpriteContainer.updateSprites(contextValues);
+      lookupMutableSpriteContainer.updateSprites();
       platformRender.endRenderSprite(stateStackFns.removeFromStack());
     } else {
       platformRender.renderTexture(stateStackFns.getTopStack(), sprite, null);
@@ -907,15 +907,13 @@ function getRenderMethod(
 function handleAllMutableContainer<I>(
   container: AllMutableSpriteContainer<I>,
   platformRender: PlatformRender,
-  stateStackFns: StateStackFns,
-  getInputsPlatform: ReplayPlatform<I>["getInputs"],
-  contextValues: ContextValue[]
+  stateStackFns: StateStackFns
 ) {
   if (container.type === "mutable") {
     container.updateSprite(); // update props
     const stackItem = stateStackFns.addToStack(container.props);
     platformRender.startRenderSprite(container.props, stackItem);
-    container.updateSprites(contextValues);
+    container.updateSprites();
     platformRender.endRenderSprite(stateStackFns.removeFromStack());
   } else if (container.type === "mutableArray") {
     container.updateSprites();
@@ -923,7 +921,7 @@ function handleAllMutableContainer<I>(
       const containerEl = container.containersArray[key];
       const stackItem = stateStackFns.addToStack(containerEl.props);
       platformRender.startRenderSprite(containerEl.props, stackItem);
-      containerEl.updateSprites(contextValues);
+      containerEl.updateSprites();
       platformRender.endRenderSprite(stateStackFns.removeFromStack());
     }
   } else if (container.type === "mutTexture") {
@@ -943,23 +941,11 @@ function handleAllMutableContainer<I>(
   } else if (container.type === "mutConditional") {
     container.updateConditional();
     container.containers.forEach((container) => {
-      handleAllMutableContainer(
-        container,
-        platformRender,
-        stateStackFns,
-        getInputsPlatform,
-        contextValues
-      );
+      handleAllMutableContainer(container, platformRender, stateStackFns);
     });
   } else if (container.type === "mutContext") {
     container.containers.forEach((container) => {
-      handleAllMutableContainer(
-        container,
-        platformRender,
-        stateStackFns,
-        getInputsPlatform,
-        contextValues
-      );
+      handleAllMutableContainer(container, platformRender, stateStackFns);
     });
   } else {
     throw Error("TODO");
@@ -974,7 +960,7 @@ function createMutableSpriteContainer<P, S, I>(
   newInputs: () => I,
   currentTime: number,
   globalId: string,
-  contextValues: ContextValue[],
+  contextValues: MutContextValue[],
   platformRender: PlatformRender
 ): AllMutableSpriteContainer<I> {
   if (sprite.type !== "mutable" && sprite.type !== "mutableArray") {
@@ -1138,7 +1124,7 @@ function createMutableSpriteContainer<P, S, I>(
     if (!contextValue) {
       throw Error("No context setup");
     }
-    return contextValue.value as T;
+    return (contextValue.value as () => T)();
   }
 
   if (sprite.type === "mutableArray") {
@@ -1327,7 +1313,7 @@ function createMutableSpriteContainer<P, S, I>(
     updateSprite() {
       sprite.update?.(props, 0);
     },
-    updateSprites(contextValues) {
+    updateSprites() {
       if (this.stackIndex === null) {
         this.stackIndex = stateStackFns.getStackIndex();
       }
@@ -1340,13 +1326,7 @@ function createMutableSpriteContainer<P, S, I>(
       spriteObj.loop?.(loopObject);
 
       this.childContainers.forEach((container) => {
-        handleAllMutableContainer(
-          container,
-          platformRender,
-          stateStackFns,
-          getInputsPlatform,
-          contextValues
-        );
+        handleAllMutableContainer(container, platformRender, stateStackFns);
       });
     },
     cleanup() {
@@ -1487,7 +1467,7 @@ type MutableSpriteContainer<P, S, I> = {
   stackIndex: null | number;
   inputs: I;
   updateSprite: () => void;
-  updateSprites: (contextValues: ContextValue[]) => void;
+  updateSprites: () => void;
   cleanup: () => void;
 };
 
