@@ -107,6 +107,7 @@ export function getDrawRectBatch(
 
   return function drawRectBatch(
     matrix: Matrix2D,
+    mutTextureState: WebRectArrayTextureState,
     opacity: number,
     elements: RectangleArrayTexture["props"]
   ) {
@@ -116,17 +117,13 @@ export function getDrawRectBatch(
       glVao.bindVertexArrayOES(vao);
     }
 
-    const { matrices, colours } = getMatricesColoursData(
-      matrix,
-      opacity,
-      elements
-    );
+    setMatricesColoursData(mutTextureState, matrix, opacity, elements);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, matrices, gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, mutTextureState.matrices, gl.DYNAMIC_DRAW);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, coloursBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, colours, gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, mutTextureState.colours, gl.DYNAMIC_DRAW);
 
     glInstArrays.drawArraysInstancedANGLE(
       gl.TRIANGLES,
@@ -137,7 +134,8 @@ export function getDrawRectBatch(
   };
 }
 
-function getMatricesColoursData(
+function setMatricesColoursData(
+  mutTextureState: WebRectArrayTextureState,
   matrix: Matrix2D,
   parentOpacity: number,
   elements: RectangleArrayTexture["props"]
@@ -146,10 +144,18 @@ function getMatricesColoursData(
   const floatsPerColour = 4;
 
   // floats per mat3
-  const matrices = new Float32Array(elements.length * floatsPerMatrix);
+  const matricesLength = elements.length * floatsPerMatrix;
+  if (mutTextureState.matrices.length !== matricesLength) {
+    mutTextureState.matrices = new Float32Array(matricesLength);
+  }
+  const matrices = mutTextureState.matrices;
 
   // floats for colour vec4
-  const colours = new Float32Array(elements.length * floatsPerColour);
+  const coloursLength = elements.length * floatsPerColour;
+  if (mutTextureState.colours.length !== coloursLength) {
+    mutTextureState.colours = new Float32Array(coloursLength);
+  }
+  const colours = mutTextureState.colours;
 
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
@@ -183,6 +189,9 @@ function getMatricesColoursData(
     colours[n2 + 2] = b;
     colours[n2 + 3] = opacity;
   }
-
-  return { matrices, colours };
 }
+
+type WebRectArrayTextureState = {
+  matrices: Float32Array;
+  colours: Float32Array;
+};

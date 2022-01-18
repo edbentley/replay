@@ -264,7 +264,10 @@ export function draw(
         const imageInfo = getImage(imageElements, texture.fileName);
         drawImageBatch(
           imageInfo.texture,
-          textureState,
+          textureState || {
+            matrices: new Float32Array(),
+            opacities: new Float32Array(),
+          },
           topStack.transformation,
           topStack.opacity,
           texture.props
@@ -283,7 +286,15 @@ export function draw(
 
         applyMask(texture.mask, topStack.transformation);
 
-        drawRectBatch(topStack.transformation, topStack.opacity, texture.props);
+        drawRectBatch(
+          topStack.transformation,
+          textureState || {
+            matrices: new Float32Array(),
+            colours: new Float32Array(),
+          },
+          topStack.opacity,
+          texture.props
+        );
 
         if (texture.mask) {
           clearMask();
@@ -466,10 +477,9 @@ export function draw(
         case "mutText":
         case "text": {
           const { text, color, strokeColor, font } = texture.props;
-          let cacheKey = `${text}-${color}-${strokeColor}`;
-          if (font) {
-            cacheKey += `-${font.size}-${font.weight}-${font.style}-${font.align}`;
-          }
+          const cacheKey = font
+            ? `${text}-${color}-${strokeColor}-${font.size}-${font.weight}-${font.style}-${font.align}`
+            : `${text}-${color}-${strokeColor}`;
 
           let cacheValue = textureMap[cacheKey];
 
@@ -502,7 +512,7 @@ export function draw(
               ? newMatrix
               : m2d.multiply(
                   newMatrix,
-                  m2d.getTranslateMatrix(
+                  m2dMut.getTranslateMatrixPooled(
                     (width / (2 * devicePixelRatio)) *
                       (align === "left" ? 1 : -1),
                     0

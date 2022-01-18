@@ -1,11 +1,11 @@
 import { Gradient } from "@replay/core/dist/t";
 import {
   createProgram,
-  hexToRGB,
+  hexToRGBPooled,
   RenderState,
   setupRampTexture,
 } from "./glUtils";
-import { m2d, Matrix2D } from "./matrix";
+import { m2d, m2dMut, Matrix2D } from "./matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_position;
@@ -67,6 +67,8 @@ export function getDrawRect(
   // -- Done
   glVao.bindVertexArrayOES(null);
 
+  const uMatrixPooled = m2d.getNewIdentity3fv();
+
   return function drawRect(
     matrix: Matrix2D,
     colour: string,
@@ -84,16 +86,18 @@ export function getDrawRect(
     // where
     // u_matrix = matrix * scale
     // scale converts position (which is -0.5 / 0.5 points) to the size of the image
-    const uMatrixValue = m2d.multiply(
+    const uMatrixValue = m2dMut.multiplyPooled(
       matrix,
-      m2d.getScaleMatrix(width, height)
+      m2dMut.getScaleMatrixPooled(width, height)
     );
+    m2dMut.toUniform3fvMut(uMatrixValue, uMatrixPooled);
 
     // Set the matrix which will be u_matrix * a_position
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(uMatrixValue));
+    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     // Set colour
-    gl.uniform4f(uColourLocation, ...hexToRGB(colour, opacity), opacity);
+    const { r, g, b } = hexToRGBPooled(colour, opacity);
+    gl.uniform4f(uColourLocation, r, g, b, opacity);
 
     // draw the quad (2 triangles, 6 vertices)
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -201,6 +205,8 @@ export function getDrawRectGrad(
   // -- Done
   glVao.bindVertexArrayOES(null);
 
+  const uMatrixPooled = m2d.getNewIdentity3fv();
+
   return function drawRectGrad(
     matrix: Matrix2D,
     gradTexture: WebGLTexture,
@@ -220,12 +226,13 @@ export function getDrawRectGrad(
       glVao.bindVertexArrayOES(vao);
     }
 
-    const uMatrixValue = m2d.multiply(
+    const uMatrixValue = m2dMut.multiplyPooled(
       matrix,
-      m2d.getScaleMatrix(width, height)
+      m2dMut.getScaleMatrixPooled(width, height)
     );
+    m2dMut.toUniform3fvMut(uMatrixValue, uMatrixPooled);
 
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(uMatrixValue));
+    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     gl.uniform1f(uOpacityLocation, opacity);
 

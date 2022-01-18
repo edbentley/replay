@@ -1603,13 +1603,15 @@ function getInitTextureState(texture: MutTexture): null | Record<any, any> {
         points: new Float32Array(),
       };
 
-    // TODO
-    case "mutRectangle":
     case "mutRectangleArray":
-    case "mutSpriteSheet":
-      return null;
+      return {
+        matrices: new Float32Array(),
+        colours: new Float32Array(),
+      };
 
+    case "mutRectangle":
     case "mutImage":
+    case "mutSpriteSheet":
     case "mutText":
       return null;
   }
