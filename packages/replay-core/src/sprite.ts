@@ -254,6 +254,7 @@ export type NativeSprite<P> = {
   type: "native";
   name: string;
   props: P;
+  update?: (thisProps: P) => void;
 };
 
 export type NativeSpriteImplementation<P, S> = {
@@ -269,9 +270,11 @@ export type NativeSpriteImplementation<P, S> = {
     state: S;
     parentGlobalId: string;
     utils: NativeSpriteUtils;
-    // TODO: handle with shared matrices
-    parentX: number;
-    parentY: number;
+    spriteToGameCoords: <T extends { x: number; y: number }>(
+      x: number,
+      y: number,
+      out: T
+    ) => void;
   }) => S;
   cleanup: (params: { state: S; parentGlobalId: string }) => void;
 };
@@ -299,7 +302,7 @@ export type NativeSpriteUtils = {
  */
 export function makeNativeSprite<P extends { id: string }>(
   name: string
-): (props: P) => NativeSprite<P> {
+): (props: P, update?: (thisProps: P) => void) => NativeSprite<P> {
   return (props) => ({
     type: "native",
     name,
@@ -336,7 +339,8 @@ export type AllMutSprite =
   | MutableSpriteArray<any, any, any, any>
   | MutTexture
   | MutConditionalItem
-  | MutContextSprite<any>;
+  | MutContextSprite<any>
+  | NativeSprite<any>;
 
 export type MutSpriteProps<P> = P &
   Partial<SpriteBaseProps> & {

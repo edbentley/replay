@@ -20,7 +20,7 @@ import {
   MutTexture,
   RenderableMutTexture,
 } from "./t2";
-import { m2d, Matrix2D } from "./matrix";
+import { m2d, m2dMut, Matrix2D } from "./matrix";
 import { applyTransformMut } from "./transform";
 
 /**
@@ -445,20 +445,14 @@ function traverseCustomSpriteContainer<P, I>(
 
           recursiveSpriteCleanup(container.childContainers, containerGlobalId);
 
-          container.cleanup();
-
           if (container.loadFilesPromise) {
             container.loadFilesPromise.then(() => {
               // Only cleanup once the initial load is complete
               cleanupFiles(containerGlobalId, mutDevice.assetUtils);
             });
           }
-        } else if (container.type === "native") {
-          container.cleanup({
-            state: container.state,
-            parentGlobalId,
-          });
         }
+        container.cleanup();
       });
     };
 
@@ -533,8 +527,9 @@ function handleSprites<P, I>(
         lookupNativeSpriteContainer.type !== "native"
       ) {
         // Create a native container
-        const newContainer: NativeSpriteContainer<UnknownObject> = {
+        const newContainer: NativeSpriteContainer<unknown, UnknownObject> = {
           type: "native",
+          props: sprite.props,
           state: nativeSpriteImplementation.create({
             props: sprite.props,
             parentGlobalId,
@@ -547,26 +542,40 @@ function handleSprites<P, I>(
             },
             utils: nativeSpriteUtils,
           }),
-          cleanup: nativeSpriteImplementation.cleanup,
+          updateSprite() {
+            platformRender.startNativeSprite();
+
+            newContainer.update?.(sprite.props);
+
+            newContainer.state = nativeSpriteImplementation.loop({
+              props: sprite.props,
+              state: newContainer.state,
+              parentGlobalId,
+              utils: nativeSpriteUtils,
+              spriteToGameCoords: (x, y, out) => {
+                const result = m2dMut.multiplyPooled(
+                  stateStackFns.getTopStack().transformationGameCoords,
+                  [0, 0, 0, 0, x, y]
+                );
+                out.x = result[4];
+                out.y = result[5];
+              },
+            });
+
+            platformRender.endNativeSprite();
+          },
+          cleanup() {
+            nativeSpriteImplementation.cleanup({
+              state: this.state,
+              parentGlobalId,
+            });
+          },
         };
         customSpriteContainer.childContainers[sprite.props.id] = newContainer;
         lookupNativeSpriteContainer = newContainer;
       }
 
-      // TODO: Native Sprites causing bugs
-
-      // platformRender.startNativeSprite();
-
-      // lookupNativeSpriteContainer.state = nativeSpriteImplementation.loop({
-      //   props: sprite.props,
-      //   state: lookupNativeSpriteContainer.state,
-      //   parentGlobalId,
-      //   utils: nativeSpriteUtils,
-      //   parentX: spriteX,
-      //   parentY: spriteY,
-      // });
-
-      // platformRender.endNativeSprite();
+      lookupNativeSpriteContainer.updateSprite();
     } else if (sprite.type === "pure") {
       addChildId(sprite.props.id);
 
@@ -663,7 +672,8 @@ function handleSprites<P, I>(
           customSpriteContainer.prevTime,
           globalId,
           [],
-          platformRender
+          platformRender,
+          nativeSpriteSettings
         ) as MutableSpriteContainer<any, any, any>;
         if (lookupMutableSpriteContainer.type !== "mutable") {
           throw Error("Can only render mutable Sprite");
@@ -947,6 +957,8 @@ function handleAllMutableContainer<I>(
     container.containers.forEach((container) => {
       handleAllMutableContainer(container, platformRender, stateStackFns);
     });
+  } else if (container.type === "native") {
+    container.updateSprite();
   } else {
     throw Error("TODO");
   }
@@ -961,7 +973,8 @@ function createMutableSpriteContainer<P, S, I>(
   currentTime: number,
   globalId: string,
   contextValues: MutContextValue[],
-  platformRender: PlatformRender
+  platformRender: PlatformRender,
+  nativeSpriteSettings: NativeSpriteSettings
 ): AllMutableSpriteContainer<I> {
   if (sprite.type !== "mutable" && sprite.type !== "mutableArray") {
     if (
@@ -980,6 +993,7 @@ function createMutableSpriteContainer<P, S, I>(
           const update = sprite.update as ((arg: any) => void) | undefined;
           update?.(sprite.props);
         },
+        cleanup: () => null,
       };
     }
     if (
@@ -1007,6 +1021,7 @@ function createMutableSpriteContainer<P, S, I>(
               },
         array: sprite.array,
         textureState: getInitTextureState(sprite),
+        cleanup: () => null,
         updateTextureArray() {
           const array = this.array();
 
@@ -1041,7 +1056,7 @@ function createMutableSpriteContainer<P, S, I>(
         containers: (isTrue
           ? sprite.trueSprites()
           : sprite.falseSprites()
-        ).map((sprite) =>
+        ).map((sprite, index) =>
           createMutableSpriteContainer(
             sprite,
             mutDevice,
@@ -1049,17 +1064,19 @@ function createMutableSpriteContainer<P, S, I>(
             getInputsPlatform,
             newInputs,
             currentTime,
-            globalId,
+            `${globalId}--${isTrue}-${index}`,
             contextValues,
-            platformRender
+            platformRender,
+            nativeSpriteSettings
           )
         ),
         updateConditional() {
           if (!this.isTrue && sprite.condition()) {
             this.isTrue = true;
+            this.cleanup();
             this.containers = sprite
               .trueSprites()
-              .map((sprite) =>
+              .map((sprite, index) =>
                 createMutableSpriteContainer(
                   sprite,
                   mutDevice,
@@ -1067,16 +1084,18 @@ function createMutableSpriteContainer<P, S, I>(
                   getInputsPlatform,
                   newInputs,
                   currentTime,
-                  globalId,
+                  `${globalId}--true-${index}`,
                   contextValues,
-                  platformRender
+                  platformRender,
+                  nativeSpriteSettings
                 )
               );
           } else if (this.isTrue && !sprite.condition()) {
             this.isTrue = false;
+            this.cleanup();
             this.containers = sprite
               .falseSprites()
-              .map((sprite) =>
+              .map((sprite, index) =>
                 createMutableSpriteContainer(
                   sprite,
                   mutDevice,
@@ -1084,12 +1103,18 @@ function createMutableSpriteContainer<P, S, I>(
                   getInputsPlatform,
                   newInputs,
                   currentTime,
-                  globalId,
+                  `${globalId}--false-${index}`,
                   contextValues,
-                  platformRender
+                  platformRender,
+                  nativeSpriteSettings
                 )
               );
           }
+        },
+        cleanup() {
+          this.containers.forEach((container) => {
+            container.cleanup();
+          });
         },
       };
     }
@@ -1097,7 +1122,7 @@ function createMutableSpriteContainer<P, S, I>(
       const newContextValues = [...contextValues, sprite];
       return {
         type: "mutContext",
-        containers: sprite.sprites.map((sprite) =>
+        containers: sprite.sprites.map((sprite, index) =>
           createMutableSpriteContainer(
             sprite,
             mutDevice,
@@ -1105,12 +1130,77 @@ function createMutableSpriteContainer<P, S, I>(
             getInputsPlatform,
             newInputs,
             currentTime,
-            globalId,
+            `${globalId}--${index}`,
             newContextValues,
-            platformRender
+            platformRender,
+            nativeSpriteSettings
           )
         ),
+        cleanup() {
+          this.containers.forEach((container) => {
+            container.cleanup();
+          });
+        },
       };
+    } else if (sprite.type === "native") {
+      const { nativeSpriteMap, nativeSpriteUtils } = nativeSpriteSettings;
+
+      const nativeSpriteImplementation = nativeSpriteMap[sprite.name];
+      if (!nativeSpriteImplementation) {
+        throw Error(`Cannot find Native Sprite "${sprite.name}"`);
+      }
+
+      const newContainer: NativeSpriteContainer<
+        UnknownObject,
+        UnknownObject
+      > = {
+        type: "native",
+        props: sprite.props,
+        state: nativeSpriteImplementation.create({
+          props: sprite.props,
+          parentGlobalId: globalId,
+          getState: () => newContainer.state,
+          updateState: (mergeState) => {
+            newContainer.state = {
+              ...newContainer.state,
+              ...mergeState,
+            };
+          },
+          utils: nativeSpriteUtils,
+        }),
+        update: sprite.update,
+        updateSprite() {
+          this.update?.(this.props);
+
+          platformRender.startNativeSprite();
+
+          newContainer.update?.(this.props);
+
+          newContainer.state = nativeSpriteImplementation.loop({
+            props: this.props,
+            state: newContainer.state,
+            parentGlobalId: globalId,
+            utils: nativeSpriteUtils,
+            spriteToGameCoords: (x, y, out) => {
+              const result = m2dMut.multiplyPooled(
+                stateStackFns.getTopStack().transformationGameCoords,
+                [0, 0, 0, 0, x, y]
+              );
+              out.x = result[4];
+              out.y = result[5];
+            },
+          });
+
+          platformRender.endNativeSprite();
+        },
+        cleanup: () => {
+          nativeSpriteImplementation.cleanup({
+            state: newContainer.state,
+            parentGlobalId: globalId,
+          });
+        },
+      };
+      return newContainer;
     }
     throw Error("TODO");
   }
@@ -1149,23 +1239,24 @@ function createMutableSpriteContainer<P, S, I>(
       key: sprite.key,
       prevIds: [],
       prevIdsSet: new Set(),
-      containersArray: sprite.array().reduce(
-        (obj, arrayEl, index) => ({
+      containersArray: sprite.array().reduce((obj, arrayEl, index) => {
+        const id = sprite.key(arrayEl, index);
+        return {
           ...obj,
-          [sprite.key(arrayEl, index)]: createMutableSpriteContainer(
+          [id]: createMutableSpriteContainer(
             newMutSprite(arrayEl, index),
             mutDevice,
             stateStackFns,
             getInputsPlatform,
             newInputs,
             currentTime,
-            globalId,
+            `${globalId}--${id}`,
             contextValues,
-            platformRender
+            platformRender,
+            nativeSpriteSettings
           ) as MutableSpriteContainer<P, S, I>,
-        }),
-        {}
-      ),
+        };
+      }, {}),
       updateSprites() {
         const array = this.array();
 
@@ -1192,9 +1283,10 @@ function createMutableSpriteContainer<P, S, I>(
               getInputsPlatform,
               newInputs,
               currentTime,
-              globalId,
+              `${globalId}--${id}`,
               contextValues,
-              platformRender
+              platformRender,
+              nativeSpriteSettings
             ) as MutableSpriteContainer<P, S, I>;
             this.containersArray[id] = container;
           }
@@ -1211,6 +1303,7 @@ function createMutableSpriteContainer<P, S, I>(
           ids.length = idIndex;
         }
         unusedIds.forEach((id) => {
+          this.containersArray[id].cleanup();
           delete this.containersArray[id];
         });
 
@@ -1224,6 +1317,11 @@ function createMutableSpriteContainer<P, S, I>(
             (item, index) => ids.indexOf(item) !== index
           );
           throw Error(`Duplicate key ${duplicate}`);
+        }
+      },
+      cleanup() {
+        for (const id in this.containersArray) {
+          this.containersArray[id].cleanup();
         }
       },
     };
@@ -1297,7 +1395,7 @@ function createMutableSpriteContainer<P, S, I>(
           ),
         getContext,
       })
-      .map((sprite) =>
+      .map((sprite, index) =>
         createMutableSpriteContainer(
           sprite,
           mutDevice,
@@ -1305,9 +1403,10 @@ function createMutableSpriteContainer<P, S, I>(
           getInputsPlatform,
           newInputs,
           currentTime,
-          globalId,
+          `${globalId}--${index}`,
           contextValues,
-          platformRender
+          platformRender,
+          nativeSpriteSettings
         )
       ),
     updateSprite() {
@@ -1330,10 +1429,21 @@ function createMutableSpriteContainer<P, S, I>(
       });
     },
     cleanup() {
+      this.childContainers.forEach((container) => {
+        container.cleanup();
+      });
+
       spriteObj.cleanup?.({
         state: this.state,
         device: mutDevice,
       });
+
+      if (this.loadFilesPromise) {
+        this.loadFilesPromise.then(() => {
+          // Only cleanup once the initial load is complete
+          cleanupFiles(globalId, mutDevice.assetUtils);
+        });
+      }
     },
     prevTime: currentTime,
     currentLag: 0,
@@ -1343,62 +1453,18 @@ function createMutableSpriteContainer<P, S, I>(
   return spriteContainer!;
 }
 
-// function traverseMutableSpriteContainer<P, I>(
-//   mutableSpriteContainer: MutableSpriteContainer<P, unknown, I>,
-//   spriteProps: MutableSpriteProps<P>,
-//   mutDevice: Device,
-//   getInputsPlatform: ReplayPlatform<I>["getInputs"],
-//   getParentCoords: (globalCoords: {
-//     x: number;
-//     y: number;
-//   }) => { x: number; y: number },
-//   initCreation: boolean,
-//   renderMethod: RenderMethod,
-//   extrapolateFactor: number,
-//   parentGlobalId: string,
-//   nativeSpriteSettings: NativeSpriteSettings,
-//   platformRender: PlatformRender,
-//   contextValues: ContextValue[],
-//   parentX: number,
-//   parentY: number
-// ) {
-//   const { baseProps } = mutableSpriteContainer;
-//   mutateBaseProps(baseProps, spriteProps);
-
-//   const getLocalCoords = (globalCoords: { x: number; y: number }) => {
-//     const parentCoords = getParentCoords(globalCoords);
-//     const getParentToLocalCoords = getLocalCoordsForSprite(baseProps);
-//     return getParentToLocalCoords(parentCoords);
-//   };
-
-//   // Cache in case called in multiple sprite methods
-//   let cachedInputs: I | null = null;
-//   const getInputs = () => {
-//     if (!cachedInputs) {
-//       cachedInputs = getInputsPlatform(getLocalCoords);
-//     }
-//     return cachedInputs;
-//   };
-
-//   platformRender.startRenderSprite(baseProps);
-
-//   mutableSpriteContainer.updateSprites(getInputs, contextValues);
-
-//   platformRender.endRenderSprite();
-// }
-
 type SpriteContainer<P, S, I> =
   | CustomSpriteContainer<P, S, I>
   | MutableSpriteContainer<P, S, I>
-  | MutableSpriteArrayContainer<P, S, I, any>
   | PureCustomSpriteContainer<P>
-  | NativeSpriteContainer<S>;
+  | NativeSpriteContainer<P, S>;
 
 type MutableTextureContainer = {
   type: "mutTexture";
   texture: MutSingleTexture;
   textureState: any;
   updateTexture: () => void;
+  cleanup: () => void;
 };
 type MutableArrayTextureContainer = {
   type: "mutArrayTexture";
@@ -1406,6 +1472,7 @@ type MutableArrayTextureContainer = {
   array: () => any[];
   textureState: any;
   updateTextureArray: () => void;
+  cleanup: () => void;
 };
 
 type MutableConditionalContainer<I> = {
@@ -1414,6 +1481,7 @@ type MutableConditionalContainer<I> = {
   isTrue: boolean;
   containers: AllMutableSpriteContainer<I>[];
   updateConditional: () => void;
+  cleanup: () => void;
 };
 
 type AllMutableSpriteContainer<I> =
@@ -1422,7 +1490,8 @@ type AllMutableSpriteContainer<I> =
   | MutableTextureContainer
   | MutableConditionalContainer<I>
   | MutableArrayTextureContainer
-  | MutableContextContainer<I>;
+  | MutableContextContainer<I>
+  | NativeSpriteContainer<any, any>;
 
 type CustomSpriteContainer<P, S, I> = {
   type: "custom";
@@ -1454,6 +1523,7 @@ type CustomSpriteContainer<P, S, I> = {
 type MutableContextContainer<I> = {
   type: "mutContext";
   containers: AllMutableSpriteContainer<I>[];
+  cleanup: () => void;
 };
 
 type MutableSpriteContainer<P, S, I> = {
@@ -1480,6 +1550,7 @@ type MutableSpriteArrayContainer<P, S, I, ItemState> = {
   key: (itemState: ItemState, index: number) => string | number;
   containersArray: Record<string | number, MutableSpriteContainer<P, S, I>>;
   updateSprites: () => void;
+  cleanup: () => void;
   prevIds: (string | number)[];
   prevIdsSet: Set<string | number>;
 };
@@ -1494,6 +1565,7 @@ type PureCustomSpriteContainer<P> = {
   baseProps: SpriteBaseProps;
   cache?: PureSpriteCache;
   prevProps?: P;
+  cleanup: () => void;
   getSprites: (
     props: CustomSpriteProps<P>,
     size: DeviceSize,
@@ -1549,6 +1621,7 @@ function createPureCustomSpriteContainer<P>(
         }),
       };
     },
+    cleanup: () => null,
   };
 }
 
@@ -1711,10 +1784,13 @@ function traversePureSpriteCache(
   platformRender.endRenderSprite(stateStackFns.removeFromStack());
 }
 
-type NativeSpriteContainer<S> = {
+type NativeSpriteContainer<P, S> = {
   type: "native";
+  props: P;
   state: S;
-  cleanup: (params: { state: S; parentGlobalId: string }) => void;
+  update?: (thisProps: P) => void;
+  updateSprite: () => void;
+  cleanup: () => void;
 };
 
 export type NativeSpriteSettings = {
