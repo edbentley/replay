@@ -291,7 +291,7 @@ function getRotateMatrixPooled(rotationRad: number): Matrix2D {
   rotateResult[0] = c;
   rotateResult[1] = s;
   rotateResult[2] = -s;
-  rotateResult[4] = c;
+  rotateResult[3] = c;
 
   return rotateResult;
 }

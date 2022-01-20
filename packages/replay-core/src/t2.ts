@@ -10,8 +10,12 @@ export const t = {
       type: "mutText",
       props: mutateBaseProps(
         {
+          font: arg.font,
           text: arg.text || "",
           color: arg.color || "black",
+          gradient: arg.gradient,
+          strokeColor: arg.strokeColor,
+          strokeThickness: arg.strokeThickness,
         },
         arg
       ),
@@ -28,6 +32,7 @@ export const t = {
         {
           radius: arg.radius || 10,
           color: arg.color || "black",
+          gradient: arg.gradient,
         },
         arg
       ),
@@ -45,6 +50,7 @@ export const t = {
           width: props.width || 10,
           height: props.height || 10,
           color: props.color || "black",
+          gradient: props.gradient,
         },
         props
       ),
@@ -73,6 +79,7 @@ export const t = {
           width: props.width || 10,
           height: props.height || 10,
           color: props.color || "black",
+          gradient: props.gradient,
         },
         props
       ),
@@ -93,6 +100,7 @@ export const t = {
           thickness: props.thickness ?? 1,
           lineCap: props.lineCap || "butt",
           path: props.path || [],
+          gradient: props.gradient,
           fillGradient: props.fillGradient,
         },
         props

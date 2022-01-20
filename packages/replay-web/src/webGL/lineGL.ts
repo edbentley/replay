@@ -120,6 +120,7 @@ export function getDrawLine(
     opacity: number
   ) {
     if (path.length <= 1) {
+      mutTextureState.lineCaps = null;
       return;
     }
 

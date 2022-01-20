@@ -178,6 +178,7 @@ export const MutPlayStage = makeMutableSprite<
             //   x: -24,
             // }),
           }),
+
           t2.line({
             path: [
               [-30, -30],
@@ -187,6 +188,16 @@ export const MutPlayStage = makeMutableSprite<
             thickness: 3,
             fillColor: "#000000",
             color: "#FF0000",
+            lineCap: "round",
+          }),
+          t2.line({
+            path: [
+              [0, 25],
+              [0, -25],
+            ],
+            thickness: 3,
+            color: "#FF0000",
+            lineCap: "round",
           }),
           t2.text({
             text: "test",

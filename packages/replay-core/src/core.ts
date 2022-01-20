@@ -462,7 +462,10 @@ function traverseCustomSpriteContainer<P, I>(
     delete customSpriteContainer.childContainers[id];
   });
 
-  customSpriteContainer.prevChildIdsSet = new Set(childIds);
+  customSpriteContainer.prevChildIdsSet.clear();
+  childIds.forEach((id) => {
+    customSpriteContainer.prevChildIdsSet.add(id);
+  });
 
   if (customSpriteContainer.prevChildIdsSet.size < childIds.length) {
     const duplicate = childIds.find(
@@ -1416,12 +1419,12 @@ function createMutableSpriteContainer<P, S, I>(
       if (this.stackIndex === null) {
         this.stackIndex = stateStackFns.getStackIndex();
       }
-      loopObject.getInputs = () =>
-        getInputsPlatform(
-          stateStackFns.getStack(spriteContainer?.stackIndex || 0)
-            .transformationGameCoords,
-          this.inputs
-        );
+      // loopObject.getInputs = () =>
+      //   getInputsPlatform(
+      //     stateStackFns.getStack(spriteContainer?.stackIndex || 0)
+      //       .transformationGameCoords,
+      //     this.inputs
+      //   );
       spriteObj.loop?.(loopObject);
 
       this.childContainers.forEach((container) => {

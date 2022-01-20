@@ -291,6 +291,12 @@ export function draw(
 
         case "mutLine":
         case "line": {
+          const tState = textureState || {
+            lineCaps: null,
+            linePath: new Float32Array(),
+            strokePath: new Float32Array(),
+          };
+
           const gradient = texture.props.fillGradient;
           if (gradient) {
             const gradCacheKey = `${gradient.type}-${gradient.colors.join(
@@ -315,11 +321,7 @@ export function draw(
             drawLineGrad(
               newMatrix,
               // Default for non-mut line
-              textureState || {
-                lineCaps: null,
-                linePath: new Float32Array(),
-                strokePath: new Float32Array(),
-              },
+              tState,
               cacheValue.texture,
               texture.props.path,
               gradient,
@@ -327,11 +329,6 @@ export function draw(
             );
           }
           if (texture.props.color || texture.props.fillColor) {
-            const tState = textureState || {
-              lineCaps: null,
-              linePath: new Float32Array(),
-              strokePath: new Float32Array(),
-            };
             drawLine(
               newMatrix,
               tState,
