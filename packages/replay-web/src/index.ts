@@ -462,6 +462,7 @@ export function renderCanvas<S>(
     getInputs: getInputsMut,
     newInputs,
     render: mutRender,
+    isTestPlatform: false,
   };
 
   const nativeSpriteUtils: NativeSpriteUtils = {

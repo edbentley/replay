@@ -157,7 +157,7 @@ export const MutPlayStage = makeMutableSprite<
       size: { height, heightMargin, width, widthMargin },
     },
   }) {
-    const extrapolateFactor = 1;
+    const extrapolateFactor = 0;
     const fullHeight = height + heightMargin * 2;
     const fullWidth = width + widthMargin * 2;
 
@@ -173,10 +173,10 @@ export const MutPlayStage = makeMutableSprite<
           MutWalkingGreenCapChar.Single({
             x: -100,
             y: 0,
-            // mask: mask.circle({
-            //   radius: 20,
-            //   x: -24,
-            // }),
+            mask: mask.circle({
+              radius: 20,
+              x: -24,
+            }),
           }),
 
           t2.line({
@@ -293,6 +293,7 @@ export const MutPlayStage = makeMutableSprite<
                 extrapolateFactor * props.bulletSpeed
               );
             },
+            testId: (_, index) => `bullet${index + 1}`,
           }),
           t2.imageArray({
             props: { width: 20, height: 20, fileName: "enemy.png" },
@@ -301,6 +302,7 @@ export const MutPlayStage = makeMutableSprite<
               thisProps.x = enemy.x;
               thisProps.y = enemy.y;
             },
+            testId: (_, index) => `enemy${index + 1}`,
           }),
           t2.circle(
             {

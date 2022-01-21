@@ -46,7 +46,7 @@ export function mapInputCoordinates<
     pointer: { ...inputs.pointer, x: result[4], y: result[5] },
   };
 }
-const pooledInputMatrix: Matrix2D = [0, 0, 0, 0, 0, 0];
+const pooledInputMatrix: Matrix2D = [1, 0, 0, 1, 0, 0];
 
 export function getInputsMut(matrix: Matrix2D, localMutInputs: Inputs): Inputs {
   localMutInputs.keysDown = mutableInputs.keysDown;

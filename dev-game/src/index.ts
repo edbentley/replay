@@ -58,7 +58,11 @@ export const gameProps: GameProps = {
   },
 };
 
-export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
+export const Game = makeSprite<
+  GameProps & { isMut?: boolean },
+  State,
+  WebInputs | iOSInputs
+>({
   init({ device, updateState }) {
     // device.network.get(
     //   "https://jsonplaceholder.typicode.com/posts/1",
@@ -132,7 +136,7 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
     };
   },
 
-  render({ state, updateState, device }) {
+  render({ state, updateState, device, props: { isMut = true } }) {
     switch (state.stage) {
       case GameStage.Loading:
         return [
@@ -174,26 +178,42 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
           //   id: "MyMutSprite",
           //   highScore: 80,
           // }),
-          MutPlayStage.Single(
-            {
-              id: "play-stage",
-              bulletSpeed: state.bulletSpeed,
-              gameOver: function gameOver(score) {
-                if (score > state.highScore) {
-                  device.storage.setItem("highScore", String(score));
+          isMut
+            ? MutPlayStage.Single(
+                {
+                  id: "play-stage",
+                  bulletSpeed: state.bulletSpeed,
+                  gameOver: function gameOver(score) {
+                    if (score > state.highScore) {
+                      device.storage.setItem("highScore", String(score));
+                    }
+                    updateState((currState) => ({
+                      ...currState,
+                      stage: GameStage.GameOver,
+                      highScore: Math.max(score, state.highScore),
+                    }));
+                  },
+                  highScore: state.highScore,
+                },
+                (thisProps) => {
+                  thisProps.bulletSpeed = state.bulletSpeed;
                 }
-                updateState((currState) => ({
-                  ...currState,
-                  stage: GameStage.GameOver,
-                  highScore: Math.max(score, state.highScore),
-                }));
-              },
-              highScore: state.highScore,
-            },
-            (thisProps) => {
-              thisProps.bulletSpeed = state.bulletSpeed;
-            }
-          ),
+              )
+            : PlayStage({
+                id: "play-stage",
+                bulletSpeed: state.bulletSpeed,
+                gameOver: function gameOver(score) {
+                  if (score > state.highScore) {
+                    device.storage.setItem("highScore", String(score));
+                  }
+                  updateState((currState) => ({
+                    ...currState,
+                    stage: GameStage.GameOver,
+                    highScore: Math.max(score, state.highScore),
+                  }));
+                },
+                highScore: state.highScore,
+              }),
           // PureRectGroup({ id: "Circles" }),
           // PlayStage({
           //   id: "play-stage",

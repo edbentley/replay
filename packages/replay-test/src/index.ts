@@ -1,17 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { GameProps, Texture, Device, DeviceSize, Context } from "@replay/core";
+import { GameProps, Device, DeviceSize, Context } from "@replay/core";
 import { replayCore, ReplayPlatform } from "@replay/core/dist/core";
-import { CustomSprite, makeSprite, Sprite } from "@replay/core/dist/sprite";
+import {
+  CustomSprite,
+  makeSprite,
+  makeMutableSprite,
+  MutableSprite,
+  Sprite,
+  AllMutSprite,
+} from "@replay/core/dist/sprite";
 import {
   ImageTexture,
   RectangleTexture,
   SingleTexture,
   TextTexture,
 } from "@replay/core/dist/t";
-import { getParentCoordsForSprite } from "./coords";
 import { NativeSpriteMock } from "./nativeSpriteMock";
 import { AssetMap } from "@replay/core/dist/device";
+import { m2d, Matrix2D } from "@replay/core/dist/matrix";
+import { MutSingleTexture, MutTextTexture } from "@replay/core/dist/t2";
+
+type AllSingleTexture = SingleTexture | MutSingleTexture;
 
 interface Timer {
   id: string;
@@ -26,20 +36,15 @@ export interface TestSpriteOptions<I> {
    * A mapping function to adjust an input's (x, y) coordinate to its relative
    * value within a Sprite
    */
-  mapInputCoordinates?: (
-    globalToLocalCoords: (globalCoords: {
-      x: number;
-      y: number;
-    }) => {
-      x: number;
-      y: number;
-    },
-    inputs: I
-  ) => I;
+  mapInputCoordinates?: (matrix: Matrix2D, inputs: I) => I;
   /**
    * Array of tuples of context and the value to inject
    */
   contexts?: ContextTuple<any>[];
+  /**
+   * Array of tuples of context and the value to inject. Use if sprite passed in is Mutable
+   */
+  mutContexts?: MutContextTuple<any>[];
   /**
    * Same as setRandomNumbers but for init call
    */
@@ -94,15 +99,15 @@ export interface TestSpriteOptions<I> {
 interface TestSpriteUtils<I> {
   nextFrame: () => void;
   jumpToFrame: (
-    condition: () => boolean | SingleTexture,
+    condition: () => boolean | AllSingleTexture,
     maxFrames?: number
   ) => Promise<void>;
   setRandomNumbers: (numbers: number[]) => void;
   updateInputs: (newInputs: I) => void;
-  getTextures: () => SingleTexture[];
-  getTexture: (testId: string) => SingleTexture;
+  getTextures: () => AllSingleTexture[];
+  getTexture: (testId: string) => AllSingleTexture;
   textureExists: (testId: string) => boolean;
-  getByText: (text: string) => TextTexture[];
+  getByText: (text: string) => (TextTexture | MutTextTexture)[];
   log: jest.Mock<any, any>;
   resolvePromises: () => Promise<void>;
   audio: {
@@ -136,13 +141,14 @@ interface TestSpriteUtils<I> {
  * play and record the game.
  */
 export function testSprite<P, S, I>(
-  sprite: CustomSprite<P, S, I>,
+  sprite: CustomSprite<P, S, I> | MutableSprite<P, S, I>,
   gameProps: GameProps,
   options: TestSpriteOptions<I> = {}
 ): TestSpriteUtils<I> {
   const {
     initInputs = {} as I,
     contexts: contextTuples = [],
+    mutContexts: mutContextTuples = [],
     initRandom = [0.5],
     size = {
       width:
@@ -155,6 +161,8 @@ export function testSprite<P, S, I>(
           : gameProps.size.landscape.height,
       widthMargin: 0,
       heightMargin: 0,
+      fullWidth: 0,
+      fullHeight: 0,
       deviceWidth: 1000,
       deviceHeight: 500,
     },
@@ -366,7 +374,7 @@ export function testSprite<P, S, I>(
     },
   };
 
-  const textures: SingleTexture[] = [];
+  const textures: AllSingleTexture[] = [];
 
   const timers: Timer[] = [];
 
@@ -378,15 +386,12 @@ export function testSprite<P, S, I>(
   const audioElements: AssetMap<Record<string, string>> = {};
   const imageElements: AssetMap<Record<string, string>> = {};
 
-  type Pos = { x: number; y: number; rotation: number };
-  /**
-   * Keep a stack of functions mapping local to global coords
-   */
-  const getPosStack: ((localCoords: Pos) => Pos)[] = [];
-
   const testPlatform: ReplayPlatform<I> = {
-    getInputs: (globalToLocalCoords) =>
-      mapInputCoordinates(globalToLocalCoords, inputs),
+    isTestPlatform: true,
+    getInputs: (matrix) => {
+      return mapInputCoordinates(matrix, inputs);
+    },
+    newInputs: () => ({ ...initInputs }),
     mutDevice: {
       isTouchScreen,
       size,
@@ -421,23 +426,15 @@ export function testSprite<P, S, I>(
         textures.length = 0;
       },
       endFrame: () => null,
-      startRenderSprite: (baseProps) => {
-        const getParentCoords = getParentCoordsForSprite(baseProps);
-
-        const getParentPos = ({ x, y, rotation }: Pos) => ({
-          ...getParentCoords({ x, y }),
-          rotation: rotation + baseProps.rotation,
-        });
-
-        getPosStack.unshift(getParentPos);
-      },
-      endRenderSprite: () => {
-        getPosStack.shift();
-      },
-      renderTexture: (texture) => {
+      startRenderSprite: () => null,
+      endRenderSprite: () => null,
+      renderTexture: (stackItem, texture) => {
         if (
           throwAssetErrors &&
-          (texture.type === "image" || texture.type === "spriteSheet")
+          (texture.type === "image" ||
+            texture.type === "mutImage" ||
+            texture.type === "spriteSheet" ||
+            texture.type === "mutSpriteSheet")
         ) {
           const fileName = texture.props.fileName;
           const imageElement = imageElements[fileName];
@@ -451,51 +448,83 @@ export function testSprite<P, S, I>(
           }
         }
 
-        // Go through all functions mapping position
-        const { x, y, rotation } = getPosStack.reduce(
-          (pos, posFn) => posFn(pos),
-          texture.props as Pos
-        );
+        const matrix = stackItem.transformationGameCoords;
 
-        if (texture.type === "imageArray") {
+        /**
+         * Replace texture's position with absolute game coordinates
+         */
+        function updatePropsPos<T extends AllSingleTexture["props"]>(
+          textureProps: T,
+          matrix: Matrix2D
+        ): T {
+          const {
+            x,
+            y,
+            rotation,
+            scaleX,
+            scaleY,
+            anchorX,
+            anchorY,
+          } = textureProps;
+          const transform = m2d.transform(
+            matrix,
+            x,
+            y,
+            scaleX,
+            scaleY,
+            rotation * toRad,
+            anchorX,
+            anchorY,
+            1,
+            1
+          );
+          return {
+            ...textureProps,
+            x: Math.round(transform[4]),
+            y: Math.round(transform[5]),
+            rotation: Math.round(Math.acos(transform[0]) / toRad),
+          };
+        }
+
+        if (
+          texture.type === "imageArray" ||
+          texture.type === "mutImageArrayRender"
+        ) {
           textures.push(
-            ...texture.props.map(
+            ...(texture.props as ImageTexture["props"][]).map(
               (props): ImageTexture => {
-                const { x, y, rotation } = getPosStack.reduce(
-                  (pos, posFn) => posFn(pos),
-                  props as Pos
-                );
                 return {
                   type: "image",
-                  props: {
-                    fileName: texture.fileName,
-                    mask: texture.mask,
-                    ...props,
-                    x: Math.round(x),
-                    y: Math.round(y),
-                    rotation: Math.round(rotation),
-                  },
+                  props: updatePropsPos(props, matrix),
+                  // props: {
+                  //   fileName: texture.fileName,
+                  //   mask: texture.mask,
+                  //   ...props,
+                  //   x: Math.round(x),
+                  //   y: Math.round(y),
+                  //   rotation: Math.round(rotation),
+                  // },
                 };
               }
             )
           );
-        } else if (texture.type === "rectangleArray") {
+        } else if (
+          texture.type === "rectangleArray" ||
+          texture.type === "mutRectangleArrayRender"
+        ) {
           textures.push(
-            ...texture.props.map(
+            ...(texture.props as RectangleTexture["props"][]).map(
               (props): RectangleTexture => {
-                const { x, y, rotation } = getPosStack.reduce(
-                  (pos, posFn) => posFn(pos),
-                  props as Pos
-                );
                 return {
                   type: "rectangle",
-                  props: {
-                    mask: texture.mask,
-                    ...props,
-                    x: Math.round(x),
-                    y: Math.round(y),
-                    rotation: Math.round(rotation),
-                  },
+                  props: updatePropsPos(props, matrix),
+                  // props: {
+                  //   mask: texture.mask,
+                  //   ...props,
+                  //   x: Math.round(x),
+                  //   y: Math.round(y),
+                  //   rotation: Math.round(rotation),
+                  // },
                 };
               }
             )
@@ -503,13 +532,8 @@ export function testSprite<P, S, I>(
         } else {
           textures.push({
             ...texture,
-            props: {
-              ...texture.props,
-              x: Math.round(x),
-              y: Math.round(y),
-              rotation: Math.round(rotation),
-            },
-          } as SingleTexture);
+            props: updatePropsPos(texture.props, matrix),
+          } as AllSingleTexture);
         }
       },
       startNativeSprite: () => null,
@@ -520,13 +544,36 @@ export function testSprite<P, S, I>(
   const TestContainer = makeSprite<GameProps>({
     render() {
       return [
-        // Wrap sprite with contexts passed in options
-        contextTuples.reduce<Sprite>((prevSprite, [context, contextValue]) => {
-          return context.Sprite({
-            context: contextValue,
-            sprites: [prevSprite],
-          });
-        }, sprite),
+        sprite.type === "custom"
+          ? // Wrap sprite with contexts passed in options
+            contextTuples.reduce<Sprite>(
+              (prevSprite, [context, contextValue]) => {
+                return context.Sprite({
+                  context: contextValue,
+                  sprites: [prevSprite],
+                });
+              },
+              sprite
+            )
+          : MutContexts.Single({ id: "MutContexts", sprite }),
+      ];
+    },
+  });
+
+  const MutContexts = makeMutableSprite<{
+    sprite: MutableSprite<any, any, any>;
+  }>({
+    render({ props }) {
+      return [
+        mutContextTuples.reduce<AllMutSprite>(
+          (prevSprite, [context, contextValue]) => {
+            return context.Single({
+              context: contextValue,
+              sprites: [prevSprite],
+            });
+          },
+          props.sprite
+        ),
       ];
     },
   });
@@ -588,7 +635,7 @@ export function testSprite<P, S, I>(
    * event loop.
    */
   async function jumpToFrame(
-    condition: () => boolean | SingleTexture,
+    condition: () => boolean | AllSingleTexture,
     maxFrames = 1800
   ) {
     let lastErrorMsg: string | null = null;
@@ -641,10 +688,10 @@ export function testSprite<P, S, I>(
   }
 
   /**
-   * Get a texture with matching test id. If multiple textures found, return the
-   * first one. Throws if no matches found.
+   * Get a texture with matching test id. If multiple textures found, returns
+   * the first one. Throws if no matches found.
    */
-  function getTexture(testId: string): SingleTexture {
+  function getTexture(testId: string): AllSingleTexture {
     const match = textures.find((texture) => texture.props.testId === testId);
     if (!match) {
       throw Error(`No textures found with test id "${testId}"`);
@@ -665,8 +712,10 @@ export function testSprite<P, S, I>(
     }
   }
 
-  function isTextTexture(texture: Texture): texture is TextTexture {
-    return texture.type === "text";
+  function isTextTexture(
+    texture: AllSingleTexture
+  ): texture is TextTexture | MutTextTexture {
+    return texture.type === "text" || texture.type === "mutText";
   }
 
   /**
@@ -725,6 +774,7 @@ function removeStackLines(stack: string, removeLineContaining: string) {
 }
 
 type ContextTuple<T> = [Context<T>, T];
+type MutContextTuple<T> = [Context<T>, () => T];
 
 export function mockContext<T>(
   context: Context<T>,
@@ -732,3 +782,12 @@ export function mockContext<T>(
 ): ContextTuple<T> {
   return [context, mockValue];
 }
+
+export function mockMutContext<T>(
+  context: Context<T>,
+  mockValue: T
+): MutContextTuple<T> {
+  return [context, () => mockValue];
+}
+
+const toRad = Math.PI / 180;

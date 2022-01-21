@@ -97,6 +97,8 @@ export interface ReplayPlatform<I> {
   mutDevice: Device;
 
   render: PlatformRender;
+
+  isTestPlatform: boolean;
 }
 
 export type PlatformRender = {
@@ -152,7 +154,12 @@ export function replayCore<S, I>(
 ): {
   runNextFrame: (time: number, resetInputs: () => void) => void;
 } {
-  const { mutDevice, getInputs: getInputsPlatform, newInputs } = platform;
+  const {
+    mutDevice,
+    getInputs: getInputsPlatform,
+    newInputs,
+    isTestPlatform,
+  } = platform;
 
   const stateStackPool: StateStackPool = {
     index: 0,
@@ -269,6 +276,7 @@ export function replayCore<S, I>(
     gameSprite.props.id,
     nativeSpriteSettings,
     mutPlatformRender,
+    isTestPlatform,
     []
   );
 
@@ -350,6 +358,7 @@ export function replayCore<S, I>(
           gameSprite.props.id,
           nativeSpriteSettings,
           mutPlatformRender,
+          isTestPlatform,
           []
         );
 
@@ -382,6 +391,7 @@ function traverseCustomSpriteContainer<P, I>(
   parentGlobalId: string,
   nativeSpriteSettings: NativeSpriteSettings,
   platformRender: PlatformRender,
+  isTestPlatform: boolean,
   contextValues: ContextValue[]
 ) {
   const { baseProps } = customSpriteContainer;
@@ -423,6 +433,7 @@ function traverseCustomSpriteContainer<P, I>(
     parentGlobalId,
     nativeSpriteSettings,
     platformRender,
+    isTestPlatform,
     contextValues,
     addChildId
   );
@@ -487,6 +498,7 @@ function handleSprites<P, I>(
   parentGlobalId: string,
   nativeSpriteSettings: NativeSpriteSettings,
   platformRender: PlatformRender,
+  isTestPlatform: boolean,
   contextValues: ContextValue[],
   addChildId: (id: string) => void
 ) {
@@ -508,6 +520,7 @@ function handleSprites<P, I>(
         parentGlobalId,
         nativeSpriteSettings,
         platformRender,
+        isTestPlatform,
         // Adding the context value to nested sprites here
         [...contextValues, sprite],
         addChildId
@@ -649,6 +662,7 @@ function handleSprites<P, I>(
         globalId,
         nativeSpriteSettings,
         platformRender,
+        isTestPlatform,
         contextValues
       );
     } else if (sprite.type === "mutable") {
@@ -662,10 +676,13 @@ function handleSprites<P, I>(
 
       const globalId = `${parentGlobalId}--${sprite.props.id}`;
 
+      let spriteInitCreation = false;
+
       if (
         !lookupMutableSpriteContainer ||
         lookupMutableSpriteContainer.type !== "mutable"
       ) {
+        spriteInitCreation = true;
         lookupMutableSpriteContainer = createMutableSpriteContainer(
           sprite,
           mutDevice,
@@ -676,6 +693,7 @@ function handleSprites<P, I>(
           globalId,
           [],
           platformRender,
+          isTestPlatform,
           nativeSpriteSettings
         ) as MutableSpriteContainer<any, any, any>;
         if (lookupMutableSpriteContainer.type !== "mutable") {
@@ -697,7 +715,7 @@ function handleSprites<P, I>(
         lookupMutableSpriteContainer.props as SpriteBaseProps,
         stackItem
       );
-      lookupMutableSpriteContainer.updateSprites();
+      lookupMutableSpriteContainer.updateSprites(spriteInitCreation);
       platformRender.endRenderSprite(stateStackFns.removeFromStack());
     } else {
       platformRender.renderTexture(stateStackFns.getTopStack(), sprite, null);
@@ -920,13 +938,14 @@ function getRenderMethod(
 function handleAllMutableContainer<I>(
   container: AllMutableSpriteContainer<I>,
   platformRender: PlatformRender,
-  stateStackFns: StateStackFns
+  stateStackFns: StateStackFns,
+  initCreation: boolean
 ) {
   if (container.type === "mutable") {
     container.updateSprite(); // update props
     const stackItem = stateStackFns.addToStack(container.props);
     platformRender.startRenderSprite(container.props, stackItem);
-    container.updateSprites();
+    container.updateSprites(initCreation);
     platformRender.endRenderSprite(stateStackFns.removeFromStack());
   } else if (container.type === "mutableArray") {
     container.updateSprites();
@@ -934,7 +953,7 @@ function handleAllMutableContainer<I>(
       const containerEl = container.containersArray[key];
       const stackItem = stateStackFns.addToStack(containerEl.props);
       platformRender.startRenderSprite(containerEl.props, stackItem);
-      containerEl.updateSprites();
+      containerEl.updateSprites(initCreation);
       platformRender.endRenderSprite(stateStackFns.removeFromStack());
     }
   } else if (container.type === "mutTexture") {
@@ -954,11 +973,21 @@ function handleAllMutableContainer<I>(
   } else if (container.type === "mutConditional") {
     container.updateConditional();
     container.containers.forEach((container) => {
-      handleAllMutableContainer(container, platformRender, stateStackFns);
+      handleAllMutableContainer(
+        container,
+        platformRender,
+        stateStackFns,
+        initCreation
+      );
     });
   } else if (container.type === "mutContext") {
     container.containers.forEach((container) => {
-      handleAllMutableContainer(container, platformRender, stateStackFns);
+      handleAllMutableContainer(
+        container,
+        platformRender,
+        stateStackFns,
+        initCreation
+      );
     });
   } else if (container.type === "native") {
     container.updateSprite();
@@ -977,6 +1006,7 @@ function createMutableSpriteContainer<P, S, I>(
   globalId: string,
   contextValues: MutContextValue[],
   platformRender: PlatformRender,
+  isTestPlatform: boolean,
   nativeSpriteSettings: NativeSpriteSettings
 ): AllMutableSpriteContainer<I> {
   if (sprite.type !== "mutable" && sprite.type !== "mutableArray") {
@@ -1016,7 +1046,7 @@ function createMutableSpriteContainer<P, S, I>(
               }
             : {
                 type: "mutImageArrayRender",
-                fileName: sprite.props.fileName,
+                fileName: sprite.fileName,
                 props: Array.from({ length: sprite.array.length }).map(() => ({
                   ...sprite.props,
                 })),
@@ -1046,6 +1076,10 @@ function createMutableSpriteContainer<P, S, I>(
               index: number
             ) => void;
             update(props, array[index], index);
+
+            if (isTestPlatform && sprite.testId) {
+              props.testId = sprite.testId(array[index], index);
+            }
           });
         },
       };
@@ -1070,6 +1104,7 @@ function createMutableSpriteContainer<P, S, I>(
             `${globalId}--${isTrue}-${index}`,
             contextValues,
             platformRender,
+            isTestPlatform,
             nativeSpriteSettings
           )
         ),
@@ -1090,6 +1125,7 @@ function createMutableSpriteContainer<P, S, I>(
                   `${globalId}--true-${index}`,
                   contextValues,
                   platformRender,
+                  isTestPlatform,
                   nativeSpriteSettings
                 )
               );
@@ -1109,6 +1145,7 @@ function createMutableSpriteContainer<P, S, I>(
                   `${globalId}--false-${index}`,
                   contextValues,
                   platformRender,
+                  isTestPlatform,
                   nativeSpriteSettings
                 )
               );
@@ -1136,6 +1173,7 @@ function createMutableSpriteContainer<P, S, I>(
             `${globalId}--${index}`,
             newContextValues,
             platformRender,
+            isTestPlatform,
             nativeSpriteSettings
           )
         ),
@@ -1256,6 +1294,7 @@ function createMutableSpriteContainer<P, S, I>(
             `${globalId}--${id}`,
             contextValues,
             platformRender,
+            isTestPlatform,
             nativeSpriteSettings
           ) as MutableSpriteContainer<P, S, I>,
         };
@@ -1289,6 +1328,7 @@ function createMutableSpriteContainer<P, S, I>(
               `${globalId}--${id}`,
               contextValues,
               platformRender,
+              isTestPlatform,
               nativeSpriteSettings
             ) as MutableSpriteContainer<P, S, I>;
             this.containersArray[id] = container;
@@ -1409,26 +1449,30 @@ function createMutableSpriteContainer<P, S, I>(
           `${globalId}--${index}`,
           contextValues,
           platformRender,
+          isTestPlatform,
           nativeSpriteSettings
         )
       ),
     updateSprite() {
       sprite.update?.(props, 0);
     },
-    updateSprites() {
+    updateSprites(initCreation) {
       if (this.stackIndex === null) {
         this.stackIndex = stateStackFns.getStackIndex();
       }
-      // loopObject.getInputs = () =>
-      //   getInputsPlatform(
-      //     stateStackFns.getStack(spriteContainer?.stackIndex || 0)
-      //       .transformationGameCoords,
-      //     this.inputs
-      //   );
-      spriteObj.loop?.(loopObject);
+
+      if (!initCreation) {
+        // Don't run loop on first frame
+        spriteObj.loop?.(loopObject);
+      }
 
       this.childContainers.forEach((container) => {
-        handleAllMutableContainer(container, platformRender, stateStackFns);
+        handleAllMutableContainer(
+          container,
+          platformRender,
+          stateStackFns,
+          initCreation
+        );
       });
     },
     cleanup() {
@@ -1540,7 +1584,7 @@ type MutableSpriteContainer<P, S, I> = {
   stackIndex: null | number;
   inputs: I;
   updateSprite: () => void;
-  updateSprites: () => void;
+  updateSprites: (initCreation: boolean) => void;
   cleanup: () => void;
 };
 
@@ -1803,34 +1847,6 @@ export type NativeSpriteSettings = {
   nativeSpriteMap: NativeSpriteMap;
   nativeSpriteUtils: NativeSpriteUtils;
 };
-
-/**
- * A mapping of the parent Sprite's (x, y) coordinate to local Sprite
- * coordinates
- */
-export function getLocalCoordsForSprite(baseProps: SpriteBaseProps) {
-  const toRad = Math.PI / 180;
-  const rotation = -(baseProps.rotation || 0) * toRad;
-
-  return ({ x, y }: { x: number; y: number }) => {
-    // This explains the equation for rotating: https://www.youtube.com/watch?v=AAx8JON4KeQ
-    const relativeX = x - baseProps.x;
-    const relativeY = y - baseProps.y;
-
-    const rotatedX =
-      relativeX * Math.cos(rotation) + relativeY * Math.sin(rotation);
-    const rotatedY =
-      -relativeX * Math.sin(rotation) + relativeY * Math.cos(rotation);
-
-    const scaledX = rotatedX / baseProps.scaleX;
-    const scaledY = rotatedY / baseProps.scaleY;
-
-    const anchoredX = scaledX + baseProps.anchorX;
-    const anchoredY = scaledY + baseProps.anchorY;
-
-    return { x: anchoredX, y: anchoredY };
-  };
-}
 
 type UnknownObject = Record<string, unknown>;
 

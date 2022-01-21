@@ -1,40 +1,43 @@
+import { MaskShape } from "./mask";
 import { SpriteBaseProps, mutateBaseProps } from "./props";
 import { Gradient, TextureFont } from "./t";
 
 export const t = {
   text: (
-    arg: Partial<TextProps>,
+    props: Partial<TextProps>,
     update?: (thisProps: TextProps, index: number) => void
   ): MutTextTexture => {
     return {
       type: "mutText",
       props: mutateBaseProps(
         {
-          font: arg.font,
-          text: arg.text || "",
-          color: arg.color || "black",
-          gradient: arg.gradient,
-          strokeColor: arg.strokeColor,
-          strokeThickness: arg.strokeThickness,
+          testId: props.testId,
+          font: props.font,
+          text: props.text || "",
+          color: props.color || "black",
+          gradient: props.gradient,
+          strokeColor: props.strokeColor,
+          strokeThickness: props.strokeThickness,
         },
-        arg
+        props
       ),
       update,
     };
   },
   circle: (
-    arg: Partial<CircleProps>,
+    props: Partial<CircleProps>,
     update?: (thisProps: CircleProps) => void
   ): MutCircleTexture => {
     return {
       type: "mutCircle",
       props: mutateBaseProps(
         {
-          radius: arg.radius || 10,
-          color: arg.color || "black",
-          gradient: arg.gradient,
+          testId: props.testId,
+          radius: props.radius || 10,
+          color: props.color || "black",
+          gradient: props.gradient,
         },
-        arg
+        props
       ),
       update,
     };
@@ -47,6 +50,7 @@ export const t = {
       type: "mutRectangle",
       props: mutateBaseProps(
         {
+          testId: props.testId,
           width: props.width || 10,
           height: props.height || 10,
           color: props.color || "black",
@@ -59,23 +63,27 @@ export const t = {
   },
   rectangleArray: <ItemState>({
     props,
+    mask,
     update,
     array,
+    testId,
   }: {
-    // mask?: MaskShape;
+    mask?: MaskShape;
     props: Partial<RectangleProps>;
     update: (
-      thisProps: RectangleProps,
+      thisProps: Omit<RectangleProps, "mask">,
       itemState: ItemState,
       index: number
     ) => void;
     array: () => ItemState[];
+    testId?: (itemState: ItemState, index: number) => string;
   }): MutRectangleArrayTexture<ItemState> => {
     return {
       type: "mutRectangleArray",
-      // mask: arg.mask || null,
+      mask: mask || null,
       props: mutateBaseProps(
         {
+          testId: props.testId,
           width: props.width || 10,
           height: props.height || 10,
           color: props.color || "black",
@@ -84,6 +92,7 @@ export const t = {
         props
       ),
       update,
+      testId,
       array,
     };
   },
@@ -95,6 +104,7 @@ export const t = {
       type: "mutLine",
       props: mutateBaseProps(
         {
+          testId: props.testId,
           color: props.color,
           fillColor: props.fillColor,
           thickness: props.thickness ?? 1,
@@ -116,6 +126,7 @@ export const t = {
       type: "mutImage",
       props: mutateBaseProps(
         {
+          testId: props.testId,
           width: props.width || 10,
           height: props.height || 10,
           fileName: props.fileName || "<not set>",
@@ -127,30 +138,35 @@ export const t = {
   },
   imageArray: <ItemState>({
     props,
+    mask,
     update,
     array,
+    testId,
   }: {
-    // mask?: MaskShape;
+    mask?: MaskShape;
     props: Partial<ImageProps>;
     update: (
-      thisProps: Omit<ImageProps, "fileName" | "mask">,
+      thisProps: ImageArrayItemProps,
       itemState: ItemState,
       index: number
     ) => void;
     array: () => ItemState[];
+    testId?: (itemState: ItemState, index: number) => string;
   }): MutImageArrayTexture<ItemState> => {
     return {
       type: "mutImageArray",
-      // mask: arg.mask || null,
-      props: mutateBaseProps(
+      fileName: props.fileName || "<not set>",
+      mask: mask || null,
+      props: mutateBaseProps<Omit<ImageProps, "fileName">>(
         {
+          testId: props.testId,
           width: props.width || 10,
           height: props.height || 10,
-          fileName: props.fileName || "<not set>",
         },
         props
       ),
       update,
+      testId,
       array,
     };
   },
@@ -162,6 +178,7 @@ export const t = {
       type: "mutSpriteSheet",
       props: mutateBaseProps(
         {
+          testId: props.testId,
           fileName: props.fileName || "<not set>",
           columns: props.columns || 1,
           rows: props.rows || 1,
@@ -244,18 +261,19 @@ export interface MutRectangleTexture {
 }
 export interface MutRectangleArrayTexture<ItemState> {
   type: "mutRectangleArray";
-  // mask: MaskShape;
+  mask: MaskShape;
   props: RectangleProps;
   update: (
-    thisProps: RectangleProps,
+    thisProps: Omit<RectangleProps, "mask">,
     itemState: ItemState,
     index: number
   ) => void;
   array: () => ItemState[];
+  testId?: (itemState: ItemState, index: number) => string;
 }
 export interface MutRectangleArrayTextureRender {
   type: "mutRectangleArrayRender";
-  mask: null;
+  mask: MaskShape;
   props: RectangleProps[];
 }
 
@@ -287,21 +305,26 @@ export interface MutImageTexture {
   update?: (thisProps: ImageProps) => void;
 }
 
+type ImageArrayItemProps = Omit<ImageProps, "fileName" | "mask">;
+
 export interface MutImageArrayTexture<ItemState> {
   type: "mutImageArray";
-  props: ImageProps;
+  fileName: string;
+  props: ImageArrayItemProps;
+  mask: MaskShape;
   update: (
-    thisProps: Omit<ImageProps, "fileName" | "mask">,
+    thisProps: ImageArrayItemProps,
     itemState: ItemState,
     index: number
   ) => void;
   array: () => ItemState[];
+  testId?: (itemState: ItemState, index: number) => string;
 }
 export interface MutImageArrayTextureRender {
   type: "mutImageArrayRender";
   fileName: string;
-  mask: null;
-  props: ImageProps[];
+  mask: MaskShape;
+  props: ImageArrayItemProps[];
 }
 
 // -- SpriteSheet
