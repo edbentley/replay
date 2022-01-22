@@ -303,10 +303,11 @@ export type NativeSpriteUtils = {
 export function makeNativeSprite<P extends { id: string }>(
   name: string
 ): (props: P, update?: (thisProps: P) => void) => NativeSprite<P> {
-  return (props) => ({
+  return (props, update) => ({
     type: "native",
     name,
     props,
+    update,
   });
 }
 
@@ -339,6 +340,8 @@ export type AllMutSprite =
   | MutableSpriteArray<any, any, any, any>
   | MutTexture
   | MutConditionalItem
+  | MutRerenderOnChange<any>
+  | MutRun
   | MutContextSprite<any>
   | NativeSprite<any>;
 
@@ -373,6 +376,7 @@ export function makeMutableSprite<
     Array: function makeSpriteArrayCallback<ItemState>({
       props,
       update,
+      updateAll,
       filter,
       array,
       key,
@@ -383,6 +387,7 @@ export function makeMutableSprite<
         itemState: ItemState,
         index: number
       ) => void;
+      updateAll?: (thisProps: MutSpriteProps<P>) => void;
       filter?: (itemState: ItemState, index: number) => boolean;
       array: () => ItemState[];
       key: (itemState: ItemState, index: number) => string | number;
@@ -392,6 +397,7 @@ export function makeMutableSprite<
         spriteObj,
         props,
         update,
+        updateAll,
         filter,
         array,
         key,
@@ -411,6 +417,7 @@ export interface MutableSpriteArray<P, S, I, ItemState> {
   spriteObj: MutableSpriteObj<P, S, I>;
   props: (itemState: ItemState, index: number) => MutSpriteProps<P>;
   update?: (thisProps: P, itemState: ItemState, index: number) => void;
+  updateAll?: (thisProps: MutSpriteProps<P>) => void;
   filter?: (itemState: ItemState, index: number) => boolean;
   array: () => ItemState[];
   key: (itemState: ItemState, index: number) => string | number;
@@ -494,6 +501,22 @@ export const r = {
       falseSprites,
     };
   },
+  onChange: <T>(
+    value: () => T,
+    sprites: () => AllMutSprite[]
+  ): MutRerenderOnChange<T> => {
+    return {
+      type: "onChange",
+      value,
+      sprites,
+    };
+  },
+  run: (fn: () => void): MutRun => {
+    return {
+      type: "run",
+      fn,
+    };
+  },
 };
 
 export type MutConditionalItem = {
@@ -501,4 +524,15 @@ export type MutConditionalItem = {
   condition: () => boolean;
   trueSprites: () => AllMutSprite[];
   falseSprites: () => AllMutSprite[];
+};
+
+export type MutRerenderOnChange<T> = {
+  type: "onChange";
+  value: () => T;
+  sprites: () => AllMutSprite[];
+};
+
+export type MutRun = {
+  type: "run";
+  fn: () => void;
 };

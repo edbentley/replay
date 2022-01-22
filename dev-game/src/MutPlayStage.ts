@@ -7,6 +7,7 @@ import { MutWalkingGreenCapChar } from "./MutSpriteSheet";
 import { MutPosLogger } from "./MutPosLogger";
 import { MutClickable } from "./MutClickable";
 import { testContext, TestContextChild, TestContext } from "./TestContext";
+import { TextInput } from "../../packages/replay-text-input/src";
 
 interface State {
   loading: boolean;
@@ -21,6 +22,7 @@ interface State {
   testContext: TestContext;
   spawnEnemyTimerId: string;
   paused: boolean;
+  text: string;
 }
 
 export interface Bullet {
@@ -77,6 +79,7 @@ export const MutPlayStage = makeMutableSprite<
       pointer: { x: 0, y: 0 },
       score: 0,
       spawnEnemyTimerId: "",
+      text: "",
       paused: false,
       testContext: { val: 0 },
     };
@@ -166,6 +169,26 @@ export const MutPlayStage = makeMutableSprite<
         () => state.loading,
         () => [t2.text({ text: "Loading level", color: "black" })],
         () => [
+          TextInput(
+            {
+              id: "TestInput",
+              fontName: "Calibri",
+              fontSize: 20,
+              text: state.text,
+              onChangeText: (text) => {
+                state.text = text;
+              },
+              width: 100,
+              x: -width / 2 + 100,
+              y: -height / 2 + 40,
+              numberOfLines: 3,
+              align: "left",
+              color: "red",
+            },
+            (thisProps) => {
+              thisProps.text = state.text;
+            }
+          ),
           testContext.Single({
             context: () => state.testContext,
             sprites: [TestContextChild.Single({})],
