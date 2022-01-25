@@ -90,6 +90,6 @@ export function mutateBaseProps<T extends SpriteBaseProps>(
   toAddProps.anchorX = props.anchorX || 0;
   toAddProps.anchorY = props.anchorY || 0;
   toAddProps.mask = props.mask || null;
-  toAddProps.show = props.show || true;
+  toAddProps.show = props.show ?? true;
   return toAddProps;
 }

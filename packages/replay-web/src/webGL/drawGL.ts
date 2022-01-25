@@ -393,6 +393,7 @@ export function draw(
         applyMask(texture.mask, topStack.transformation);
 
         texture.props.forEach((textProps) => {
+          if (!textProps.show) return;
           applyTransformMut(topStack.transformation, newMatrix, textProps);
           handleTextTextureLocal(textProps, topStack.opacity);
         });
@@ -419,6 +420,7 @@ export function draw(
         }
 
         texture.props.forEach((circleProps, index) => {
+          if (!circleProps.show) return;
           applyTransformMut(topStack.transformation, newMatrix, circleProps);
 
           drawCircle(
@@ -460,6 +462,7 @@ export function draw(
         }
 
         texture.props.forEach((lineProps, index) => {
+          if (!lineProps.show) return;
           applyTransformMut(topStack.transformation, newMatrix, lineProps);
           handleLineTextureLocal(
             lineProps,

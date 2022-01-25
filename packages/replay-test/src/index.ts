@@ -21,10 +21,7 @@ import {
 import { NativeSpriteMock } from "./nativeSpriteMock";
 import { AssetMap } from "@replay/core/dist/device";
 import { m2d, Matrix2D } from "@replay/core/dist/matrix";
-import { MutSingleTexture, MutTextTexture } from "@replay/core/dist/t2";
 import { MaskShape } from "@replay/core/dist/mask";
-
-type AllSingleTexture = SingleTexture | MutSingleTexture;
 
 interface Timer {
   id: string;
@@ -102,15 +99,15 @@ export interface TestSpriteOptions<I> {
 interface TestSpriteUtils<I> {
   nextFrame: () => void;
   jumpToFrame: (
-    condition: () => boolean | AllSingleTexture,
+    condition: () => boolean | SingleTexture,
     maxFrames?: number
   ) => Promise<void>;
   setRandomNumbers: (numbers: number[]) => void;
   updateInputs: (newInputs: I) => void;
-  getTextures: () => AllSingleTexture[];
-  getTexture: (testId: string) => AllSingleTexture;
+  getTextures: () => SingleTexture[];
+  getTexture: (testId: string) => SingleTexture;
   textureExists: (testId: string) => boolean;
-  getByText: (text: string) => (TextTexture | MutTextTexture)[];
+  getByText: (text: string) => TextTexture[];
   log: jest.Mock<any, any>;
   resolvePromises: () => Promise<void>;
   audio: {
@@ -148,24 +145,26 @@ export function testSprite<P, S, I>(
   gameProps: GameProps,
   options: TestSpriteOptions<I> = {}
 ): TestSpriteUtils<I> {
+  const width =
+    "width" in gameProps.size
+      ? gameProps.size.width
+      : gameProps.size.landscape.width;
+  const height =
+    "height" in gameProps.size
+      ? gameProps.size.height
+      : gameProps.size.landscape.height;
   const {
     initInputs = {} as I,
     contexts: contextTuples = [],
     mutContexts: mutContextTuples = [],
     initRandom = [0.5],
     size = {
-      width:
-        "width" in gameProps.size
-          ? gameProps.size.width
-          : gameProps.size.landscape.width,
-      height:
-        "height" in gameProps.size
-          ? gameProps.size.height
-          : gameProps.size.landscape.height,
+      width,
+      height,
       widthMargin: 0,
       heightMargin: 0,
-      fullWidth: 0,
-      fullHeight: 0,
+      fullWidth: width,
+      fullHeight: height,
       deviceWidth: 1000,
       deviceHeight: 500,
     },
@@ -377,7 +376,7 @@ export function testSprite<P, S, I>(
     },
   };
 
-  const textures: AllSingleTexture[] = [];
+  const textures: SingleTexture[] = [];
 
   const timers: Timer[] = [];
 
@@ -456,7 +455,7 @@ export function testSprite<P, S, I>(
         /**
          * Replace texture's position with absolute game coordinates
          */
-        function updateTextureProps<T extends AllSingleTexture["props"]>(
+        function updateTextureProps<T extends SingleTexture["props"]>(
           textureProps: T,
           matrix: Matrix2D,
           mask: MaskShape
@@ -500,7 +499,11 @@ export function testSprite<P, S, I>(
               (props): ImageTexture => {
                 return {
                   type: "image",
-                  props: updateTextureProps(props, matrix, texture.mask),
+                  props: updateTextureProps(
+                    { ...props, fileName: texture.fileName },
+                    matrix,
+                    texture.mask
+                  ),
                 };
               }
             )
@@ -555,12 +558,26 @@ export function testSprite<P, S, I>(
         } else {
           textures.push({
             ...texture,
+            type:
+              texture.type === "mutCircle"
+                ? "circle"
+                : texture.type === "mutImage"
+                ? "image"
+                : texture.type === "mutRectangle"
+                ? "rectangle"
+                : texture.type === "mutLine"
+                ? "line"
+                : texture.type === "mutText"
+                ? "text"
+                : texture.type === "mutSpriteSheet"
+                ? "spriteSheet"
+                : texture.type,
             props: updateTextureProps(
               texture.props,
               matrix,
               texture.props.mask
             ),
-          } as AllSingleTexture);
+          } as SingleTexture);
         }
       },
       startNativeSprite: () => null,
@@ -662,7 +679,7 @@ export function testSprite<P, S, I>(
    * event loop.
    */
   async function jumpToFrame(
-    condition: () => boolean | AllSingleTexture,
+    condition: () => boolean | SingleTexture,
     maxFrames = 1800
   ) {
     let lastErrorMsg: string | null = null;
@@ -718,7 +735,7 @@ export function testSprite<P, S, I>(
    * Get a texture with matching test id. If multiple textures found, returns
    * the first one. Throws if no matches found.
    */
-  function getTexture(testId: string): AllSingleTexture {
+  function getTexture(testId: string): SingleTexture {
     const match = textures.find((texture) => texture.props.testId === testId);
     if (!match) {
       throw Error(`No textures found with test id "${testId}"`);
@@ -739,10 +756,8 @@ export function testSprite<P, S, I>(
     }
   }
 
-  function isTextTexture(
-    texture: AllSingleTexture
-  ): texture is TextTexture | MutTextTexture {
-    return texture.type === "text" || texture.type === "mutText";
+  function isTextTexture(texture: SingleTexture): texture is TextTexture {
+    return texture.type === "text";
   }
 
   /**
