@@ -1031,6 +1031,9 @@ function createMutableSpriteContainer<P, S, I>(
     }
     if (
       sprite.type === "mutRectangleArray" ||
+      sprite.type === "mutTextArray" ||
+      sprite.type === "mutCircleArray" ||
+      sprite.type === "mutLineArray" ||
       sprite.type === "mutImageArray"
     ) {
       return {
@@ -1039,6 +1042,30 @@ function createMutableSpriteContainer<P, S, I>(
           sprite.type === "mutRectangleArray"
             ? {
                 type: "mutRectangleArrayRender",
+                props: Array.from({ length: sprite.array.length }).map(() => ({
+                  ...sprite.props,
+                })),
+                mask: null,
+              }
+            : sprite.type === "mutTextArray"
+            ? {
+                type: "mutTextArrayRender",
+                props: Array.from({ length: sprite.array.length }).map(() => ({
+                  ...sprite.props,
+                })),
+                mask: null,
+              }
+            : sprite.type === "mutCircleArray"
+            ? {
+                type: "mutCircleArrayRender",
+                props: Array.from({ length: sprite.array.length }).map(() => ({
+                  ...sprite.props,
+                })),
+                mask: null,
+              }
+            : sprite.type === "mutLineArray"
+            ? {
+                type: "mutLineArrayRender",
                 props: Array.from({ length: sprite.array.length }).map(() => ({
                   ...sprite.props,
                 })),
@@ -1400,12 +1427,10 @@ function createMutableSpriteContainer<P, S, I>(
 
           sprite.updateAll?.(container.props);
 
-          const update = sprite.update as (
-            thisProps: any,
-            itemState: any,
-            index: number
-          ) => void;
-          update(container.props, array[index], index);
+          const update = sprite.update as
+            | ((thisProps: any, itemState: any, index: number) => void)
+            | undefined;
+          update?.(container.props, array[index], index);
         });
 
         if (idIndex < ids.length) {
@@ -1948,6 +1973,27 @@ function getInitTextureState(texture: MutTexture): null | Record<any, any> {
         colours: new Float32Array(),
       };
 
+    case "mutCircleArray":
+      return {
+        pointsByIndex: Array.from({
+          length: texture.array().length,
+        }).map(() => ({ points: new Float32Array() })),
+      };
+
+    case "mutLineArray":
+      return {
+        stateByIndex: Array.from({
+          length: texture.array().length,
+        }).map(() => ({
+          lineCaps: null,
+          linePath: new Float32Array(),
+          strokePath: new Float32Array(),
+        })),
+      };
+
+    case "mutTextArray":
+    case "mutCircleArray":
+    case "mutLineArray":
     case "mutRectangle":
     case "mutImage":
     case "mutSpriteSheet":

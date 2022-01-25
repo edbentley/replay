@@ -11,7 +11,9 @@ import {
   AllMutSprite,
 } from "@replay/core/dist/sprite";
 import {
+  CircleTexture,
   ImageTexture,
+  LineTexture,
   RectangleTexture,
   SingleTexture,
   TextTexture,
@@ -20,6 +22,7 @@ import { NativeSpriteMock } from "./nativeSpriteMock";
 import { AssetMap } from "@replay/core/dist/device";
 import { m2d, Matrix2D } from "@replay/core/dist/matrix";
 import { MutSingleTexture, MutTextTexture } from "@replay/core/dist/t2";
+import { MaskShape } from "@replay/core/dist/mask";
 
 type AllSingleTexture = SingleTexture | MutSingleTexture;
 
@@ -453,9 +456,10 @@ export function testSprite<P, S, I>(
         /**
          * Replace texture's position with absolute game coordinates
          */
-        function updatePropsPos<T extends AllSingleTexture["props"]>(
+        function updateTextureProps<T extends AllSingleTexture["props"]>(
           textureProps: T,
-          matrix: Matrix2D
+          matrix: Matrix2D,
+          mask: MaskShape
         ): T {
           const {
             x,
@@ -480,6 +484,7 @@ export function testSprite<P, S, I>(
           );
           return {
             ...textureProps,
+            mask,
             x: Math.round(transform[4]),
             y: Math.round(transform[5]),
             rotation: Math.round(Math.acos(transform[0]) / toRad),
@@ -495,15 +500,7 @@ export function testSprite<P, S, I>(
               (props): ImageTexture => {
                 return {
                   type: "image",
-                  props: updatePropsPos(props, matrix),
-                  // props: {
-                  //   fileName: texture.fileName,
-                  //   mask: texture.mask,
-                  //   ...props,
-                  //   x: Math.round(x),
-                  //   y: Math.round(y),
-                  //   rotation: Math.round(rotation),
-                  // },
+                  props: updateTextureProps(props, matrix, texture.mask),
                 };
               }
             )
@@ -517,14 +514,40 @@ export function testSprite<P, S, I>(
               (props): RectangleTexture => {
                 return {
                   type: "rectangle",
-                  props: updatePropsPos(props, matrix),
-                  // props: {
-                  //   mask: texture.mask,
-                  //   ...props,
-                  //   x: Math.round(x),
-                  //   y: Math.round(y),
-                  //   rotation: Math.round(rotation),
-                  // },
+                  props: updateTextureProps(props, matrix, texture.mask),
+                };
+              }
+            )
+          );
+        } else if (texture.type === "mutTextArrayRender") {
+          textures.push(
+            ...(texture.props as TextTexture["props"][]).map(
+              (props): TextTexture => {
+                return {
+                  type: "text",
+                  props: updateTextureProps(props, matrix, texture.mask),
+                };
+              }
+            )
+          );
+        } else if (texture.type === "mutCircleArrayRender") {
+          textures.push(
+            ...(texture.props as CircleTexture["props"][]).map(
+              (props): CircleTexture => {
+                return {
+                  type: "circle",
+                  props: updateTextureProps(props, matrix, texture.mask),
+                };
+              }
+            )
+          );
+        } else if (texture.type === "mutLineArrayRender") {
+          textures.push(
+            ...(texture.props as LineTexture["props"][]).map(
+              (props): LineTexture => {
+                return {
+                  type: "line",
+                  props: updateTextureProps(props, matrix, texture.mask),
                 };
               }
             )
@@ -532,7 +555,11 @@ export function testSprite<P, S, I>(
         } else {
           textures.push({
             ...texture,
-            props: updatePropsPos(texture.props, matrix),
+            props: updateTextureProps(
+              texture.props,
+              matrix,
+              texture.props.mask
+            ),
           } as AllSingleTexture);
         }
       },

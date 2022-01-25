@@ -10,7 +10,7 @@ import {
   handleTextTexture,
 } from "./canvasGL";
 import { m2d, m2dMut, Matrix2D } from "@replay/core/dist/matrix";
-import { TextureFont } from "@replay/core/dist/t";
+import { LineTexture, TextTexture, TextureFont } from "@replay/core/dist/t";
 import { getDrawLine, getDrawLineGrad } from "./lineGL";
 import { getDrawCircle } from "./circleGL";
 import { createGradTexture, hexToRGB, RenderState } from "./glUtils";
@@ -176,6 +176,136 @@ export function draw(
 
   const [bgR, bgG, bgB] = hexToRGB(bgColor);
 
+  function handleLineTextureLocal(
+    textureProps: LineTexture["props"],
+    stackOpacity: number,
+    textureState: any
+  ) {
+    const tState = textureState || {
+      lineCaps: null,
+      linePath: new Float32Array(),
+      strokePath: new Float32Array(),
+    };
+
+    const gradient = textureProps.fillGradient;
+    if (gradient) {
+      const gradCacheKey = `${gradient.type}-${gradient.colors.join("")}-${(
+        gradient.opacities || []
+      ).join("")}`;
+
+      let cacheValue = textureMap[gradCacheKey];
+
+      if (!cacheValue) {
+        cacheValue = {
+          texture: createGradTexture(gl, gradient),
+          // unused
+          width: 0,
+          height: 0,
+          align: "center",
+        };
+        textureMap[gradCacheKey] = cacheValue;
+      } else {
+        unusedTextures.delete(gradCacheKey);
+      }
+
+      drawLineGrad(
+        newMatrix,
+        // Default for non-mut line
+        tState,
+        cacheValue.texture,
+        textureProps.path,
+        gradient,
+        textureProps.opacity * stackOpacity
+      );
+    }
+    if (textureProps.color || textureProps.fillColor) {
+      drawLine(
+        newMatrix,
+        tState,
+        textureProps.path,
+        textureProps.thickness,
+        textureProps.color,
+        textureProps.fillColor,
+        textureProps.lineCap,
+        textureProps.opacity * stackOpacity
+      );
+
+      const capColor = textureProps.color;
+      if (tState.lineCaps && capColor) {
+        tState.lineCaps.forEach((circle: any) => {
+          const m1 = m2dMut.multiplyPooled(
+            m2dMut.getTranslateMatrixPooled(circle.x, circle.y),
+            m2dMut.getRotateMatrixPooled(circle.angleRad)
+          );
+          const m2 = m2dMut.multiplyPooled(newMatrix, m1);
+          drawCircle(
+            m2,
+            circle.textureState,
+            capColor,
+            textureProps.thickness / 2,
+            gameWidth,
+            gameHeight,
+            pxPerPoint,
+            textureProps.opacity * stackOpacity,
+            true
+          );
+        });
+      }
+    }
+  }
+
+  function handleTextTextureLocal(
+    textureProps: TextTexture["props"],
+    stackOpacity: number
+  ) {
+    const { text, color, strokeColor, font } = textureProps;
+    const cacheKey = font
+      ? `${text}-${color}-${strokeColor}-${font.size}-${font.weight}-${font.style}-${font.align}`
+      : `${text}-${color}-${strokeColor}`;
+
+    let cacheValue = textureMap[cacheKey];
+
+    if (!cacheValue) {
+      const align = handleTextTexture(
+        textureProps,
+        offscreenCanvas,
+        offscreenCanvasCtx,
+        defaultFont,
+        devicePixelRatio
+      );
+
+      cacheValue = {
+        texture: createCanvasTexture(gl, offscreenCanvas),
+        width: offscreenCanvas.width,
+        height: offscreenCanvas.height,
+        align,
+      };
+
+      textureMap[cacheKey] = cacheValue;
+    } else {
+      unusedTextures.delete(cacheKey);
+    }
+
+    const { align, width, height } = cacheValue;
+
+    drawCanvas(
+      cacheValue.texture,
+      align === "center"
+        ? newMatrix
+        : m2d.multiply(
+            newMatrix,
+            m2dMut.getTranslateMatrixPooled(
+              (width / (2 * devicePixelRatio)) * (align === "left" ? 1 : -1),
+              0
+            )
+          ),
+      width,
+      height,
+      textureProps.opacity * stackOpacity,
+      devicePixelRatio
+    );
+  }
+
   return {
     newFrame: () => {
       // Set background for game
@@ -257,6 +387,92 @@ export function draw(
         }
         return;
       }
+      if (texture.type === "mutTextArrayRender") {
+        if (texture.props.length === 0) return;
+
+        applyMask(texture.mask, topStack.transformation);
+
+        texture.props.forEach((textProps) => {
+          applyTransformMut(topStack.transformation, newMatrix, textProps);
+          handleTextTextureLocal(textProps, topStack.opacity);
+        });
+
+        if (texture.mask) {
+          clearMask();
+        }
+        return;
+      }
+      if (texture.type === "mutCircleArrayRender") {
+        if (texture.props.length === 0) return;
+
+        applyMask(texture.mask, topStack.transformation);
+
+        const length = texture.props.length;
+        const lengthChange = length - textureState.pointsByIndex.length;
+
+        if (lengthChange > 0) {
+          for (let i = 0; i < lengthChange; i++) {
+            textureState.pointsByIndex.push({ points: new Float32Array() });
+          }
+        } else if (lengthChange < 0) {
+          textureState.pointsByIndex.length = texture.props.length;
+        }
+
+        texture.props.forEach((circleProps, index) => {
+          applyTransformMut(topStack.transformation, newMatrix, circleProps);
+
+          drawCircle(
+            newMatrix,
+            textureState.pointsByIndex[index],
+            circleProps.color,
+            circleProps.radius,
+            gameWidth,
+            gameHeight,
+            pxPerPoint,
+            circleProps.opacity * topStack.opacity,
+            false
+          );
+        });
+
+        if (texture.mask) {
+          clearMask();
+        }
+        return;
+      }
+      if (texture.type === "mutLineArrayRender") {
+        if (texture.props.length === 0) return;
+
+        applyMask(texture.mask, topStack.transformation);
+
+        const length = texture.props.length;
+        const lengthChange = length - textureState.stateByIndex.length;
+
+        if (lengthChange > 0) {
+          for (let i = 0; i < lengthChange; i++) {
+            textureState.stateByIndex.push({
+              lineCaps: null,
+              linePath: new Float32Array(),
+              strokePath: new Float32Array(),
+            });
+          }
+        } else if (lengthChange < 0) {
+          textureState.stateByIndex.length = texture.props.length;
+        }
+
+        texture.props.forEach((lineProps, index) => {
+          applyTransformMut(topStack.transformation, newMatrix, lineProps);
+          handleLineTextureLocal(
+            lineProps,
+            topStack.opacity,
+            textureState.stateByIndex[index]
+          );
+        });
+
+        if (texture.mask) {
+          clearMask();
+        }
+        return;
+      }
 
       if (!texture.props.show) {
         return;
@@ -291,77 +507,7 @@ export function draw(
 
         case "mutLine":
         case "line": {
-          const tState = textureState || {
-            lineCaps: null,
-            linePath: new Float32Array(),
-            strokePath: new Float32Array(),
-          };
-
-          const gradient = texture.props.fillGradient;
-          if (gradient) {
-            const gradCacheKey = `${gradient.type}-${gradient.colors.join(
-              ""
-            )}-${(gradient.opacities || []).join("")}`;
-
-            let cacheValue = textureMap[gradCacheKey];
-
-            if (!cacheValue) {
-              cacheValue = {
-                texture: createGradTexture(gl, gradient),
-                // unused
-                width: 0,
-                height: 0,
-                align: "center",
-              };
-              textureMap[gradCacheKey] = cacheValue;
-            } else {
-              unusedTextures.delete(gradCacheKey);
-            }
-
-            drawLineGrad(
-              newMatrix,
-              // Default for non-mut line
-              tState,
-              cacheValue.texture,
-              texture.props.path,
-              gradient,
-              texture.props.opacity * topStack.opacity
-            );
-          }
-          if (texture.props.color || texture.props.fillColor) {
-            drawLine(
-              newMatrix,
-              tState,
-              texture.props.path,
-              texture.props.thickness,
-              texture.props.color,
-              texture.props.fillColor,
-              texture.props.lineCap,
-              texture.props.opacity * topStack.opacity
-            );
-
-            const capColor = texture.props.color;
-            if (tState.lineCaps && capColor) {
-              tState.lineCaps.forEach((circle: any) => {
-                const m1 = m2dMut.multiplyPooled(
-                  m2dMut.getTranslateMatrixPooled(circle.x, circle.y),
-                  m2dMut.getRotateMatrixPooled(circle.angleRad)
-                );
-                const m2 = m2dMut.multiplyPooled(newMatrix, m1);
-                drawCircle(
-                  m2,
-                  circle.textureState,
-                  capColor,
-                  texture.props.thickness / 2,
-                  gameWidth,
-                  gameHeight,
-                  pxPerPoint,
-                  texture.props.opacity * topStack.opacity,
-                  true
-                );
-              });
-            }
-          }
+          handleLineTextureLocal(texture.props, topStack.opacity, textureState);
           break;
         }
 
@@ -429,53 +575,7 @@ export function draw(
 
         case "mutText":
         case "text": {
-          const { text, color, strokeColor, font } = texture.props;
-          const cacheKey = font
-            ? `${text}-${color}-${strokeColor}-${font.size}-${font.weight}-${font.style}-${font.align}`
-            : `${text}-${color}-${strokeColor}`;
-
-          let cacheValue = textureMap[cacheKey];
-
-          if (!cacheValue) {
-            const align = handleTextTexture(
-              texture,
-              offscreenCanvas,
-              offscreenCanvasCtx,
-              defaultFont,
-              devicePixelRatio
-            );
-
-            cacheValue = {
-              texture: createCanvasTexture(gl, offscreenCanvas),
-              width: offscreenCanvas.width,
-              height: offscreenCanvas.height,
-              align,
-            };
-
-            textureMap[cacheKey] = cacheValue;
-          } else {
-            unusedTextures.delete(cacheKey);
-          }
-
-          const { align, width, height } = cacheValue;
-
-          drawCanvas(
-            cacheValue.texture,
-            align === "center"
-              ? newMatrix
-              : m2d.multiply(
-                  newMatrix,
-                  m2dMut.getTranslateMatrixPooled(
-                    (width / (2 * devicePixelRatio)) *
-                      (align === "left" ? 1 : -1),
-                    0
-                  )
-                ),
-            width,
-            height,
-            texture.props.opacity * topStack.opacity,
-            devicePixelRatio
-          );
+          handleTextTextureLocal(texture.props, topStack.opacity);
           break;
         }
       }

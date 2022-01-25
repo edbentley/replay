@@ -24,6 +24,43 @@ export const t = {
       update,
     };
   },
+  textArray: <ItemState>({
+    props,
+    mask,
+    update,
+    array,
+    testId,
+  }: {
+    mask?: MaskShape;
+    props: Partial<TextProps>;
+    update: (
+      thisProps: Omit<TextProps, "mask">,
+      itemState: ItemState,
+      index: number
+    ) => void;
+    array: () => ItemState[];
+    testId?: (itemState: ItemState, index: number) => string;
+  }): MutTextArrayTexture<ItemState> => {
+    return {
+      type: "mutTextArray",
+      mask: mask || null,
+      props: mutateBaseProps(
+        {
+          testId: props.testId,
+          font: props.font,
+          text: props.text || "",
+          color: props.color || "black",
+          gradient: props.gradient,
+          strokeColor: props.strokeColor,
+          strokeThickness: props.strokeThickness,
+        },
+        props
+      ),
+      update,
+      testId,
+      array,
+    };
+  },
   circle: (
     props: Partial<CircleProps>,
     update?: (thisProps: CircleProps) => void
@@ -40,6 +77,40 @@ export const t = {
         props
       ),
       update,
+    };
+  },
+  circleArray: <ItemState>({
+    props,
+    mask,
+    update,
+    array,
+    testId,
+  }: {
+    mask?: MaskShape;
+    props: Partial<CircleProps>;
+    update: (
+      thisProps: Omit<CircleProps, "mask">,
+      itemState: ItemState,
+      index: number
+    ) => void;
+    array: () => ItemState[];
+    testId?: (itemState: ItemState, index: number) => string;
+  }): MutCircleArrayTexture<ItemState> => {
+    return {
+      type: "mutCircleArray",
+      mask: mask || null,
+      props: mutateBaseProps(
+        {
+          testId: props.testId,
+          radius: props.radius || 10,
+          color: props.color || "black",
+          gradient: props.gradient,
+        },
+        props
+      ),
+      update,
+      testId,
+      array,
     };
   },
   rectangle: (
@@ -116,6 +187,44 @@ export const t = {
         props
       ),
       update,
+    };
+  },
+  lineArray: <ItemState>({
+    props,
+    mask,
+    update,
+    array,
+    testId,
+  }: {
+    mask?: MaskShape;
+    props: Partial<LineProps>;
+    update: (
+      thisProps: Omit<LineProps, "mask">,
+      itemState: ItemState,
+      index: number
+    ) => void;
+    array: () => ItemState[];
+    testId?: (itemState: ItemState, index: number) => string;
+  }): MutLineArrayTexture<ItemState> => {
+    return {
+      type: "mutLineArray",
+      mask: mask || null,
+      props: mutateBaseProps(
+        {
+          testId: props.testId,
+          color: props.color,
+          fillColor: props.fillColor,
+          thickness: props.thickness ?? 1,
+          lineCap: props.lineCap || "butt",
+          path: props.path || [],
+          gradient: props.gradient,
+          fillGradient: props.fillGradient,
+        },
+        props
+      ),
+      update,
+      testId,
+      array,
     };
   },
   image: (
@@ -215,9 +324,15 @@ export type RenderableMutTexture = MutSingleTexture | MutArrayTextureRenderable;
 
 export type MutArrayTexture =
   | MutRectangleArrayTexture<any>
+  | MutTextArrayTexture<any>
+  | MutCircleArrayTexture<any>
+  | MutLineArrayTexture<any>
   | MutImageArrayTexture<any>;
 export type MutArrayTextureRenderable =
   | MutRectangleArrayTextureRender
+  | MutTextArrayTextureRender
+  | MutCircleArrayTextureRender
+  | MutLineArrayTextureRender
   | MutImageArrayTextureRender;
 
 // -- Text
@@ -234,6 +349,23 @@ export interface MutTextTexture {
   props: TextProps;
   update?: (arg: TextProps, index: number) => void;
 }
+export interface MutTextArrayTexture<ItemState> {
+  type: "mutTextArray";
+  mask: MaskShape;
+  props: TextProps;
+  update: (
+    thisProps: Omit<TextProps, "mask">,
+    itemState: ItemState,
+    index: number
+  ) => void;
+  array: () => ItemState[];
+  testId?: (itemState: ItemState, index: number) => string;
+}
+export interface MutTextArrayTextureRender {
+  type: "mutTextArrayRender";
+  mask: MaskShape;
+  props: TextProps[];
+}
 
 // -- Circle
 type CircleProps = BaseProps & {
@@ -245,6 +377,23 @@ export interface MutCircleTexture {
   type: "mutCircle";
   props: CircleProps;
   update?: (arg: CircleProps) => void;
+}
+export interface MutCircleArrayTexture<ItemState> {
+  type: "mutCircleArray";
+  mask: MaskShape;
+  props: CircleProps;
+  update: (
+    thisProps: Omit<CircleProps, "mask">,
+    itemState: ItemState,
+    index: number
+  ) => void;
+  array: () => ItemState[];
+  testId?: (itemState: ItemState, index: number) => string;
+}
+export interface MutCircleArrayTextureRender {
+  type: "mutCircleArrayRender";
+  mask: MaskShape;
+  props: CircleProps[];
 }
 
 // -- Rectangle
@@ -291,6 +440,23 @@ export interface MutLineTexture {
   type: "mutLine";
   props: LineProps;
   update?: (thisProps: LineProps) => void;
+}
+export interface MutLineArrayTexture<ItemState> {
+  type: "mutLineArray";
+  mask: MaskShape;
+  props: LineProps;
+  update: (
+    thisProps: Omit<LineProps, "mask">,
+    itemState: ItemState,
+    index: number
+  ) => void;
+  array: () => ItemState[];
+  testId?: (itemState: ItemState, index: number) => string;
+}
+export interface MutLineArrayTextureRender {
+  type: "mutLineArrayRender";
+  mask: MaskShape;
+  props: LineProps[];
 }
 
 // -- Image

@@ -165,13 +165,13 @@ export function createCanvasTexture(
  * Returns required align
  */
 export function handleTextTexture(
-  texture: TextTexture | MutTextTexture,
+  textureProps: TextTexture["props"],
   offscreenCanvas: HTMLCanvasElement,
   offscreenCanvasCtx: CanvasRenderingContext2D,
   defaultFont: TextureFont,
   devicePixelRatio: number
 ): "left" | "center" | "right" {
-  const fontDetails = { ...defaultFont, ...texture.props.font };
+  const fontDetails = { ...defaultFont, ...textureProps.font };
 
   const {
     size = 10,
@@ -184,7 +184,7 @@ export function handleTextTexture(
   const fontString = `${style} ${weight} ${size ? `${size}px` : ""} ${
     family ? `${family}` : ""
   }`;
-  const { text, strokeThickness = 1, color } = texture.props;
+  const { text, strokeThickness = 1, color } = textureProps;
 
   resetCanvas(
     offscreenCanvas,
@@ -202,8 +202,8 @@ export function handleTextTexture(
     strokeThickness,
     baseline,
     "center",
-    texture.props.gradient,
-    texture.props.strokeColor
+    textureProps.gradient,
+    textureProps.strokeColor
   );
 
   return align;
