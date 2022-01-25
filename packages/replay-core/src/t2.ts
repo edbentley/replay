@@ -32,8 +32,8 @@ export const t = {
     testId,
   }: {
     mask?: MaskShape;
-    props: Partial<TextProps>;
-    update: (
+    props: (itemState: ItemState, index: number) => Partial<TextProps>;
+    update?: (
       thisProps: Omit<TextProps, "mask">,
       itemState: ItemState,
       index: number
@@ -44,18 +44,19 @@ export const t = {
     return {
       type: "mutTextArray",
       mask: mask || null,
-      props: mutateBaseProps(
-        {
-          testId: props.testId,
-          font: props.font,
-          text: props.text || "",
-          color: props.color || "black",
-          gradient: props.gradient,
-          strokeColor: props.strokeColor,
-          strokeThickness: props.strokeThickness,
-        },
-        props
-      ),
+      props,
+      // props: mutateBaseProps(
+      //   {
+      //     testId: props.testId,
+      //     font: props.font,
+      //     text: props.text || "",
+      //     color: props.color || "black",
+      //     gradient: props.gradient,
+      //     strokeColor: props.strokeColor,
+      //     strokeThickness: props.strokeThickness,
+      //   },
+      //   props
+      // ),
       update,
       testId,
       array,
@@ -87,8 +88,8 @@ export const t = {
     testId,
   }: {
     mask?: MaskShape;
-    props: Partial<CircleProps>;
-    update: (
+    props: (itemState: ItemState, index: number) => Partial<CircleProps>;
+    update?: (
       thisProps: Omit<CircleProps, "mask">,
       itemState: ItemState,
       index: number
@@ -99,15 +100,16 @@ export const t = {
     return {
       type: "mutCircleArray",
       mask: mask || null,
-      props: mutateBaseProps(
-        {
-          testId: props.testId,
-          radius: props.radius || 10,
-          color: props.color || "black",
-          gradient: props.gradient,
-        },
-        props
-      ),
+      props,
+      // props: mutateBaseProps(
+      //   {
+      //     testId: props.testId,
+      //     radius: props.radius || 10,
+      //     color: props.color || "black",
+      //     gradient: props.gradient,
+      //   },
+      //   props
+      // ),
       update,
       testId,
       array,
@@ -140,8 +142,8 @@ export const t = {
     testId,
   }: {
     mask?: MaskShape;
-    props: Partial<RectangleProps>;
-    update: (
+    props: (itemState: ItemState, index: number) => Partial<RectangleProps>;
+    update?: (
       thisProps: Omit<RectangleProps, "mask">,
       itemState: ItemState,
       index: number
@@ -152,16 +154,17 @@ export const t = {
     return {
       type: "mutRectangleArray",
       mask: mask || null,
-      props: mutateBaseProps(
-        {
-          testId: props.testId,
-          width: props.width || 10,
-          height: props.height || 10,
-          color: props.color || "black",
-          gradient: props.gradient,
-        },
-        props
-      ),
+      props,
+      // props: mutateBaseProps(
+      //   {
+      //     testId: props.testId,
+      //     width: props.width || 10,
+      //     height: props.height || 10,
+      //     color: props.color || "black",
+      //     gradient: props.gradient,
+      //   },
+      //   props
+      // ),
       update,
       testId,
       array,
@@ -197,8 +200,8 @@ export const t = {
     testId,
   }: {
     mask?: MaskShape;
-    props: Partial<LineProps>;
-    update: (
+    props: (itemState: ItemState, index: number) => Partial<LineProps>;
+    update?: (
       thisProps: Omit<LineProps, "mask">,
       itemState: ItemState,
       index: number
@@ -209,19 +212,20 @@ export const t = {
     return {
       type: "mutLineArray",
       mask: mask || null,
-      props: mutateBaseProps(
-        {
-          testId: props.testId,
-          color: props.color,
-          fillColor: props.fillColor,
-          thickness: props.thickness ?? 1,
-          lineCap: props.lineCap || "butt",
-          path: props.path || [],
-          gradient: props.gradient,
-          fillGradient: props.fillGradient,
-        },
-        props
-      ),
+      props,
+      // props: mutateBaseProps(
+      //   {
+      //     testId: props.testId,
+      //     color: props.color,
+      //     fillColor: props.fillColor,
+      //     thickness: props.thickness ?? 1,
+      //     lineCap: props.lineCap || "butt",
+      //     path: props.path || [],
+      //     gradient: props.gradient,
+      //     fillGradient: props.fillGradient,
+      //   },
+      //   props
+      // ),
       update,
       testId,
       array,
@@ -247,14 +251,16 @@ export const t = {
   },
   imageArray: <ItemState>({
     props,
+    fileName,
     mask,
     update,
     array,
     testId,
   }: {
     mask?: MaskShape;
-    props: Partial<ImageProps>;
-    update: (
+    fileName: string;
+    props: (itemState: ItemState, index: number) => Partial<ImageProps>;
+    update?: (
       thisProps: ImageArrayItemProps,
       itemState: ItemState,
       index: number
@@ -264,16 +270,17 @@ export const t = {
   }): MutImageArrayTexture<ItemState> => {
     return {
       type: "mutImageArray",
-      fileName: props.fileName || "<not set>",
       mask: mask || null,
-      props: mutateBaseProps<Omit<ImageProps, "fileName">>(
-        {
-          testId: props.testId,
-          width: props.width || 10,
-          height: props.height || 10,
-        },
-        props
-      ),
+      props,
+      fileName,
+      // props: mutateBaseProps<Omit<ImageProps, "fileName">>(
+      //   {
+      //     testId: props.testId,
+      //     width: props.width || 10,
+      //     height: props.height || 10,
+      //   },
+      //   props
+      // ),
       update,
       testId,
       array,
@@ -352,8 +359,8 @@ export interface MutTextTexture {
 export interface MutTextArrayTexture<ItemState> {
   type: "mutTextArray";
   mask: MaskShape;
-  props: TextProps;
-  update: (
+  props: (itemState: ItemState, index: number) => Partial<TextProps>;
+  update?: (
     thisProps: Omit<TextProps, "mask">,
     itemState: ItemState,
     index: number
@@ -381,8 +388,8 @@ export interface MutCircleTexture {
 export interface MutCircleArrayTexture<ItemState> {
   type: "mutCircleArray";
   mask: MaskShape;
-  props: CircleProps;
-  update: (
+  props: (itemState: ItemState, index: number) => Partial<CircleProps>;
+  update?: (
     thisProps: Omit<CircleProps, "mask">,
     itemState: ItemState,
     index: number
@@ -411,8 +418,8 @@ export interface MutRectangleTexture {
 export interface MutRectangleArrayTexture<ItemState> {
   type: "mutRectangleArray";
   mask: MaskShape;
-  props: RectangleProps;
-  update: (
+  props: (itemState: ItemState, index: number) => Partial<RectangleProps>;
+  update?: (
     thisProps: Omit<RectangleProps, "mask">,
     itemState: ItemState,
     index: number
@@ -444,8 +451,8 @@ export interface MutLineTexture {
 export interface MutLineArrayTexture<ItemState> {
   type: "mutLineArray";
   mask: MaskShape;
-  props: LineProps;
-  update: (
+  props: (itemState: ItemState, index: number) => Partial<LineProps>;
+  update?: (
     thisProps: Omit<LineProps, "mask">,
     itemState: ItemState,
     index: number
@@ -475,10 +482,10 @@ type ImageArrayItemProps = Omit<ImageProps, "fileName" | "mask">;
 
 export interface MutImageArrayTexture<ItemState> {
   type: "mutImageArray";
+  props: (itemState: ItemState, index: number) => Partial<ImageProps>;
   fileName: string;
-  props: ImageArrayItemProps;
   mask: MaskShape;
-  update: (
+  update?: (
     thisProps: ImageArrayItemProps,
     itemState: ItemState,
     index: number

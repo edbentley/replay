@@ -303,7 +303,12 @@ export const MutPlayStage = makeMutableSprite<
             }
           ),
           t2.rectangleArray({
-            props: { width: 4, height: 4, color: "#0095DD", opacity: 0.9 },
+            props: () => ({
+              width: 4,
+              height: 4,
+              color: "#0095DD",
+              opacity: 0.9,
+            }),
             array: () => state.bullets,
             update: (thisProps, bullet) => {
               thisProps.x = bulletX(
@@ -319,7 +324,8 @@ export const MutPlayStage = makeMutableSprite<
             testId: (_, index) => `bullet${index + 1}`,
           }),
           t2.imageArray({
-            props: { width: 20, height: 20, fileName: "enemy.png" },
+            fileName: "enemy.png",
+            props: () => ({ width: 20, height: 20 }),
             array: () => state.enemies,
             update: (thisProps, enemy) => {
               thisProps.x = enemy.x;

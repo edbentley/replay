@@ -1036,47 +1036,121 @@ function createMutableSpriteContainer<P, S, I>(
       sprite.type === "mutLineArray" ||
       sprite.type === "mutImageArray"
     ) {
+      const array = sprite.array();
+
+      function newProps(props: any): any {
+        switch (sprite.type) {
+          case "mutRectangleArray":
+            return mutateBaseProps(
+              {
+                testId: props.testId,
+                width: props.width || 10,
+                height: props.height || 10,
+                color: props.color || "black",
+                gradient: props.gradient,
+              },
+              props
+            );
+          case "mutTextArray":
+            return mutateBaseProps(
+              {
+                testId: props.testId,
+                font: props.font,
+                text: props.text || "",
+                color: props.color || "black",
+                gradient: props.gradient,
+                strokeColor: props.strokeColor,
+                strokeThickness: props.strokeThickness,
+              },
+              props
+            );
+          case "mutCircleArray":
+            return mutateBaseProps(
+              {
+                testId: props.testId,
+                radius: props.radius || 10,
+                color: props.color || "black",
+                gradient: props.gradient,
+              },
+              props
+            );
+          case "mutLineArray":
+            return mutateBaseProps(
+              {
+                testId: props.testId,
+                color: props.color,
+                fillColor: props.fillColor,
+                thickness: props.thickness ?? 1,
+                lineCap: props.lineCap || "butt",
+                path: props.path || [],
+                gradient: props.gradient,
+                fillGradient: props.fillGradient,
+              },
+              props
+            );
+          case "mutImageArray":
+            return mutateBaseProps(
+              {
+                testId: props.testId,
+                width: props.width || 10,
+                height: props.height || 10,
+              },
+              props
+            );
+        }
+      }
+
       return {
         type: "mutArrayTexture",
         texture:
           sprite.type === "mutRectangleArray"
             ? {
                 type: "mutRectangleArrayRender",
-                props: Array.from({ length: sprite.array.length }).map(() => ({
-                  ...sprite.props,
-                })),
+                props: Array.from({
+                  length: sprite.array.length,
+                }).map((_, index) =>
+                  newProps(sprite.props(array[index], index))
+                ),
                 mask: null,
               }
             : sprite.type === "mutTextArray"
             ? {
                 type: "mutTextArrayRender",
-                props: Array.from({ length: sprite.array.length }).map(() => ({
-                  ...sprite.props,
-                })),
+                props: Array.from({
+                  length: sprite.array.length,
+                }).map((_, index) =>
+                  newProps(sprite.props(array[index], index))
+                ),
                 mask: null,
               }
             : sprite.type === "mutCircleArray"
             ? {
                 type: "mutCircleArrayRender",
-                props: Array.from({ length: sprite.array.length }).map(() => ({
-                  ...sprite.props,
-                })),
+                props: Array.from({
+                  length: sprite.array.length,
+                }).map((_, index) =>
+                  newProps(sprite.props(array[index], index))
+                ),
                 mask: null,
               }
             : sprite.type === "mutLineArray"
             ? {
                 type: "mutLineArrayRender",
-                props: Array.from({ length: sprite.array.length }).map(() => ({
-                  ...sprite.props,
-                })),
+                props: Array.from({
+                  length: sprite.array.length,
+                }).map((_, index) =>
+                  newProps(sprite.props(array[index], index))
+                ),
                 mask: null,
               }
             : {
                 type: "mutImageArrayRender",
+                props: Array.from({
+                  length: sprite.array.length,
+                }).map((_, index) =>
+                  newProps(sprite.props(array[index], index))
+                ),
                 fileName: sprite.fileName,
-                props: Array.from({ length: sprite.array.length }).map(() => ({
-                  ...sprite.props,
-                })),
                 mask: null,
               },
         array: sprite.array,
@@ -1085,24 +1159,25 @@ function createMutableSpriteContainer<P, S, I>(
         updateTextureArray() {
           const array = this.array();
 
-          const length = array.length;
-          const lengthChange = length - this.texture.props.length;
+          const newLength = array.length;
+          const currLength = this.texture.props.length;
+          const lengthChange = newLength - currLength;
 
           if (lengthChange > 0) {
             for (let i = 0; i < lengthChange; i++) {
-              this.texture.props.push({ ...sprite.props } as any);
+              this.texture.props.push(
+                newProps(sprite.props(array[currLength + i], currLength + i))
+              );
             }
           } else if (lengthChange < 0) {
-            this.texture.props.length = length;
+            this.texture.props.length = newLength;
           }
 
           this.texture.props.forEach((props: any, index: number) => {
-            const update = sprite.update as (
-              arg: any,
-              itemState: any,
-              index: number
-            ) => void;
-            update(props, array[index], index);
+            const update = sprite.update as
+              | ((arg: any, itemState: any, index: number) => void)
+              | undefined;
+            update?.(props, array[index], index);
 
             if (isTestPlatform && sprite.testId) {
               props.testId = sprite.testId(array[index], index);
