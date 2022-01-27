@@ -1008,7 +1008,9 @@ function createMutableSpriteContainer<P, S, I>(
   platformRender: PlatformRender,
   isTestPlatform: boolean,
   nativeSpriteSettings: NativeSpriteSettings
-): AllMutableSpriteContainer<I> {
+): AllMutableSpriteContainer<I> | null {
+  if (sprite === null) return null;
+
   if (sprite.type !== "mutable" && sprite.type !== "mutableArray") {
     if (
       sprite.type === "mutText" ||
@@ -1039,7 +1041,7 @@ function createMutableSpriteContainer<P, S, I>(
       const array = sprite.array();
 
       function newProps(props: any): any {
-        switch (sprite.type) {
+        switch (sprite!.type) {
           case "mutRectangleArray":
             return mutateBaseProps(
               {
@@ -1207,7 +1209,8 @@ function createMutableSpriteContainer<P, S, I>(
               isTestPlatform,
               nativeSpriteSettings
             )
-          ),
+          )
+          .filter(isNotNull),
         updateOnChange() {
           const value = sprite.value();
           if (this.value !== value) {
@@ -1229,7 +1232,8 @@ function createMutableSpriteContainer<P, S, I>(
                   isTestPlatform,
                   nativeSpriteSettings
                 )
-              );
+              )
+              .filter(isNotNull);
           }
         },
         cleanup() {
@@ -1253,24 +1257,23 @@ function createMutableSpriteContainer<P, S, I>(
       return {
         type: "mutOnChange",
         value: isTrue,
-        containers: (isTrue
-          ? sprite.trueSprites()
-          : sprite.falseSprites()
-        ).map((sprite, index) =>
-          createMutableSpriteContainer(
-            sprite,
-            mutDevice,
-            stateStackFns,
-            getInputsPlatform,
-            newInputs,
-            currentTime,
-            `${globalId}--${isTrue}-${index}`,
-            contextValues,
-            platformRender,
-            isTestPlatform,
-            nativeSpriteSettings
+        containers: (isTrue ? sprite.trueSprites() : sprite.falseSprites())
+          .map((sprite, index) =>
+            createMutableSpriteContainer(
+              sprite,
+              mutDevice,
+              stateStackFns,
+              getInputsPlatform,
+              newInputs,
+              currentTime,
+              `${globalId}--${isTrue}-${index}`,
+              contextValues,
+              platformRender,
+              isTestPlatform,
+              nativeSpriteSettings
+            )
           )
-        ),
+          .filter(isNotNull),
         updateOnChange() {
           if (!this.value && sprite.condition()) {
             this.value = true;
@@ -1291,7 +1294,8 @@ function createMutableSpriteContainer<P, S, I>(
                   isTestPlatform,
                   nativeSpriteSettings
                 )
-              );
+              )
+              .filter(isNotNull);
           } else if (this.value && !sprite.condition()) {
             this.value = false;
             this.cleanup();
@@ -1311,7 +1315,8 @@ function createMutableSpriteContainer<P, S, I>(
                   isTestPlatform,
                   nativeSpriteSettings
                 )
-              );
+              )
+              .filter(isNotNull);
           }
         },
         cleanup() {
@@ -1325,21 +1330,23 @@ function createMutableSpriteContainer<P, S, I>(
       const newContextValues = [...contextValues, sprite];
       return {
         type: "mutContext",
-        containers: sprite.sprites.map((sprite, index) =>
-          createMutableSpriteContainer(
-            sprite,
-            mutDevice,
-            stateStackFns,
-            getInputsPlatform,
-            newInputs,
-            currentTime,
-            `${globalId}--${index}`,
-            newContextValues,
-            platformRender,
-            isTestPlatform,
-            nativeSpriteSettings
+        containers: sprite.sprites
+          .map((sprite, index) =>
+            createMutableSpriteContainer(
+              sprite,
+              mutDevice,
+              stateStackFns,
+              getInputsPlatform,
+              newInputs,
+              currentTime,
+              `${globalId}--${index}`,
+              newContextValues,
+              platformRender,
+              isTestPlatform,
+              nativeSpriteSettings
+            )
           )
-        ),
+          .filter(isNotNull),
         cleanup() {
           this.containers.forEach((container) => {
             container.cleanup();
@@ -1446,25 +1453,31 @@ function createMutableSpriteContainer<P, S, I>(
       key: sprite.key,
       prevIds: [],
       prevIdsSet: new Set(),
-      containersArray: sprite.array().reduce((obj, arrayEl, index) => {
-        const id = sprite.key(arrayEl, index);
-        return {
-          ...obj,
-          [id]: createMutableSpriteContainer(
-            newMutSprite(arrayEl, index),
-            mutDevice,
-            stateStackFns,
-            getInputsPlatform,
-            newInputs,
-            currentTime,
-            `${globalId}--${id}`,
-            contextValues,
-            platformRender,
-            isTestPlatform,
-            nativeSpriteSettings
-          ) as MutableSpriteContainer<P, S, I>,
-        };
-      }, {}),
+      containersArray: sprite
+        .array()
+        .filter(
+          (arrayEl, index) =>
+            sprite.filter === undefined || sprite.filter(arrayEl, index)
+        )
+        .reduce((obj, arrayEl, index) => {
+          const id = sprite.key(arrayEl, index);
+          return {
+            ...obj,
+            [id]: createMutableSpriteContainer(
+              newMutSprite(arrayEl, index),
+              mutDevice,
+              stateStackFns,
+              getInputsPlatform,
+              newInputs,
+              currentTime,
+              `${globalId}--${id}`,
+              contextValues,
+              platformRender,
+              isTestPlatform,
+              nativeSpriteSettings
+            ) as MutableSpriteContainer<P, S, I>,
+          };
+        }, {}),
       updateSprites() {
         const array = this.array();
 
@@ -1618,7 +1631,8 @@ function createMutableSpriteContainer<P, S, I>(
           isTestPlatform,
           nativeSpriteSettings
         )
-      ),
+      )
+      .filter(isNotNull),
     updateSprite() {
       sprite.update?.(props, 0);
     },
@@ -2075,4 +2089,8 @@ function getInitTextureState(texture: MutTexture): null | Record<any, any> {
     case "mutText":
       return null;
   }
+}
+
+function isNotNull<T>(it: T): it is NonNullable<T> {
+  return it != null;
 }

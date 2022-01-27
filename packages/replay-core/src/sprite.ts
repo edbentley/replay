@@ -343,7 +343,8 @@ export type AllMutSprite =
   | MutRerenderOnChange<any>
   | MutRun
   | MutContextSprite<any>
-  | NativeSprite<any>;
+  | NativeSprite<any>
+  | null;
 
 export type MutSpriteProps<P> = P &
   Partial<SpriteBaseProps> & {
