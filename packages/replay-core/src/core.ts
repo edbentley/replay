@@ -1158,6 +1158,7 @@ function createMutableSpriteContainer<P, S, I>(
         array: sprite.array,
         textureState: getInitTextureState(sprite),
         cleanup: () => null,
+        pooledProps: [],
         updateTextureArray() {
           const array = this.array();
 
@@ -1167,12 +1168,20 @@ function createMutableSpriteContainer<P, S, I>(
 
           if (lengthChange > 0) {
             for (let i = 0; i < lengthChange; i++) {
-              this.texture.props.push(
-                newProps(sprite.props(array[currLength + i], currLength + i))
-              );
+              if (this.pooledProps.length > 0) {
+                this.texture.props.push(this.pooledProps.pop());
+              } else {
+                this.texture.props.push(
+                  newProps(sprite.props(array[currLength + i], currLength + i))
+                );
+              }
             }
           } else if (lengthChange < 0) {
-            this.texture.props.length = newLength;
+            let toRemove = -lengthChange;
+            while (toRemove > 0) {
+              toRemove--;
+              this.pooledProps.push(this.texture.props.pop());
+            }
           }
 
           this.texture.props.forEach((props: any, index: number) => {
@@ -1455,11 +1464,15 @@ function createMutableSpriteContainer<P, S, I>(
       prevIdsSet: new Set(),
       containersArray: sprite
         .array()
-        .filter(
-          (arrayEl, index) =>
-            sprite.filter === undefined || sprite.filter(arrayEl, index)
-        )
+        .map((arrayEl, index) => {
+          if (sprite.filter === undefined || sprite.filter(arrayEl, index)) {
+            return arrayEl;
+          } else {
+            return null;
+          }
+        })
         .reduce((obj, arrayEl, index) => {
+          if (arrayEl === null) return obj;
           const id = sprite.key(arrayEl, index);
           return {
             ...obj,
@@ -1698,6 +1711,7 @@ type MutableArrayTextureContainer = {
   texture: MutArrayTextureRenderable;
   array: () => any[];
   textureState: any;
+  pooledProps: any[];
   updateTextureArray: () => void;
   cleanup: () => void;
 };
