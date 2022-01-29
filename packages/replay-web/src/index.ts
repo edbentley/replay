@@ -231,8 +231,19 @@ export function renderCanvas<S>(
     }
 
     const devicePixelRatio = window.devicePixelRatio || 1;
-    canvas.width = mutDevice.size.deviceWidth * devicePixelRatio;
-    canvas.height = mutDevice.size.deviceHeight * devicePixelRatio;
+
+    // Reduce large image resolutions (e.g. iPad).
+    // Technically it should be fullWidth * imageResolution, but we assume lower
+    // resolution devices can't support that many pixels in their GPU.
+    const canvasWidth =
+      Math.min(mutDevice.size.deviceWidth, mutDevice.size.fullWidth) *
+      devicePixelRatio;
+    const canvasHeight =
+      Math.min(mutDevice.size.deviceHeight, mutDevice.size.fullHeight) *
+      devicePixelRatio;
+
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
     canvas.style.width = `${mutDevice.size.deviceWidth}px`;
     canvas.style.height = `${mutDevice.size.deviceHeight}px`;
 
