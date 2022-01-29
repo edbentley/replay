@@ -274,12 +274,14 @@ function generatePathDataFill(
   }
   const out = mutTextureState.linePath;
 
-  path.forEach(([x, y], index) => {
+  for (let index = 0; index < path.length; index++) {
+    const [x, y] = path[index];
+
     const n = index * floatsPerPoint;
 
     out[n] = x;
     out[n + 1] = y;
-  });
+  }
 }
 
 function generateLineCaps(

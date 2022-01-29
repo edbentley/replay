@@ -248,7 +248,9 @@ const generateGradient = (
           gradient.height / 2
         );
 
-  gradient.colors.forEach((colour, index) => {
+  for (let index = 0; index < gradient.colors.length; index++) {
+    let colour = gradient.colors[index];
+
     if (gradient.opacities) {
       const a = gradient.opacities[index];
       if (a !== undefined) {
@@ -260,7 +262,7 @@ const generateGradient = (
 
     const offset = index / (gradient.colors.length - 1);
     canvasGradient.addColorStop(offset, colour);
-  });
+  }
 
   return canvasGradient;
 };

@@ -167,7 +167,9 @@ export function createGradTexture(
 function getRampData(gradient: Gradient) {
   const array = Array.from<number>({ length: gradient.colors.length * 4 });
 
-  gradient.colors.forEach((colour, index) => {
+  for (let index = 0; index < gradient.colors.length; index++) {
+    const colour = gradient.colors[index];
+
     const [r, g, b] = hexToRGB(colour);
     let a = 1;
     if (gradient.opacities) {
@@ -182,7 +184,7 @@ function getRampData(gradient: Gradient) {
     array[n + 1] = g * 255;
     array[n + 2] = b * 255;
     array[n + 3] = a * 255;
-  });
+  }
 
   return new Uint8Array(array);
 }

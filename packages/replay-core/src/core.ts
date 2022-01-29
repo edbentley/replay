@@ -444,13 +444,15 @@ function traverseCustomSpriteContainer<P, I>(
     childIds.length = childIdIndex;
   }
 
-  unusedChildIds.forEach((id) => {
+  for (const id of unusedChildIds) {
     // Run cleanup of Sprites on all the removed child containers
     const recursiveSpriteCleanup = (
       containers: { [id: string]: SpriteContainer<unknown, unknown, I> },
       containerParentGlobalId: string
     ) => {
-      Object.entries(containers).forEach(([containerId, container]) => {
+      for (const containerId in containers) {
+        const container = containers[containerId];
+
         if (container.type === "custom") {
           const containerGlobalId = `${containerParentGlobalId}--${containerId}`;
 
@@ -464,19 +466,19 @@ function traverseCustomSpriteContainer<P, I>(
           }
         }
         container.cleanup();
-      });
+      }
     };
 
     const spriteContainer = customSpriteContainer.childContainers[id];
     recursiveSpriteCleanup({ [id]: spriteContainer }, parentGlobalId);
 
     delete customSpriteContainer.childContainers[id];
-  });
+  }
 
   customSpriteContainer.prevChildIdsSet.clear();
-  childIds.forEach((id) => {
+  for (const id of childIds) {
     customSpriteContainer.prevChildIdsSet.add(id);
-  });
+  }
 
   if (customSpriteContainer.prevChildIdsSet.size < childIds.length) {
     const duplicate = childIds.find(
@@ -970,25 +972,25 @@ function handleAllMutableContainer<I>(
     );
   } else if (container.type === "mutOnChange") {
     container.updateOnChange();
-    container.containers.forEach((container) => {
+    for (const childContainer of container.containers) {
       handleAllMutableContainer(
-        container,
+        childContainer,
         platformRender,
         stateStackFns,
         initCreation
       );
-    });
+    }
   } else if (container.type === "mutRun") {
     container.updateRun();
   } else if (container.type === "mutContext") {
-    container.containers.forEach((container) => {
+    for (const childContainer of container.containers) {
       handleAllMutableContainer(
-        container,
+        childContainer,
         platformRender,
         stateStackFns,
         initCreation
       );
-    });
+    }
   } else if (container.type === "native") {
     container.updateSprite();
   } else {
@@ -1184,7 +1186,9 @@ function createMutableSpriteContainer<P, S, I>(
             }
           }
 
-          this.texture.props.forEach((props: any, index: number) => {
+          for (let index = 0; index < this.texture.props.length; index++) {
+            const props = this.texture.props[index];
+
             const update = sprite.update as
               | ((arg: any, itemState: any, index: number) => void)
               | undefined;
@@ -1193,7 +1197,7 @@ function createMutableSpriteContainer<P, S, I>(
             if (isTestPlatform && sprite.testId) {
               props.testId = sprite.testId(array[index], index);
             }
-          });
+          }
         },
       };
     }
@@ -1246,9 +1250,9 @@ function createMutableSpriteContainer<P, S, I>(
           }
         },
         cleanup() {
-          this.containers.forEach((container) => {
+          for (const container of this.containers) {
             container.cleanup();
-          });
+          }
         },
       };
     }
@@ -1329,9 +1333,9 @@ function createMutableSpriteContainer<P, S, I>(
           }
         },
         cleanup() {
-          this.containers.forEach((container) => {
+          for (const container of this.containers) {
             container.cleanup();
-          });
+          }
         },
       };
     }
@@ -1357,9 +1361,9 @@ function createMutableSpriteContainer<P, S, I>(
           )
           .filter(isNotNull),
         cleanup() {
-          this.containers.forEach((container) => {
+          for (const container of this.containers) {
             container.cleanup();
-          });
+          }
         },
       };
     } else if (sprite.type === "native") {
@@ -1498,7 +1502,8 @@ function createMutableSpriteContainer<P, S, I>(
         const ids = this.prevIds;
         let idIndex = 0;
 
-        array.forEach((arrayEl, index) => {
+        for (let index = 0; index < array.length; index++) {
+          const arrayEl = array[index];
           if (this.filter?.(arrayEl, index) === false) return;
 
           const id = sprite.key(arrayEl, index);
@@ -1532,20 +1537,20 @@ function createMutableSpriteContainer<P, S, I>(
             | ((thisProps: any, itemState: any, index: number) => void)
             | undefined;
           update?.(container.props, array[index], index);
-        });
+        }
 
         if (idIndex < ids.length) {
           ids.length = idIndex;
         }
-        unusedIds.forEach((id) => {
+        for (const id of unusedIds) {
           this.containersArray[id].cleanup();
           delete this.containersArray[id];
-        });
+        }
 
         this.prevIdsSet.clear();
-        ids.forEach((id) => {
+        for (const id of ids) {
           this.prevIdsSet.add(id);
-        });
+        }
 
         if (this.prevIdsSet.size < ids.length) {
           const duplicate = ids.find(
@@ -1659,19 +1664,19 @@ function createMutableSpriteContainer<P, S, I>(
         spriteObj.loop?.(loopObject);
       }
 
-      this.childContainers.forEach((container) => {
+      for (const childContainer of this.childContainers) {
         handleAllMutableContainer(
-          container,
+          childContainer,
           platformRender,
           stateStackFns,
           initCreation
         );
-      });
+      }
     },
     cleanup() {
-      this.childContainers.forEach((container) => {
-        container.cleanup();
-      });
+      for (const childContainer of this.childContainers) {
+        childContainer.cleanup();
+      }
 
       spriteObj.cleanup?.({
         state: this.state,
@@ -1982,9 +1987,9 @@ function traversePureCustomSpriteContainerNotCached<P>(
 
   platformRender.endRenderSprite(stateStackFns.removeFromStack());
 
-  unusedChildIds.forEach((id) => {
+  for (const id of unusedChildIds) {
     delete pureSpriteContainer.childContainers[id];
-  });
+  }
 
   const cache: PureSpriteCache = {
     type: "cache",

@@ -522,31 +522,33 @@ export function renderCanvas<S>(
 
     function loop() {
       statsEnd?.();
-      window.requestAnimationFrame(function newFrame(time) {
-        if (isCleanedUp) {
-          return;
-        }
-        statsBegin?.();
-        if (initTime === null) {
-          initTime = time - 1 / 60;
-        }
+      window.requestAnimationFrame(newWebFrame);
+    }
 
-        // Wait until visible before running to avoid bad timestamps
-        if (!isPageVisible) {
-          loop();
-          return;
-        }
+    function newWebFrame(time: number) {
+      if (isCleanedUp) {
+        return;
+      }
+      statsBegin?.();
+      if (initTime === null) {
+        initTime = time - 1 / 60;
+      }
 
-        if (needsToUpdateNotVisibleTime) {
-          needsToUpdateNotVisibleTime = false;
-          totalPageNotVisibleTime += time - lastPageNotVisibleTime;
-        }
-        lastTimeValue = time;
-
-        runNextFrame(time - initTime - totalPageNotVisibleTime, resetInputs);
-
+      // Wait until visible before running to avoid bad timestamps
+      if (!isPageVisible) {
         loop();
-      });
+        return;
+      }
+
+      if (needsToUpdateNotVisibleTime) {
+        needsToUpdateNotVisibleTime = false;
+        totalPageNotVisibleTime += time - lastPageNotVisibleTime;
+      }
+      lastTimeValue = time;
+
+      runNextFrame(time - initTime - totalPageNotVisibleTime, resetInputs);
+
+      loop();
     }
 
     loop();

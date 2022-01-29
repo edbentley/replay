@@ -232,7 +232,7 @@ export function draw(
 
       const capColor = textureProps.color;
       if (tState.lineCaps && capColor) {
-        tState.lineCaps.forEach((circle: any) => {
+        for (const circle of tState.lineCaps) {
           const m1 = m2dMut.multiplyPooled(
             m2dMut.getTranslateMatrixPooled(circle.x, circle.y),
             m2dMut.getRotateMatrixPooled(circle.angleRad)
@@ -249,7 +249,7 @@ export function draw(
             textureProps.opacity * stackOpacity,
             true
           );
-        });
+        }
       }
     }
   }
@@ -312,10 +312,10 @@ export function draw(
       gl.clearColor(bgR, bgG, bgB, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
-      unusedTextures.forEach((key) => {
+      for (const key of unusedTextures) {
         gl.deleteTexture(textureMap[key].texture);
         delete textureMap[key];
-      });
+      }
       unusedTextures.clear();
       for (const key in textureMap) {
         unusedTextures.add(key);
@@ -392,11 +392,11 @@ export function draw(
 
         applyMask(texture.mask, topStack.transformation);
 
-        texture.props.forEach((textProps) => {
+        for (const textProps of texture.props) {
           if (!textProps.show) return;
           applyTransformMut(topStack.transformation, newMatrix, textProps);
           handleTextTextureLocal(textProps, topStack.opacity);
-        });
+        }
 
         if (texture.mask) {
           clearMask();
@@ -419,8 +419,10 @@ export function draw(
           textureState.pointsByIndex.length = texture.props.length;
         }
 
-        texture.props.forEach((circleProps, index) => {
+        for (let index = 0; index < texture.props.length; index++) {
+          const circleProps = texture.props[index];
           if (!circleProps.show) return;
+
           applyTransformMut(topStack.transformation, newMatrix, circleProps);
 
           drawCircle(
@@ -434,7 +436,7 @@ export function draw(
             circleProps.opacity * topStack.opacity,
             false
           );
-        });
+        }
 
         if (texture.mask) {
           clearMask();
@@ -461,15 +463,17 @@ export function draw(
           textureState.stateByIndex.length = texture.props.length;
         }
 
-        texture.props.forEach((lineProps, index) => {
+        for (let index = 0; index < texture.props.length; index++) {
+          const lineProps = texture.props[index];
           if (!lineProps.show) return;
+
           applyTransformMut(topStack.transformation, newMatrix, lineProps);
           handleLineTextureLocal(
             lineProps,
             topStack.opacity,
             textureState.stateByIndex[index]
           );
-        });
+        }
 
         if (texture.mask) {
           clearMask();
