@@ -445,32 +445,12 @@ function traverseCustomSpriteContainer<P, I>(
   }
 
   for (const id of unusedChildIds) {
-    // Run cleanup of Sprites on all the removed child containers
-    const recursiveSpriteCleanup = (
-      containers: { [id: string]: SpriteContainer<unknown, unknown, I> },
-      containerParentGlobalId: string
-    ) => {
-      for (const containerId in containers) {
-        const container = containers[containerId];
-
-        if (container.type === "custom") {
-          const containerGlobalId = `${containerParentGlobalId}--${containerId}`;
-
-          recursiveSpriteCleanup(container.childContainers, containerGlobalId);
-
-          if (container.loadFilesPromise) {
-            container.loadFilesPromise.then(() => {
-              // Only cleanup once the initial load is complete
-              cleanupFiles(containerGlobalId, mutDevice.assetUtils);
-            });
-          }
-        }
-        container.cleanup();
-      }
-    };
-
     const spriteContainer = customSpriteContainer.childContainers[id];
-    recursiveSpriteCleanup({ [id]: spriteContainer }, parentGlobalId);
+    recursiveSpriteCleanup(
+      { [id]: spriteContainer },
+      parentGlobalId,
+      mutDevice
+    );
 
     delete customSpriteContainer.childContainers[id];
   }
@@ -485,6 +465,35 @@ function traverseCustomSpriteContainer<P, I>(
       (item, index) => childIds.indexOf(item) !== index
     );
     throw Error(`Duplicate Sprite id ${duplicate}`);
+  }
+}
+
+// Run cleanup of Sprites on all the removed child containers
+function recursiveSpriteCleanup<I>(
+  containers: { [id: string]: SpriteContainer<unknown, unknown, I> },
+  containerParentGlobalId: string,
+  mutDevice: Device
+) {
+  for (const containerId in containers) {
+    const container = containers[containerId];
+
+    if (container.type === "custom") {
+      const containerGlobalId = `${containerParentGlobalId}--${containerId}`;
+
+      recursiveSpriteCleanup(
+        container.childContainers,
+        containerGlobalId,
+        mutDevice
+      );
+
+      if (container.loadFilesPromise) {
+        container.loadFilesPromise.then(() => {
+          // Only cleanup once the initial load is complete
+          cleanupFiles(containerGlobalId, mutDevice.assetUtils);
+        });
+      }
+    }
+    container.cleanup();
   }
 }
 
@@ -1504,7 +1513,7 @@ function createMutableSpriteContainer<P, S, I>(
 
         for (let index = 0; index < array.length; index++) {
           const arrayEl = array[index];
-          if (this.filter?.(arrayEl, index) === false) return;
+          if (this.filter?.(arrayEl, index) === false) continue;
 
           const id = sprite.key(arrayEl, index);
 
