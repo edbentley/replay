@@ -364,7 +364,7 @@ export function makeMutableSprite<
   return {
     Single: function makeSpriteCallback(
       props: MutSpriteProps<P>,
-      update?: (thisProps: MutSpriteProps<P>, index: number) => void
+      update?: (thisProps: MutSpriteProps<P>) => void
     ): MutableSprite<P, S, I> {
       return {
         type: "mutable",
@@ -410,7 +410,7 @@ export interface MutableSprite<P, S, I> {
   type: "mutable";
   spriteObj: MutableSpriteObj<P, S, I>;
   props: MutSpriteProps<P>;
-  update?: (arg: P, index: number) => void;
+  update?: (arg: P) => void;
 }
 export interface MutableSpriteArray<P, S, I, ItemState> {
   type: "mutableArray";

@@ -1027,6 +1027,9 @@ function createMutableSpriteContainer<P, S, I>(
       sprite.type === "mutLine" ||
       sprite.type === "mutSpriteSheet"
     ) {
+      const update = sprite.update as ((arg: any) => void) | undefined;
+      update?.(sprite.props);
+
       return {
         type: "mutTexture",
         texture: sprite,
@@ -1117,9 +1120,11 @@ function createMutableSpriteContainer<P, S, I>(
                 type: "mutRectangleArrayRender",
                 props: Array.from({
                   length: sprite.array.length,
-                }).map((_, index) =>
-                  newProps(sprite.props(array[index], index))
-                ),
+                }).map((_, index) => {
+                  const props = newProps(sprite.props(array[index], index));
+                  sprite.update?.(props, array[index], index);
+                  return props;
+                }),
                 mask: null,
               }
             : sprite.type === "mutTextArray"
@@ -1127,9 +1132,11 @@ function createMutableSpriteContainer<P, S, I>(
                 type: "mutTextArrayRender",
                 props: Array.from({
                   length: sprite.array.length,
-                }).map((_, index) =>
-                  newProps(sprite.props(array[index], index))
-                ),
+                }).map((_, index) => {
+                  const props = newProps(sprite.props(array[index], index));
+                  sprite.update?.(props, array[index], index);
+                  return props;
+                }),
                 mask: null,
               }
             : sprite.type === "mutCircleArray"
@@ -1137,9 +1144,11 @@ function createMutableSpriteContainer<P, S, I>(
                 type: "mutCircleArrayRender",
                 props: Array.from({
                   length: sprite.array.length,
-                }).map((_, index) =>
-                  newProps(sprite.props(array[index], index))
-                ),
+                }).map((_, index) => {
+                  const props = newProps(sprite.props(array[index], index));
+                  sprite.update?.(props, array[index], index);
+                  return props;
+                }),
                 mask: null,
               }
             : sprite.type === "mutLineArray"
@@ -1147,18 +1156,22 @@ function createMutableSpriteContainer<P, S, I>(
                 type: "mutLineArrayRender",
                 props: Array.from({
                   length: sprite.array.length,
-                }).map((_, index) =>
-                  newProps(sprite.props(array[index], index))
-                ),
+                }).map((_, index) => {
+                  const props = newProps(sprite.props(array[index], index));
+                  sprite.update?.(props, array[index], index);
+                  return props;
+                }),
                 mask: null,
               }
             : {
                 type: "mutImageArrayRender",
                 props: Array.from({
                   length: sprite.array.length,
-                }).map((_, index) =>
-                  newProps(sprite.props(array[index], index))
-                ),
+                }).map((_, index) => {
+                  const props = newProps(sprite.props(array[index], index));
+                  sprite.update?.(props, array[index], index);
+                  return props;
+                }),
                 fileName: sprite.fileName,
                 mask: null,
               },
@@ -1450,6 +1463,8 @@ function createMutableSpriteContainer<P, S, I>(
     ): MutableSprite<any, any, I> => {
       const props = sprite.props(arrayEl, index);
       mutateBaseProps(props, props);
+      sprite.update?.(props, arrayEl, index);
+      sprite.updateAll?.(props);
       return {
         type: "mutable",
         spriteObj,
@@ -1571,6 +1586,7 @@ function createMutableSpriteContainer<P, S, I>(
   const { props } = sprite;
 
   mutateBaseProps(props, props);
+  sprite.update?.(props);
 
   let spriteContainer: MutableSpriteContainer<P, S, I> | null = null;
 
@@ -1651,7 +1667,7 @@ function createMutableSpriteContainer<P, S, I>(
       )
       .filter(isNotNull),
     updateSprite() {
-      sprite.update?.(props, 0);
+      sprite.update?.(props);
     },
     updateSprites(initCreation) {
       if (this.stackIndex === null) {
