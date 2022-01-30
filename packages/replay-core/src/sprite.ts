@@ -262,7 +262,6 @@ export type NativeSpriteImplementation<P, S> = {
     props: P;
     parentGlobalId: string;
     getState: () => S;
-    updateState: (mergeState: Partial<S>) => void;
     utils: NativeSpriteUtils;
   }) => S;
   loop: (params: {
@@ -275,7 +274,7 @@ export type NativeSpriteImplementation<P, S> = {
       y: number,
       out: T
     ) => void;
-  }) => S;
+  }) => void;
   cleanup: (params: { state: S; parentGlobalId: string }) => void;
 };
 

@@ -15,7 +15,7 @@ export const TextInputWeb: NativeSpriteImplementation<
   TextInputProps,
   TextInputState
 > = {
-  create: ({ props, parentGlobalId, getState, updateState, utils }) => {
+  create: ({ props, parentGlobalId, getState, utils }) => {
     const domId = `${parentGlobalId}--${props.id}`;
 
     let inputElement;
@@ -37,12 +37,10 @@ export const TextInputWeb: NativeSpriteImplementation<
         | HTMLInputElement
         | HTMLTextAreaElement;
 
-      const selectionEnd = thisInput.selectionEnd;
+      const state = getState();
 
       // Store previous cursor position
-      updateState({ selectionEnd });
-
-      const state = getState();
+      state.selectionEnd = thisInput.selectionEnd;
 
       state.storedProps.onChangeText(thisInput.value);
 
@@ -50,7 +48,9 @@ export const TextInputWeb: NativeSpriteImplementation<
       thisInput.value = state.storedProps.text;
 
       // Reapply previous cursor position, otherwise it jumps to the end
-      thisInput.selectionEnd = selectionEnd ? selectionEnd - 1 : null;
+      thisInput.selectionEnd = state.selectionEnd
+        ? state.selectionEnd - 1
+        : null;
     });
 
     document.body.appendChild(inputElement);
@@ -91,7 +91,7 @@ export const TextInputWeb: NativeSpriteImplementation<
       );
     }
 
-    return { domId, storedProps: props, selectionEnd: state.selectionEnd };
+    state.storedProps = { ...props };
   },
   cleanup: ({ state }) => {
     const domId = state.domId;

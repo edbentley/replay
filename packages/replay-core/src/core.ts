@@ -561,26 +561,20 @@ function handleSprites<P, I>(
             props: sprite.props,
             parentGlobalId,
             getState: () => newContainer.state,
-            updateState: (mergeState) => {
-              newContainer.state = {
-                ...newContainer.state,
-                ...mergeState,
-              };
-            },
             utils: nativeSpriteUtils,
           }),
           updateSprite() {
             platformRender.startNativeSprite();
 
-            newContainer.state = nativeSpriteImplementation.loop({
-              props: sprite.props,
+            nativeSpriteImplementation.loop({
+              props: newContainer.props,
               state: newContainer.state,
               parentGlobalId,
               utils: nativeSpriteUtils,
               spriteToGameCoords: (x, y, out) => {
                 const result = m2dMut.multiplyPooled(
                   stateStackFns.getTopStack().transformationGameCoords,
-                  [0, 0, 0, 0, x, y]
+                  m2dMut.getTranslateMatrixPooled(x, y)
                 );
                 out.x = result[4];
                 out.y = result[5];
@@ -599,6 +593,8 @@ function handleSprites<P, I>(
         customSpriteContainer.childContainers[sprite.props.id] = newContainer;
         lookupNativeSpriteContainer = newContainer;
       }
+
+      lookupNativeSpriteContainer.props = sprite.props;
 
       lookupNativeSpriteContainer.updateSprite();
     } else if (sprite.type === "pure") {
@@ -1387,12 +1383,6 @@ function createMutableSpriteContainer<P, S, I>(
         props: sprite.props,
         parentGlobalId: globalId,
         getState: () => newContainer.state,
-        updateState: (mergeState) => {
-          newContainer.state = {
-            ...newContainer.state,
-            ...mergeState,
-          };
-        },
         utils: nativeSpriteUtils,
       });
 
@@ -1406,7 +1396,7 @@ function createMutableSpriteContainer<P, S, I>(
         spriteToGameCoords: (x, y, out) => {
           const result = m2dMut.multiplyPooled(
             stateStackFns.getTopStack().transformationGameCoords,
-            [0, 0, 0, 0, x, y]
+            m2dMut.getTranslateMatrixPooled(x, y)
           );
           out.x = result[4];
           out.y = result[5];
@@ -1425,7 +1415,7 @@ function createMutableSpriteContainer<P, S, I>(
 
           sprite.update?.(this.props);
 
-          this.state = nativeSpriteImplementation.loop(loopObject);
+          nativeSpriteImplementation.loop(loopObject);
 
           platformRender.endNativeSprite();
         },
