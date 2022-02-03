@@ -123,14 +123,23 @@ export function renderCanvas<S>(
   const pointerUpEv = window.PointerEvent ? "pointerup" : "touchend";
   const pointerCancelEv = window.PointerEvent ? "pointercancel" : "touchcancel";
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const gl = canvas.getContext("webgl", { stencil: true })!;
+  const glResult = canvas.getContext("webgl", { stencil: true });
+  if (!glResult) {
+    return Error("WebGL not supported on this");
+  }
+  const gl = glResult;
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const glInstArrays = gl.getExtension("ANGLE_instanced_arrays")!;
+  const glInstArraysResult = gl.getExtension("ANGLE_instanced_arrays");
+  if (!glInstArraysResult) {
+    return Error("WebGL instancing not supported");
+  }
+  const glInstArrays = glInstArraysResult;
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const glVao = gl.getExtension("OES_vertex_array_object")!;
+  const glVaoResult = gl.getExtension("OES_vertex_array_object");
+  if (!glVaoResult) {
+    return Error("WebGL VAO not supported");
+  }
+  const glVao = glVaoResult;
 
   // Enable alpha
   gl.enable(gl.BLEND);

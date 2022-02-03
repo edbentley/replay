@@ -28,7 +28,7 @@ console.warn = sendLog;
 console.error = sendLog;
 
 export function run() {
-  renderCanvas(game.Game(game.gameProps), game.options, {
+  return renderCanvas(game.Game(game.gameProps), game.options, {
     device: {
       storage: {
         getItem: async (key) => {
