@@ -1,6 +1,6 @@
 import Foundation
 
-func getReplayRenderCanvasHtmlString(renderCanvasJsString: String, gameJsString: String, userStyles: String, jsRun: String) -> String {
+func getReplayRenderCanvasHtmlString(renderCanvasJsString: String, gameJsString: String, userStyles: String, jsRun: String, customJsScripts: [String]) -> String {
     let htmlPath = Bundle.module.path(forResource: "index", ofType: ".html")!
     var htmlString = try! String(
         contentsOfFile: htmlPath,
@@ -20,6 +20,7 @@ func getReplayRenderCanvasHtmlString(renderCanvasJsString: String, gameJsString:
     htmlString = htmlString.replacingOccurrences(of: "__linesInHtmlBeforeGameJs__", with: String(linesInHtmlBeforeGameJs))
     htmlString = htmlString.replacingOccurrences(of: "__replayRenderCanvasJsString__", with: renderCanvasJsString)
     htmlString = htmlString.replacingOccurrences(of: "__gameJsString__", with: gameJsString)
+    htmlString = htmlString.replacingOccurrences(of: "__customJsScripts__", with: customJsScripts.joined(separator: "\n"))
     
     return htmlString
 }
