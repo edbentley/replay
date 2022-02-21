@@ -976,7 +976,7 @@ function handleAllMutableContainer<I>(
       container.textureState
     );
   } else if (container.type === "mutOnChange") {
-    container.updateOnChange();
+    initCreation = initCreation || container.updateOnChange();
     for (const childContainer of container.containers) {
       handleAllMutableContainer(
         childContainer,
@@ -1265,7 +1265,9 @@ function createMutableSpriteContainer<P, S, I>(
                 )
               )
               .filter(isNotNull);
+            return true;
           }
+          return false;
         },
         cleanup() {
           for (const container of this.containers) {
@@ -1327,7 +1329,9 @@ function createMutableSpriteContainer<P, S, I>(
                 )
               )
               .filter(isNotNull);
-          } else if (this.value && !sprite.condition()) {
+            return true;
+          }
+          if (this.value && !sprite.condition()) {
             this.value = false;
             this.cleanup();
             this.containers = sprite
@@ -1348,7 +1352,9 @@ function createMutableSpriteContainer<P, S, I>(
                 )
               )
               .filter(isNotNull);
+            return true;
           }
+          return false;
         },
         cleanup() {
           for (const container of this.containers) {
@@ -1740,7 +1746,7 @@ type MutableOnChangeContainer<I, T> = {
   type: "mutOnChange";
   value: T;
   containers: AllMutableSpriteContainer<I>[];
-  updateOnChange: () => void;
+  updateOnChange: () => boolean;
   cleanup: () => void;
 };
 

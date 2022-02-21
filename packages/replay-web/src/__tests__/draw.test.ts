@@ -1,12 +1,15 @@
 import { draw } from "../webGL/drawGL";
 import { canvasToImage } from "./utils";
 import { t, DeviceSize, mask, Texture } from "@replay/core";
+import { m2d } from "@replay/core/src/matrix";
 
 const deviceSize: DeviceSize = {
   width: 300,
   height: 300,
   widthMargin: 0,
   heightMargin: 0,
+  fullWidth: 300,
+  fullHeight: 300,
   deviceWidth: 500,
   deviceHeight: 500,
 };
@@ -42,7 +45,21 @@ beforeAll(() => {
       1
     ).renderTexture;
 
-    textures.forEach(renderTexture);
+    textures.forEach((texture) =>
+      renderTexture(
+        {
+          opacity: 1,
+          transformation: m2d.getScaleMatrix(
+            2 / deviceSize.fullWidth,
+            2 / deviceSize.fullHeight
+          ),
+          transformationGameCoords: m2d.identityMatrix,
+          hasMask: false,
+        },
+        texture,
+        null
+      )
+    );
   };
 });
 

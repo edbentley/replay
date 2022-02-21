@@ -65,6 +65,8 @@ function getBenchmarkPlatform() {
       height: 200,
       widthMargin: 0,
       heightMargin: 0,
+      fullWidth: 300,
+      fullHeight: 200,
       deviceWidth: 500,
       deviceHeight: 300,
     },
@@ -131,9 +133,10 @@ function getBenchmarkPlatform() {
   };
 
   const platform: ReplayPlatform<Inputs> = {
-    getInputs: (globalToLocalCoords) => {
-      const local = globalToLocalCoords(inputs);
-      return { ...inputs, x: local.x, y: local.y };
+    isTestPlatform: false,
+    newInputs: () => inputs,
+    getInputs: (_, inputs) => {
+      return inputs;
     },
     mutDevice: mutableTestDevice,
     render: {
@@ -164,6 +167,8 @@ function getNativeSpriteSettings(): NativeSpriteSettings {
         height: 200,
         widthMargin: 0,
         heightMargin: 0,
+        fullWidth: 300,
+        fullHeight: 200,
         deviceWidth: 500,
         deviceHeight: 300,
       },

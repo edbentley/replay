@@ -1,13 +1,22 @@
-import { Device, makeSprite, t, GameProps, DeviceSize } from "../index";
+import { Device, makeSprite, t, GameProps, DeviceSize, t2 } from "../index";
 import { ReplayPlatform, NativeSpriteSettings } from "../core";
 import {
   makeNativeSprite,
   NativeSpriteImplementation,
   makePureSprite,
+  makeMutableSprite,
+  r,
 } from "../sprite";
 import { mask, MaskShape } from "../mask";
 import { Assets } from "../device";
-import { ImageTexture, RectangleTexture, SingleTexture } from "../t";
+import {
+  CircleTexture,
+  ImageTexture,
+  LineTexture,
+  RectangleTexture,
+  SingleTexture,
+  TextTexture,
+} from "../t";
 import { makeContext } from "../context";
 
 export const gameProps: GameProps = {
@@ -154,6 +163,8 @@ export function getTestPlatform(customSize?: DeviceSize) {
       height: 200,
       widthMargin: 0,
       heightMargin: 0,
+      fullWidth: 300,
+      fullHeight: 200,
       deviceWidth: 500,
       deviceHeight: 300,
     },
@@ -209,10 +220,14 @@ export function getTestPlatform(customSize?: DeviceSize) {
   const masks: MaskShape[] = [];
 
   const platform: ReplayPlatform<TestPlatformInputs> = {
-    getInputs: (globalToLocalCoords) => {
-      const local = globalToLocalCoords(mutInputs.ref);
-      return { ...mutInputs.ref, x: local.x, y: local.y };
+    getInputs: (matrix, localMutInputs) => {
+      localMutInputs.buttonPressed = mutInputs.ref.buttonPressed;
+      localMutInputs.x = mutInputs.ref.x;
+      localMutInputs.y = mutInputs.ref.y;
+      return localMutInputs;
     },
+    newInputs: getInitTestPlatformInputs,
+    isTestPlatform: true,
     mutDevice: mutableTestDevice,
     render: {
       newFrame: () => {
@@ -226,16 +241,35 @@ export function getTestPlatform(customSize?: DeviceSize) {
         }
       },
       endRenderSprite: () => null,
-      renderTexture: (texture) => {
-        if (texture.type === "imageArray") {
-          masks.push(texture.mask);
+      renderTexture: (stateStack, texture) => {
+        if (
+          texture.type === "imageArray" ||
+          texture.type === "mutImageArrayRender"
+        ) {
           textures.push(
-            ...texture.props.map(
+            ...(texture.props as ImageTexture["props"][]).map(
               (props): ImageTexture => {
                 return {
                   type: "image",
                   props: {
+                    ...props,
                     fileName: texture.fileName,
+                    mask: texture.mask,
+                  },
+                };
+              }
+            )
+          );
+        } else if (
+          texture.type === "rectangleArray" ||
+          texture.type === "mutRectangleArrayRender"
+        ) {
+          textures.push(
+            ...(texture.props as RectangleTexture["props"][]).map(
+              (props): RectangleTexture => {
+                return {
+                  type: "rectangle",
+                  props: {
                     mask: texture.mask,
                     ...props,
                   },
@@ -243,13 +277,40 @@ export function getTestPlatform(customSize?: DeviceSize) {
               }
             )
           );
-        } else if (texture.type === "rectangleArray") {
-          masks.push(texture.mask);
+        } else if (texture.type === "mutTextArrayRender") {
           textures.push(
-            ...texture.props.map(
-              (props): RectangleTexture => {
+            ...(texture.props as TextTexture["props"][]).map(
+              (props): TextTexture => {
                 return {
-                  type: "rectangle",
+                  type: "text",
+                  props: {
+                    mask: texture.mask,
+                    ...props,
+                  },
+                };
+              }
+            )
+          );
+        } else if (texture.type === "mutCircleArrayRender") {
+          textures.push(
+            ...(texture.props as CircleTexture["props"][]).map(
+              (props): CircleTexture => {
+                return {
+                  type: "circle",
+                  props: {
+                    mask: texture.mask,
+                    ...props,
+                  },
+                };
+              }
+            )
+          );
+        } else if (texture.type === "mutLineArrayRender") {
+          textures.push(
+            ...(texture.props as LineTexture["props"][]).map(
+              (props): LineTexture => {
+                return {
+                  type: "line",
                   props: {
                     mask: texture.mask,
                     ...props,
@@ -262,7 +323,23 @@ export function getTestPlatform(customSize?: DeviceSize) {
           if (texture.props.mask) {
             masks.push(texture.props.mask);
           }
-          textures.push(texture);
+          textures.push({
+            ...texture,
+            type:
+              texture.type === "mutCircle"
+                ? "circle"
+                : texture.type === "mutImage"
+                ? "image"
+                : texture.type === "mutRectangle"
+                ? "rectangle"
+                : texture.type === "mutLine"
+                ? "line"
+                : texture.type === "mutText"
+                ? "text"
+                : texture.type === "mutSpriteSheet"
+                ? "spriteSheet"
+                : texture.type,
+          } as SingleTexture);
         }
       },
       startNativeSprite: jest.fn(),
@@ -293,6 +370,8 @@ export const nativeSpriteSettings: NativeSpriteSettings = {
       height: 200,
       widthMargin: 0,
       heightMargin: 0,
+      fullWidth: 300,
+      fullHeight: 200,
       deviceWidth: 500,
       deviceHeight: 300,
     },
@@ -354,7 +433,6 @@ export const TestGameWithSprites = makeSprite<
   },
 
   render({ state, getInputs }) {
-    // Testing getInputs is cached between Sprite methods
     return state.showSprite && getInputs().buttonPressed.show
       ? [
           TestSprite({
@@ -726,30 +804,6 @@ const MaskSprite = makeSprite({
   },
 });
 
-/// -- Nested Sprite test
-
-export const NestedSpriteGame = makeSprite<
-  GameProps,
-  undefined,
-  TestPlatformInputs
->({
-  render({ device, getInputs }) {
-    const inputs = getInputs();
-    if (inputs.x) {
-      device.log(`NestedSpriteGame x: ${inputs.x}, y: ${inputs.y}`);
-    }
-    return [
-      NestedFirstSprite({
-        id: "first",
-        x: 20,
-        y: 20,
-        rotation: -90,
-        opacity: 0.8,
-      }),
-    ];
-  },
-});
-
 const NestedFirstSprite = makeSprite<{}, undefined, TestPlatformInputs>({
   render({ device, getInputs }) {
     const inputs = getInputs();
@@ -792,39 +846,6 @@ const NestedSecondSprite = makeSprite<{}, undefined, TestPlatformInputs>({
         opacity: 0.8,
       }),
     ];
-  },
-});
-
-/// -- Nested Sprite for testing scale bug
-
-export const NestedSpriteGame2 = makeSprite<
-  GameProps,
-  undefined,
-  TestPlatformInputs
->({
-  render() {
-    return [
-      NestedFirstSprite2({
-        id: "first",
-        x: 20,
-        y: 20,
-        scaleX: 0.5,
-      }),
-    ];
-  },
-});
-
-const NestedFirstSprite2 = makeSprite<{}, undefined, TestPlatformInputs>({
-  render({ device, getInputs }) {
-    const inputs = getInputs();
-    if (inputs.x) {
-      device.log(
-        `NestedFirstSprite2 x: ${Math.round(inputs.x)}, y: ${Math.round(
-          inputs.y
-        )}`
-      );
-    }
-    return [];
   },
 });
 
@@ -1113,7 +1134,10 @@ export const PureSpriteGame = makeSprite<
     return [
       PureSpriteAlwaysRenders({ id: "Always" }),
       PureSpriteNeverRenders({ id: "Never" }),
-      PureSpriteConditionalRenders({ id: "Conditional", show: state.show }),
+      PureSpriteConditionalRenders({
+        id: "Conditional",
+        showSprite: state.show,
+      }),
     ];
   },
 });
@@ -1153,14 +1177,14 @@ const PureSpriteNeverRenders = makePureSprite({
 });
 
 export const pureSpriteConditionalRendersFn = jest.fn();
-const PureSpriteConditionalRenders = makePureSprite<{ show: boolean }>({
+const PureSpriteConditionalRenders = makePureSprite<{ showSprite: boolean }>({
   shouldRerender(prevProps, newProps) {
-    return prevProps.show !== newProps.show;
+    return prevProps.showSprite !== newProps.showSprite;
   },
 
   render({ props }) {
     pureSpriteConditionalRendersFn();
-    return props.show
+    return props.showSprite
       ? [
           t.circle({
             radius: 5,
@@ -1213,7 +1237,7 @@ export const MyWidgetImplementation: NativeSpriteImplementation<
   MyWidgetProps,
   { text: string; x: number }
 > = {
-  create: ({ props, parentGlobalId, getState, updateState, utils }) => {
+  create: ({ props, parentGlobalId, getState, utils }) => {
     widgetState.text = props.text;
     widgetState.globalId = `${parentGlobalId}--${props.id}`;
     widgetState.x = utils.gameXToPlatformX(0);
@@ -1222,7 +1246,7 @@ export const MyWidgetImplementation: NativeSpriteImplementation<
     // Double x on callback
     widgetCallback = () => {
       const state = getState();
-      updateState({ x: state.x * 2 });
+      state.x *= 2;
     };
 
     return { text: props.text, x: widgetState.x };
@@ -1297,5 +1321,97 @@ export const TestContextErrorGame = makeSprite<GameProps>({
   render() {
     // No context passed in
     return [TestContextNestedSprite({ id: "Nested" })];
+  },
+});
+
+/// -- Test Mutable Sprites
+
+export const TestMutableGame = makeSprite<GameProps>({
+  render() {
+    return [MutableGameSprite.Single({ id: "Game" })];
+  },
+});
+
+export const mutableSpriteRendersFn = jest.fn();
+export const mutableSpriteInnerRendersFn = jest.fn();
+
+export const MutableGameSprite = makeMutableSprite<
+  {},
+  { showSprite: boolean },
+  TestPlatformInputs
+>({
+  init() {
+    return { showSprite: true };
+  },
+
+  loop({ getInputs, state }) {
+    state.showSprite = getInputs().buttonPressed.show;
+  },
+
+  render({ state, device }) {
+    mutableSpriteRendersFn();
+    return [
+      r.if(
+        () => state.showSprite,
+        () => [
+          TestMutableSprite.Single(
+            {
+              id: "test",
+              x: 50,
+              initPos: 50,
+              anchorY: 1,
+              scaleX: 5,
+              opacity: 0.5,
+            },
+            () => {
+              mutableSpriteInnerRendersFn();
+            }
+          ),
+        ]
+      ),
+      r.ifElse(
+        () => state.showSprite,
+        () => [t2.text({ text: "True" })],
+        () => [t2.text({ text: "False" })]
+      ),
+      r.onChange(
+        () => state.showSprite,
+        () => [t2.text({ text: String(state.showSprite) })]
+      ),
+      r.run(() => {
+        device.log(`Show: ${state.showSprite}`);
+      }),
+    ];
+  },
+});
+
+interface TestMutableSpriteProps {
+  initPos: number;
+}
+const TestMutableSprite = makeMutableSprite<
+  TestMutableSpriteProps,
+  TestGameState,
+  TestPlatformInputs
+>({
+  init({ props }) {
+    return { position: props.initPos };
+  },
+  loop({ state }) {
+    state.position++;
+  },
+  render({ state }) {
+    return [
+      t2.circle(
+        {
+          y: 50,
+          rotation: 10,
+          radius: 10,
+          color: "#0095DD",
+        },
+        (thisProps) => {
+          thisProps.x = state.position;
+        }
+      ),
+    ];
   },
 });

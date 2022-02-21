@@ -23,6 +23,8 @@ import {
   TestGameThrowUnloadedAudioError,
   TestGameThrowNotYetLoadedImageError,
   TestGameThrowNotYetLoadedAudioError,
+  NestedSpriteGame,
+  NestedSpriteGame2,
 } from "./utils";
 import { GameProps } from "@replay/core";
 
@@ -126,6 +128,9 @@ test("Dimension 'game-coords' renders the minimum size", () => {
 
   expect(canvas.width).toBe(200);
   expect(canvas.height).toBe(200);
+
+  expect(canvas.style.width).toBe("200px");
+  expect(canvas.style.height).toBe("200px");
 });
 
 test("Dimension 'scale-up' renders up to browser size and resizes", () => {
@@ -141,13 +146,17 @@ test("Dimension 'scale-up' renders up to browser size and resizes", () => {
 
   // the game is square so width scales up to max 400px (scale 2)
   // so a margin of 10 game coordinates allowed on each side = 40px extra width
-  expect(canvas.width).toBe(440);
-  expect(canvas.height).toBe(400);
+  expect(canvas.style.width).toBe("440px");
+  expect(canvas.style.height).toBe("400px");
+  expect(canvas.width).toBe(220);
+  expect(canvas.height).toBe(200);
 
   resizeWindow(300, 600); // scale 1.5
 
-  expect(canvas.width).toBe(300);
-  expect(canvas.height).toBe(360);
+  expect(canvas.style.width).toBe("300px");
+  expect(canvas.style.height).toBe("360px");
+  expect(canvas.width).toBe(200);
+  expect(canvas.height).toBe(240);
 });
 
 // Error "Server responded with 404"
@@ -219,9 +228,10 @@ test("Supports Native Sprites", () => {
 });
 
 test("Can preload and unload image and audio assets", async () => {
-  const { audioElements, imageElements } = renderCanvas(
-    TestAssetsGame(testGameProps)
-  );
+  const result = renderCanvas(TestAssetsGame(testGameProps));
+
+  if (result instanceof Error) throw result;
+  const { audioElements, imageElements } = result;
 
   await loadAssets();
 
@@ -285,4 +295,51 @@ test.skip("Font properties", async () => {
   });
 
   expect(canvasToImage(canvas)).toMatchImageSnapshot();
+});
+
+test("deeply nested input position", () => {
+  console.log = jest.fn();
+
+  const canvas = document.createElement("canvas");
+
+  renderCanvas(NestedSpriteGame(testGameProps), { canvas });
+
+  const { width, height } = canvas;
+
+  clickPointer(width / 2 + 50, height / 2 - 50);
+  mockTime.nextFrame();
+  mockTime.nextFrame();
+
+  // Rendered Sprite position
+  // Image should show x: -10, y: 60, rotation: -45, opacity: 0.5125
+  expect(canvasToImage(canvas)).toMatchImageSnapshot();
+
+  // Pointer positions global and calculated on platform side
+
+  expect(console.log).toHaveBeenNthCalledWith(
+    4,
+    "NestedSpriteGame x: 50, y: 50"
+  );
+  expect(console.log).toHaveBeenNthCalledWith(
+    5,
+    "NestedFirstSprite x: 30, y: -30"
+  );
+  expect(console.log).toHaveBeenNthCalledWith(
+    6,
+    "NestedSecondSprite x: -50, y: 20"
+  );
+});
+
+test("nested sprites and input position with scale", () => {
+  console.log = jest.fn();
+  renderCanvas(NestedSpriteGame2(testGameProps));
+
+  const { width, height } = document.getElementsByTagName("canvas")[0];
+
+  clickPointer(width / 2 + 10, height / 2 - 10);
+
+  mockTime.nextFrame();
+  mockTime.nextFrame();
+
+  expect(console.log).toBeCalledWith("NestedFirstSprite2 x: -20, y: -10");
 });
