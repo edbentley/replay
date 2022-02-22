@@ -1,7 +1,7 @@
 import { Gradient, TextTexture, TextureFont } from "@replay/core/dist/t";
 import { MutTextTexture } from "@replay/core/dist/t2";
 import { createProgram, hexToRGB, RenderState } from "./glUtils";
-import { m2d, m2dMut, Matrix2D } from "@replay/core/dist/matrix";
+import { m2d, Matrix2D } from "@replay/core/dist/matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_position;
@@ -119,14 +119,14 @@ export function getDrawCanvas(
     // where
     // u_matrix = matrix * scale
     // scale converts position (which is -0.5 / 0.5 points) to the size of the image
-    const uMatrixValue = m2dMut.multiplyPooled(
+    const uMatrixValue = m2d.multiplyPooled(
       matrix,
-      m2dMut.getScaleMatrixPooled(
+      m2d.getScaleMatrixPooled(
         width / devicePixelRatio,
         height / devicePixelRatio
       )
     );
-    m2dMut.toUniform3fvMut(uMatrixValue, uMatrixPooled);
+    m2d.toUniform3fvMut(uMatrixValue, uMatrixPooled);
 
     // Set the matrix which will be u_matrix * a_position
     gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);

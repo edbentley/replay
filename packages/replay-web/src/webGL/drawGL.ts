@@ -9,7 +9,7 @@ import {
   getDrawCanvas,
   handleTextTexture,
 } from "./canvasGL";
-import { m2d, m2dMut, Matrix2D } from "@replay/core/dist/matrix";
+import { m2d, Matrix2D } from "@replay/core/dist/matrix";
 import { LineTexture, TextTexture, TextureFont } from "@replay/core/dist/t";
 import { getDrawLine, getDrawLineGrad } from "./lineGL";
 import { getDrawCircle } from "./circleGL";
@@ -233,11 +233,11 @@ export function draw(
       const capColor = textureProps.color;
       if (tState.lineCaps && capColor) {
         for (const circle of tState.lineCaps) {
-          const m1 = m2dMut.multiplyPooled(
-            m2dMut.getTranslateMatrixPooled(circle.x, circle.y),
-            m2dMut.getRotateMatrixPooled(circle.angleRad)
+          const m1 = m2d.multiplyPooled(
+            m2d.getTranslateMatrixPooled(circle.x, circle.y),
+            m2d.getRotateMatrixPooled(circle.angleRad)
           );
-          const m2 = m2dMut.multiplyPooled(newMatrix, m1);
+          const m2 = m2d.multiplyPooled(newMatrix, m1);
           drawCircle(
             m2,
             circle.textureState,
@@ -294,7 +294,7 @@ export function draw(
         ? newMatrix
         : m2d.multiply(
             newMatrix,
-            m2dMut.getTranslateMatrixPooled(
+            m2d.getTranslateMatrixPooled(
               (width / (2 * devicePixelRatio)) * (align === "left" ? 1 : -1),
               0
             )

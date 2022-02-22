@@ -1,6 +1,6 @@
 import { ImageFileData } from "../device";
 import { createProgram, RenderState } from "./glUtils";
-import { m2d, m2dMut, Matrix2D } from "@replay/core/dist/matrix";
+import { m2d, Matrix2D } from "@replay/core/dist/matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_position;
@@ -126,7 +126,7 @@ export function getDrawImage(
     // where
     // u_matrix = matrix * scale
     // scale converts position (which is -0.5 / 0.5 points) to the size of the image
-    m2dMut.scaleToUniform3fvMut(matrix, width, height, uMatrixPooled);
+    m2d.scaleToUniform3fvMut(matrix, width, height, uMatrixPooled);
 
     // Set the matrix which will be u_matrix * a_position
     gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
@@ -187,7 +187,7 @@ function setSpriteSheetMatrix(
   uTextureMatrix: Float32Array
 ) {
   if (!info) {
-    m2dMut.toUniform3fvMut(m2d.identityMatrix, uTextureMatrix);
+    m2d.toUniform3fvMut(m2d.identityMatrix, uTextureMatrix);
     return;
   }
 
@@ -196,12 +196,12 @@ function setSpriteSheetMatrix(
   const columnIndex = index % columns;
   const rowIndex = Math.floor(index / columns) % rows;
 
-  const matrix = m2dMut.multiplyPooled(
-    m2dMut.getTranslateMatrixPooled(
+  const matrix = m2d.multiplyPooled(
+    m2d.getTranslateMatrixPooled(
       columnIndex / columns,
       (rows - 1 - rowIndex) / rows
     ),
-    m2dMut.getScaleMatrixPooled(1 / columns, 1 / rows)
+    m2d.getScaleMatrixPooled(1 / columns, 1 / rows)
   );
-  m2dMut.toUniform3fvMut(matrix, uTextureMatrix);
+  m2d.toUniform3fvMut(matrix, uTextureMatrix);
 }

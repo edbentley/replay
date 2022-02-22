@@ -20,7 +20,7 @@ import {
   MutTexture,
   RenderableMutTexture,
 } from "./t2";
-import { m2d, m2dMut, Matrix2D } from "./matrix";
+import { m2d, Matrix2D } from "./matrix";
 import { applyTransformMut } from "./transform";
 
 /**
@@ -572,9 +572,9 @@ function handleSprites<P, I>(
               parentGlobalId,
               utils: nativeSpriteUtils,
               spriteToGameCoords: (x, y, out) => {
-                const result = m2dMut.multiplyPooled(
+                const result = m2d.multiplyPooled(
                   stateStackFns.getTopStack().transformationGameCoords,
-                  m2dMut.getTranslateMatrixPooled(x, y)
+                  m2d.getTranslateMatrixPooled(x, y)
                 );
                 out.x = result[4];
                 out.y = result[5];
@@ -1413,9 +1413,9 @@ function createMutableSpriteContainer<P, S, I>(
         parentGlobalId: globalId,
         utils: nativeSpriteUtils,
         spriteToGameCoords: (x, y, out) => {
-          const result = m2dMut.multiplyPooled(
+          const result = m2d.multiplyPooled(
             stateStackFns.getTopStack().transformationGameCoords,
-            m2dMut.getTranslateMatrixPooled(x, y)
+            m2d.getTranslateMatrixPooled(x, y)
           );
           out.x = result[4];
           out.y = result[5];

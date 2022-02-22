@@ -7,7 +7,7 @@ import {
   Texture,
   makeContext,
 } from "@replay/core";
-import { m2dMut } from "@replay/core/dist/matrix";
+import { m2d } from "@replay/core/dist/matrix";
 import { m2d } from "@replay/core/src/matrix";
 import { mockContext, testSprite } from "../index";
 
@@ -582,7 +582,7 @@ test("can map input coordinates to relative coordinates within Sprite", () => {
       x: 20,
     },
     mapInputCoordinates(matrix, inputs) {
-      const invertMatrix = m2dMut.invertPooled(matrix);
+      const invertMatrix = m2d.invertPooled(matrix);
       if (!invertMatrix) return inputs;
 
       const result = m2d.multiply(

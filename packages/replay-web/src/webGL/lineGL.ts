@@ -5,7 +5,7 @@ import {
   RenderState,
   setupRampTexture,
 } from "./glUtils";
-import { m2d, m2dMut, Matrix2D } from "@replay/core/dist/matrix";
+import { m2d, Matrix2D } from "@replay/core/dist/matrix";
 
 // TODO: better line joins to avoid overlaps
 
@@ -138,7 +138,7 @@ export function getDrawLine(
     gl.bufferData(gl.ARRAY_BUFFER, mutTextureState.strokePath, gl.DYNAMIC_DRAW);
 
     // Set the matrix which will be u_matrix * a_position
-    m2dMut.toUniform3fvMut(matrix, uMatrixPooled);
+    m2d.toUniform3fvMut(matrix, uMatrixPooled);
     gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     gl.uniform1f(uHalfThicknessLocation, lineWidth / 2);
@@ -445,7 +445,7 @@ export function getDrawLineGrad(
     gl.bufferData(gl.ARRAY_BUFFER, mutTextureState.linePath, gl.DYNAMIC_DRAW);
 
     // Set the matrix which will be u_matrix * a_position
-    m2dMut.toUniform3fvMut(matrix, uMatrixPooled);
+    m2d.toUniform3fvMut(matrix, uMatrixPooled);
     gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     // Set opacity

@@ -1,4 +1,4 @@
-import { m2d, m2dMut, Matrix2D } from "./matrix";
+import { m2d, Matrix2D } from "./matrix";
 import { SpriteBaseProps } from "./props";
 
 export function applyTransform(
@@ -30,7 +30,7 @@ export function applyTransformPooled(
   withScaleX = 1,
   withScaleY = 1
 ): Matrix2D {
-  m2dMut.transformMut(
+  m2d.transformMut(
     matrix,
     baseProps.x,
     baseProps.y,
@@ -54,7 +54,7 @@ export function applyTransformMut(
   withScaleX = 1,
   withScaleY = 1
 ) {
-  m2dMut.transformMut(
+  m2d.transformMut(
     matrix,
     baseProps.x,
     baseProps.y,

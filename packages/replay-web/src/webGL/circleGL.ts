@@ -1,5 +1,5 @@
 import { createProgram, hexToRGBPooled, RenderState } from "./glUtils";
-import { m2d, m2dMut, Matrix2D } from "@replay/core/dist/matrix";
+import { m2d, Matrix2D } from "@replay/core/dist/matrix";
 
 const vertexShaderSource = `
 #define PI 3.1415926538
@@ -92,7 +92,7 @@ export function getDrawCircle(
     }
 
     // Calculate number points to draw based on one pixel resolution
-    const { scaleX, scaleY } = m2dMut.getScalePooled(matrix);
+    const { scaleX, scaleY } = m2d.getScalePooled(matrix);
     const scale = Math.max(scaleX * gameWidth, scaleY * gameHeight) / 2; // Undo initial transform in matrix (* gameSize/2)
     const numVertex = Math.ceil(Math.PI * radius * scale * pxPerPoint); // 2πr * scale / 2
 
@@ -100,7 +100,7 @@ export function getDrawCircle(
 
     gl.bufferData(gl.ARRAY_BUFFER, mutTextureState.points, gl.DYNAMIC_DRAW);
 
-    m2dMut.toUniform3fvMut(matrix, uMatrixPooled);
+    m2d.toUniform3fvMut(matrix, uMatrixPooled);
     gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     // Set uniforms

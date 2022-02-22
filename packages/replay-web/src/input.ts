@@ -1,4 +1,4 @@
-import { Matrix2D, m2dMut } from "@replay/core/dist/matrix";
+import { Matrix2D, m2d } from "@replay/core/dist/matrix";
 
 /**
  * Keys pressed based on the `key` value of browser keyboard events.
@@ -34,12 +34,12 @@ let pointerIds: number[] = [];
 export function mapInputCoordinates<
   I extends { pointer: { x: number; y: number } }
 >(matrix: Matrix2D, inputs: I): I {
-  const invertMatrix = m2dMut.invertPooled(matrix);
+  const invertMatrix = m2d.invertPooled(matrix);
   if (!invertMatrix) return inputs;
 
   pooledInputMatrix[4] = inputs.pointer.x;
   pooledInputMatrix[5] = inputs.pointer.y;
-  const result = m2dMut.multiplyPooled(invertMatrix, pooledInputMatrix);
+  const result = m2d.multiplyPooled(invertMatrix, pooledInputMatrix);
 
   return {
     ...inputs,
@@ -56,12 +56,12 @@ export function getInputsMut(matrix: Matrix2D, localMutInputs: Inputs): Inputs {
   localMutInputs.pointer.justPressed = mutableInputs.pointer.justPressed;
   localMutInputs.pointer.justReleased = mutableInputs.pointer.justReleased;
 
-  const invertMatrix = m2dMut.invertPooled(matrix);
+  const invertMatrix = m2d.invertPooled(matrix);
   if (!invertMatrix) return localMutInputs;
 
   pooledInputMatrix[4] = mutableInputs.pointer.x;
   pooledInputMatrix[5] = mutableInputs.pointer.y;
-  const result = m2dMut.multiplyPooled(invertMatrix, pooledInputMatrix);
+  const result = m2d.multiplyPooled(invertMatrix, pooledInputMatrix);
 
   localMutInputs.pointer.x = result[4];
   localMutInputs.pointer.y = result[5];

@@ -16,18 +16,6 @@ export type Matrix2D = [
   tx: number, ty: number
 ];
 
-function getRotateMatrix(rotationRad: number): Matrix2D {
-  const s = Math.sin(rotationRad);
-  const c = Math.cos(rotationRad);
-
-  // prettier-ignore
-  return [
-    c, s,
-    -s, c,
-    0, 0,
-  ];
-}
-
 // prettier-ignore
 const identityMatrix: Matrix2D = [
   1, 0,
@@ -35,12 +23,6 @@ const identityMatrix: Matrix2D = [
   0, 0,
 ];
 
-// prettier-ignore
-const identityMatrix3fv = new Float32Array([
-  1, 0, 0,
-  0, 1, 0,
-  0, 0, 1
-]);
 function getNewIdentity3fv() {
   return new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 }
@@ -83,13 +65,6 @@ function multiply(matrixA: Matrix2D, matrixB: Matrix2D): Matrix2D {
     a0 * b2 + a2 * b3, a1 * b2 + a3 * b3,
     a0 * b4 + a2 * b5 + a4, a1 * b4 + a3 * b5 + a5,
   ];
-}
-
-function multiplyMultiple(matrices: Matrix2D[]): Matrix2D | null {
-  if (matrices.length === 0) return null;
-  return matrices
-    .slice(1)
-    .reduce((prev, curr) => multiply(prev, curr), matrices[0]);
 }
 
 /**
@@ -206,31 +181,22 @@ function scaleToUniform3fvMut(
   mutOutput[8] = 1;
 }
 
-function toUniform3fv(matrix: Matrix2D): Float32Array {
-  const out = new Float32Array(9);
-  out[0] = matrix[0];
-  out[1] = matrix[1];
-  out[2] = 0;
-  out[3] = matrix[2];
-  out[4] = matrix[3];
-  out[5] = 0;
-  out[6] = matrix[4];
-  out[7] = matrix[5];
-  out[8] = 1;
-  return out;
-}
-
 export const m2d = {
   identityMatrix,
-  identityMatrix3fv,
   getNewIdentity3fv,
-  getRotateMatrix,
   getScaleMatrix,
   getTranslateMatrix,
   transform,
   multiply,
-  multiplyMultiple,
-  toUniform3fv,
+  transformMut,
+  toUniform3fvMut,
+  scaleToUniform3fvMut,
+  multiplyPooled,
+  getTranslateMatrixPooled,
+  getScaleMatrixPooled,
+  getRotateMatrixPooled,
+  getScalePooled,
+  invertPooled,
 };
 
 function toUniform3fvMut(matrix: Matrix2D, out: Float32Array) {
@@ -302,18 +268,6 @@ function getScalePooled(matrix: Matrix2D) {
   calcScaleResult.scaleY = Math.hypot(matrix[1], matrix[3]);
   return calcScaleResult;
 }
-
-export const m2dMut = {
-  transformMut,
-  toUniform3fvMut,
-  scaleToUniform3fvMut,
-  multiplyPooled,
-  getTranslateMatrixPooled,
-  getScaleMatrixPooled,
-  getRotateMatrixPooled,
-  getScalePooled,
-  invertPooled,
-};
 
 const invertResult: Matrix2D = [0, 0, 0, 0, 0, 0];
 function invertPooled(matrix: Matrix2D) {
