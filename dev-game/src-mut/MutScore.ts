@@ -16,10 +16,6 @@ export const MutScore = makeMutableSprite<{ score: number; preText?: string }>({
         (thisProps) => {
           const { score, preText = "" } = props;
           thisProps.text = `${preText}Score ${score}`;
-
-          // Updates?
-          // thisProps.x = -device.size.width / 2 + 50;
-          // thisProps.y = -device.size.height / 2 + 10;
         }
       ),
     ];

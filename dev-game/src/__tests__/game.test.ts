@@ -34,7 +34,7 @@ test("gameplay", async () => {
     resolvePromises,
     // alert,
     // clipboard,
-  } = testSprite(Game({ ...gameProps, isMut: false }), gameProps, {
+  } = testSprite(Game(gameProps), gameProps, {
     initInputs: inputs,
     mapInputCoordinates,
     initRandom: [0.5],

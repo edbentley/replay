@@ -1,13 +1,8 @@
-import {
-  GameProps,
-  t,
-  makeSprite,
-  makePureSprite,
-} from "../../packages/replay-core/src";
+import { GameProps, t, makeSprite } from "../../packages/replay-core/src";
 import { WebInputs, RenderCanvasOptions } from "../../packages/replay-web/src";
 import { iOSInputs } from "../../packages/replay-swift/src";
-import { PlayStage } from "./PlayStage";
 import { TextInput, TextInputWeb } from "../../packages/replay-text-input/src";
+import { MutPlayStage } from "./MutPlayStage";
 
 interface State {
   stage: GameStage;
@@ -58,17 +53,6 @@ export const gameProps: GameProps = {
 
 export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
   init({ device, updateState }) {
-    // device.network.get(
-    //   "https://jsonplaceholder.typicode.com/posts/1",
-    //   data => {
-    //     const speed = data.id * 5;
-    //     send({
-    //       type: "SetBulletSpeed",
-    //       speed
-    //     });
-    //   }
-    // );
-
     device.storage.getItem("highScore").then((storedHighScore) => {
       const highScore = storedHighScore ? parseInt(storedHighScore, 10) : 0;
 
@@ -79,26 +63,6 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
           bulletSpeed: 10,
           stage: GameStage.Play,
         }));
-
-        // Uncomment below to test alerts and clipboard
-        // device.clipboard.copy("Hello", (error) => {
-        //   if (error) {
-        //     device.alert.ok(`Error copying to clipboard: ${error.message}`);
-        //   } else {
-        //     device.alert.okCancel(
-        //       `Just copied "Hello" to your clipboard. Game is about to start`,
-        //       (wasOk) => {
-        //         if (wasOk) {
-        //           updateState((state) => ({
-        //             ...state,
-        //             bulletSpeed: 10,
-        //             stage: GameStage.Play,
-        //           }));
-        //         }
-        //       }
-        //     );
-        //   }
-        // });
       }, 1000);
     });
 
@@ -131,23 +95,6 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
   },
 
   render({ state, updateState, device }) {
-    const input = TextInput({
-      id: "TestInput",
-      fontName: "Calibri",
-      fontSize: 20,
-      text: state.text,
-      onChangeText: (text) => {
-        if (state.stage === GameStage.Play) {
-          updateState((s) => ({ ...s, text }));
-        }
-      },
-      width: 100,
-      x: -device.size.width / 2 + 100,
-      y: -device.size.height / 2 + 20,
-      numberOfLines: 3,
-      align: "left",
-      color: "red",
-    });
     switch (state.stage) {
       case GameStage.Loading:
         return [
@@ -156,7 +103,24 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
             text: "Loading game",
           }),
         ];
-      case GameStage.GameOver:
+      case GameStage.GameOver: {
+        const input = TextInput({
+          id: "TestInput",
+          fontName: "Calibri",
+          fontSize: 20,
+          text: state.text,
+          onChangeText: (text) => {
+            if (state.stage === GameStage.Play) {
+              updateState((s) => ({ ...s, text }));
+            }
+          },
+          width: 100,
+          x: -device.size.width / 2 + 100,
+          y: -device.size.height / 2 + 20,
+          numberOfLines: 3,
+          align: "left",
+          color: "red",
+        });
         return [
           t.text({
             color: "red",
@@ -165,50 +129,30 @@ export const Game = makeSprite<GameProps, State, WebInputs | iOSInputs>({
           }),
           input,
         ];
+      }
       case GameStage.Play:
         return [
-          PureRectGroup({ id: "Circles" }),
-
-          PlayStage({
-            id: "play-stage",
-            bulletSpeed: state.bulletSpeed,
-            gameOver: function gameOver(score) {
-              if (score > state.highScore) {
-                device.storage.setItem("highScore", String(score));
-              }
-
-              updateState((currState) => ({
-                ...currState,
-                stage: GameStage.GameOver,
-                highScore: Math.max(score, state.highScore),
-              }));
+          MutPlayStage.Single(
+            {
+              id: "play-stage",
+              bulletSpeed: state.bulletSpeed,
+              gameOver: function gameOver(score) {
+                if (score > state.highScore) {
+                  device.storage.setItem("highScore", String(score));
+                }
+                updateState((currState) => ({
+                  ...currState,
+                  stage: GameStage.GameOver,
+                  highScore: Math.max(score, state.highScore),
+                }));
+              },
+              highScore: state.highScore,
             },
-            highScore: state.highScore,
-          }),
-          input,
+            (thisProps) => {
+              thisProps.bulletSpeed = state.bulletSpeed;
+            }
+          ),
         ];
     }
-  },
-});
-
-const PureRectGroup = makePureSprite({
-  shouldRerender() {
-    return false;
-  },
-
-  render() {
-    // Large batch
-    return [
-      t.rectangleArray({
-        props: Array.from({ length: 2000 }).map(function mapRects(_, index) {
-          return {
-            testId: `Rect-${index}`,
-            width: 4,
-            height: 4,
-            color: "red",
-          };
-        }),
-      }),
-    ];
   },
 });
