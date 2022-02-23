@@ -187,7 +187,7 @@ function setMatricesColoursData(
   }
 }
 
-type WebRectArrayTextureState = {
+export type WebRectArrayTextureState = {
   matrices: Float32Array;
   colours: Float32Array;
 };

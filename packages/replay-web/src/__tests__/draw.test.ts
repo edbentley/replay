@@ -32,7 +32,7 @@ beforeAll(() => {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
-    const renderTexture = draw(
+    const { renderTexture, getInitTextureState } = draw(
       gl,
       glInstArrays,
       glVao,
@@ -43,7 +43,7 @@ beforeAll(() => {
       { family: "Courier", size: 12 },
       "white",
       1
-    ).renderTexture;
+    );
 
     textures.forEach((texture) =>
       renderTexture(
@@ -57,7 +57,7 @@ beforeAll(() => {
           hasMask: false,
         },
         texture,
-        null
+        getInitTextureState(texture)
       )
     );
   };

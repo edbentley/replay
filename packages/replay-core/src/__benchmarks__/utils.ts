@@ -132,7 +132,7 @@ function getBenchmarkPlatform() {
     },
   };
 
-  const platform: ReplayPlatform<Inputs> = {
+  const platform: ReplayPlatform<Inputs, null> = {
     isTestPlatform: false,
     newInputs: () => inputs,
     getInputs: (_, inputs) => {
@@ -147,6 +147,7 @@ function getBenchmarkPlatform() {
       renderTexture: () => null,
       startNativeSprite: () => null,
       endNativeSprite: () => null,
+      getInitTextureState: () => null,
     },
   };
 

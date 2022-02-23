@@ -115,8 +115,11 @@ export function getDrawCircle(
   };
 }
 
-type WebCircleTextureState = {
+export type WebCircleTextureState = {
   points: Float32Array;
+};
+export type WebCircleArrayTextureState = {
+  pointsByIndex: WebCircleTextureState[];
 };
 
 function generatePoints(

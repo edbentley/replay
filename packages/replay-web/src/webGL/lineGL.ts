@@ -182,10 +182,13 @@ export type LineCaps = {
   textureState: { points: Float32Array };
 };
 
-type WebLineTextureState = {
+export type WebLineTextureState = {
   lineCaps: [LineCaps, LineCaps] | null;
   linePath: Float32Array;
   strokePath: Float32Array;
+};
+export type WebLineArrayTextureState = {
+  stateByIndex: WebLineTextureState[];
 };
 
 function generatePathDataStroke(

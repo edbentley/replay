@@ -166,7 +166,7 @@ export function getDrawImageBatch(
   };
 }
 
-type WebImageArrayTextureState = {
+export type WebImageArrayTextureState = {
   matrices: Float32Array;
   opacities: Float32Array;
 };

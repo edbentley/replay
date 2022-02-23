@@ -1,5 +1,4 @@
-import { Gradient, TextTexture, TextureFont } from "@replay/core/dist/t";
-import { MutTextTexture } from "@replay/core/dist/t2";
+import { Gradient, TextArrayProps, TextureFont } from "@replay/core/dist/t";
 import { createProgram, hexToRGB, RenderState } from "./glUtils";
 import { m2d, Matrix2D } from "@replay/core/dist/matrix";
 
@@ -165,7 +164,7 @@ export function createCanvasTexture(
  * Returns required align
  */
 export function handleTextTexture(
-  textureProps: TextTexture["props"],
+  textureProps: TextArrayProps,
   offscreenCanvas: HTMLCanvasElement,
   offscreenCanvasCtx: CanvasRenderingContext2D,
   defaultFont: TextureFont,

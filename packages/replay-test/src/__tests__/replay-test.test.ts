@@ -8,7 +8,6 @@ import {
   makeContext,
 } from "@replay/core";
 import { m2d } from "@replay/core/dist/matrix";
-import { m2d } from "@replay/core/src/matrix";
 import { mockContext, testSprite } from "../index";
 
 test("getTextures, nextFrame", () => {

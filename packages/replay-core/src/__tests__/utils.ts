@@ -215,11 +215,13 @@ export function getTestPlatform(customSize?: DeviceSize) {
     mutInputs.ref = getInitTestPlatformInputs();
   }
 
+  type TextureState = null;
+
   const textures: SingleTexture[] = [];
 
   const masks: MaskShape[] = [];
 
-  const platform: ReplayPlatform<TestPlatformInputs> = {
+  const platform: ReplayPlatform<TestPlatformInputs, TextureState> = {
     getInputs: (matrix, localMutInputs) => {
       localMutInputs.buttonPressed = mutInputs.ref.buttonPressed;
       localMutInputs.x = mutInputs.ref.x;
@@ -242,12 +244,9 @@ export function getTestPlatform(customSize?: DeviceSize) {
       },
       endRenderSprite: () => null,
       renderTexture: (stateStack, texture) => {
-        if (
-          texture.type === "imageArray" ||
-          texture.type === "mutImageArrayRender"
-        ) {
+        if (texture.type === "imageArray") {
           textures.push(
-            ...(texture.props as ImageTexture["props"][]).map(
+            ...texture.props.map(
               (props): ImageTexture => {
                 return {
                   type: "image",
@@ -260,12 +259,9 @@ export function getTestPlatform(customSize?: DeviceSize) {
               }
             )
           );
-        } else if (
-          texture.type === "rectangleArray" ||
-          texture.type === "mutRectangleArrayRender"
-        ) {
+        } else if (texture.type === "rectangleArray") {
           textures.push(
-            ...(texture.props as RectangleTexture["props"][]).map(
+            ...texture.props.map(
               (props): RectangleTexture => {
                 return {
                   type: "rectangle",
@@ -277,9 +273,9 @@ export function getTestPlatform(customSize?: DeviceSize) {
               }
             )
           );
-        } else if (texture.type === "mutTextArrayRender") {
+        } else if (texture.type === "textArray") {
           textures.push(
-            ...(texture.props as TextTexture["props"][]).map(
+            ...texture.props.map(
               (props): TextTexture => {
                 return {
                   type: "text",
@@ -291,9 +287,9 @@ export function getTestPlatform(customSize?: DeviceSize) {
               }
             )
           );
-        } else if (texture.type === "mutCircleArrayRender") {
+        } else if (texture.type === "circleArray") {
           textures.push(
-            ...(texture.props as CircleTexture["props"][]).map(
+            ...texture.props.map(
               (props): CircleTexture => {
                 return {
                   type: "circle",
@@ -305,9 +301,9 @@ export function getTestPlatform(customSize?: DeviceSize) {
               }
             )
           );
-        } else if (texture.type === "mutLineArrayRender") {
+        } else if (texture.type === "lineArray") {
           textures.push(
-            ...(texture.props as LineTexture["props"][]).map(
+            ...texture.props.map(
               (props): LineTexture => {
                 return {
                   type: "line",
@@ -323,27 +319,12 @@ export function getTestPlatform(customSize?: DeviceSize) {
           if (texture.props.mask) {
             masks.push(texture.props.mask);
           }
-          textures.push({
-            ...texture,
-            type:
-              texture.type === "mutCircle"
-                ? "circle"
-                : texture.type === "mutImage"
-                ? "image"
-                : texture.type === "mutRectangle"
-                ? "rectangle"
-                : texture.type === "mutLine"
-                ? "line"
-                : texture.type === "mutText"
-                ? "text"
-                : texture.type === "mutSpriteSheet"
-                ? "spriteSheet"
-                : texture.type,
-          } as SingleTexture);
+          textures.push(texture);
         }
       },
       startNativeSprite: jest.fn(),
       endNativeSprite: jest.fn(),
+      getInitTextureState: () => null,
     },
   };
 

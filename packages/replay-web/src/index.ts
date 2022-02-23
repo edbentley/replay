@@ -35,7 +35,7 @@ import {
   getClipboard,
 } from "./device";
 import { isTouchDevice } from "./isTouchDevice";
-import { draw } from "./webGL/drawGL";
+import { draw, TextureState } from "./webGL/drawGL";
 import { createTextureInfo } from "./webGL/imageGL";
 
 export { Inputs as WebInputs, mapInputCoordinates } from "./input";
@@ -286,6 +286,7 @@ export function renderCanvas<S>(
     mutRender.renderTexture = renderCanvasResult.renderTexture;
     mutRender.startNativeSprite = renderCanvasResult.startNativeSprite;
     mutRender.endNativeSprite = renderCanvasResult.endNativeSprite;
+    mutRender.getInitTextureState = renderCanvasResult.getInitTextureState;
 
     nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
       canvasOffsetLeft: canvas.offsetLeft,
@@ -455,7 +456,7 @@ export function renderCanvas<S>(
     },
   };
 
-  const mutRender: PlatformRender = {
+  const mutRender: PlatformRender<TextureState> = {
     newFrame: () => null,
     endFrame: () => null,
     startRenderSprite: () => null,
@@ -463,6 +464,7 @@ export function renderCanvas<S>(
     renderTexture: () => null,
     startNativeSprite: () => null,
     endNativeSprite: () => null,
+    getInitTextureState: () => null,
   };
 
   const mutDevice = mutDeviceCreator(
@@ -477,7 +479,7 @@ export function renderCanvas<S>(
     platformOptions?.device || {}
   );
 
-  const domPlatform: ReplayPlatform<Inputs> = {
+  const domPlatform: ReplayPlatform<Inputs, TextureState> = {
     mutDevice,
     getInputs: getInputsMut,
     newInputs,
@@ -529,7 +531,7 @@ export function renderCanvas<S>(
 
     updateDeviceSize();
 
-    const { runNextFrame } = replayCore<S, Inputs>(
+    const { runNextFrame } = replayCore<S, Inputs, TextureState>(
       domPlatform,
       {
         nativeSpriteMap,

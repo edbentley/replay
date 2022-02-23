@@ -35,7 +35,7 @@ export type ContextValue<T = unknown> = {
   value: T;
 };
 
-export type MutContextValue<T = unknown> = {
+export type MutableContextValue<T = unknown> = {
   context: Context<T>;
   value: () => T;
 };

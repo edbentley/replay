@@ -6,9 +6,9 @@ import {
   CustomSprite,
   makeSprite,
   makeMutableSprite,
-  MutableSprite,
+  MutableCustomSprite,
   Sprite,
-  AllMutSprite,
+  MutableSprite,
 } from "@replay/core/dist/sprite";
 import {
   CircleTexture,
@@ -141,7 +141,7 @@ interface TestSpriteUtils<I> {
  * play and record the game.
  */
 export function testSprite<P, S, I>(
-  sprite: CustomSprite<P, S, I> | MutableSprite<P, S, I>,
+  sprite: CustomSprite<P, S, I> | MutableCustomSprite<P, S, I>,
   gameProps: GameProps,
   options: TestSpriteOptions<I> = {}
 ): TestSpriteUtils<I> {
@@ -388,7 +388,7 @@ export function testSprite<P, S, I>(
   const audioElements: AssetMap<Record<string, string>> = {};
   const imageElements: AssetMap<Record<string, string>> = {};
 
-  const testPlatform: ReplayPlatform<I> = {
+  const testPlatform: ReplayPlatform<I, null> = {
     isTestPlatform: true,
     getInputs: (matrix) => {
       return mapInputCoordinates(matrix, inputs);
@@ -433,10 +433,7 @@ export function testSprite<P, S, I>(
       renderTexture: (stackItem, texture) => {
         if (
           throwAssetErrors &&
-          (texture.type === "image" ||
-            texture.type === "mutImage" ||
-            texture.type === "spriteSheet" ||
-            texture.type === "mutSpriteSheet")
+          (texture.type === "image" || texture.type === "spriteSheet")
         ) {
           const fileName = texture.props.fileName;
           const imageElement = imageElements[fileName];
@@ -455,11 +452,13 @@ export function testSprite<P, S, I>(
         /**
          * Replace texture's position with absolute game coordinates
          */
-        function updateTextureProps<T extends SingleTexture["props"]>(
+        function updateTextureProps<
+          T extends Omit<SingleTexture["props"], "mask">
+        >(
           textureProps: T,
           matrix: Matrix2D,
           mask: MaskShape
-        ): T {
+        ): T & { mask: MaskShape } {
           const {
             x,
             y,
@@ -490,12 +489,9 @@ export function testSprite<P, S, I>(
           };
         }
 
-        if (
-          texture.type === "imageArray" ||
-          texture.type === "mutImageArrayRender"
-        ) {
+        if (texture.type === "imageArray") {
           textures.push(
-            ...(texture.props as ImageTexture["props"][]).map(
+            ...texture.props.map(
               (props): ImageTexture => {
                 return {
                   type: "image",
@@ -508,12 +504,9 @@ export function testSprite<P, S, I>(
               }
             )
           );
-        } else if (
-          texture.type === "rectangleArray" ||
-          texture.type === "mutRectangleArrayRender"
-        ) {
+        } else if (texture.type === "rectangleArray") {
           textures.push(
-            ...(texture.props as RectangleTexture["props"][]).map(
+            ...texture.props.map(
               (props): RectangleTexture => {
                 return {
                   type: "rectangle",
@@ -522,9 +515,9 @@ export function testSprite<P, S, I>(
               }
             )
           );
-        } else if (texture.type === "mutTextArrayRender") {
+        } else if (texture.type === "textArray") {
           textures.push(
-            ...(texture.props as TextTexture["props"][]).map(
+            ...texture.props.map(
               (props): TextTexture => {
                 return {
                   type: "text",
@@ -533,9 +526,9 @@ export function testSprite<P, S, I>(
               }
             )
           );
-        } else if (texture.type === "mutCircleArrayRender") {
+        } else if (texture.type === "circleArray") {
           textures.push(
-            ...(texture.props as CircleTexture["props"][]).map(
+            ...texture.props.map(
               (props): CircleTexture => {
                 return {
                   type: "circle",
@@ -544,9 +537,9 @@ export function testSprite<P, S, I>(
               }
             )
           );
-        } else if (texture.type === "mutLineArrayRender") {
+        } else if (texture.type === "lineArray") {
           textures.push(
-            ...(texture.props as LineTexture["props"][]).map(
+            ...texture.props.map(
               (props): LineTexture => {
                 return {
                   type: "line",
@@ -558,20 +551,6 @@ export function testSprite<P, S, I>(
         } else {
           textures.push({
             ...texture,
-            type:
-              texture.type === "mutCircle"
-                ? "circle"
-                : texture.type === "mutImage"
-                ? "image"
-                : texture.type === "mutRectangle"
-                ? "rectangle"
-                : texture.type === "mutLine"
-                ? "line"
-                : texture.type === "mutText"
-                ? "text"
-                : texture.type === "mutSpriteSheet"
-                ? "spriteSheet"
-                : texture.type,
             props: updateTextureProps(
               texture.props,
               matrix,
@@ -582,6 +561,7 @@ export function testSprite<P, S, I>(
       },
       startNativeSprite: () => null,
       endNativeSprite: () => null,
+      getInitTextureState: () => null,
     },
   };
 
@@ -605,11 +585,11 @@ export function testSprite<P, S, I>(
   });
 
   const MutContexts = makeMutableSprite<{
-    sprite: MutableSprite<any, any, any>;
+    sprite: MutableCustomSprite<any, any, any>;
   }>({
     render({ props }) {
       return [
-        mutContextTuples.reduce<AllMutSprite>(
+        mutContextTuples.reduce<MutableSprite>(
           (prevSprite, [context, contextValue]) => {
             return context.Single({
               context: contextValue,

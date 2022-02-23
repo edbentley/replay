@@ -1,11 +1,11 @@
 import { makeMutableSprite, r } from "../../packages/replay-core/src";
 import { WebInputs } from "../../packages/replay-web/src";
 import { iOSInputs } from "../../packages/replay-swift/src";
-import { AllMutSprite } from "../../packages/replay-core/src/sprite";
+import { MutableSprite } from "../../packages/replay-core/src/sprite";
 
 type ClickableProps = {
-  spritesPressed: AllMutSprite[];
-  spritesNotPressed?: AllMutSprite[];
+  spritesPressed: MutableSprite[];
+  spritesNotPressed?: MutableSprite[];
   width: number;
   height: number;
   onPress: () => void;

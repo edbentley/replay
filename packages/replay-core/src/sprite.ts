@@ -1,6 +1,6 @@
 import { Device, DeviceSize, Assets } from "./device";
 import { Texture } from "./t";
-import { MutTexture } from "./t2";
+import { MutableTexture } from "./t2";
 import { SpriteBaseProps, ExcludeSpriteBaseProps } from "./props";
 
 /**
@@ -14,7 +14,7 @@ export type Sprite<P = any, S = any, I = any> =
   | NativeSprite<P>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | ContextSprite<any>
-  | MutableSprite<any, any, any>
+  | MutableCustomSprite<P, S, I>
   | Texture
   | null;
 
@@ -317,35 +317,39 @@ export type ContextSprite<T> = {
   sprites: Sprite[];
 };
 
-export type MutContextSprite<T> = {
+export type MutableContextSprite<T> = {
   type: "mutContext";
   context: Context<T>;
   value: () => T;
-  sprites: AllMutSprite[];
+  sprites: MutableSprite[];
 };
 
 export type Context<T> = {
   Sprite: (args: { context: T; sprites: Sprite[] }) => ContextSprite<T>;
   Single: (args: {
     context: () => T;
-    sprites: AllMutSprite[];
-  }) => MutContextSprite<T>;
+    sprites: MutableSprite[];
+  }) => MutableContextSprite<T>;
 };
 
 // -- Mutable
 
-export type AllMutSprite =
-  | MutableSprite<any, any, any>
-  | MutableSpriteArray<any, any, any, any>
-  | MutTexture
-  | MutConditionalItem
-  | MutRerenderOnChange<any>
-  | MutRun
-  | MutContextSprite<any>
-  | NativeSprite<any>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type MutableSprite<P = any, S = any, I = any> =
+  | MutableCustomSprite<P, S, I>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | MutableSpriteArray<P, S, I, any>
+  | MutableTexture
+  | MutableConditionalItem
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | MutableRerenderOnChange<any>
+  | MutableRun
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | MutableContextSprite<any>
+  | NativeSprite<P>
   | null;
 
-export type MutSpriteProps<P> = P &
+export type MutableCustomSpriteProps<P> = P &
   Partial<SpriteBaseProps> & {
     /**
      * Only required if NOT in Mutable Sprite
@@ -363,9 +367,9 @@ export function makeMutableSprite<
 >(spriteObj: MutableSpriteObj<P, S, I>) {
   return {
     Single: function makeSpriteCallback(
-      props: MutSpriteProps<P>,
-      update?: (thisProps: MutSpriteProps<P>) => void
-    ): MutableSprite<P, S, I> {
+      props: MutableCustomSpriteProps<P>,
+      update?: (thisProps: MutableCustomSpriteProps<P>) => void
+    ): MutableCustomSprite<P, S, I> {
       return {
         type: "mutable",
         spriteObj,
@@ -381,13 +385,16 @@ export function makeMutableSprite<
       array,
       key,
     }: {
-      props: (itemState: ItemState, index: number) => MutSpriteProps<P>;
+      props: (
+        itemState: ItemState,
+        index: number
+      ) => MutableCustomSpriteProps<P>;
       update?: (
-        thisProps: MutSpriteProps<P>,
+        thisProps: MutableCustomSpriteProps<P>,
         itemState: ItemState,
         index: number
       ) => void;
-      updateAll?: (thisProps: MutSpriteProps<P>) => void;
+      updateAll?: (thisProps: MutableCustomSpriteProps<P>) => void;
       filter?: (itemState: ItemState, index: number) => boolean;
       array: () => ItemState[];
       key: (itemState: ItemState, index: number) => string | number;
@@ -406,18 +413,18 @@ export function makeMutableSprite<
   };
 }
 
-export interface MutableSprite<P, S, I> {
+export interface MutableCustomSprite<P, S, I> {
   type: "mutable";
   spriteObj: MutableSpriteObj<P, S, I>;
-  props: MutSpriteProps<P>;
+  props: MutableCustomSpriteProps<P>;
   update?: (arg: P) => void;
 }
 export interface MutableSpriteArray<P, S, I, ItemState> {
   type: "mutableArray";
   spriteObj: MutableSpriteObj<P, S, I>;
-  props: (itemState: ItemState, index: number) => MutSpriteProps<P>;
+  props: (itemState: ItemState, index: number) => MutableCustomSpriteProps<P>;
   update?: (thisProps: P, itemState: ItemState, index: number) => void;
-  updateAll?: (thisProps: MutSpriteProps<P>) => void;
+  updateAll?: (thisProps: MutableCustomSpriteProps<P>) => void;
   filter?: (itemState: ItemState, index: number) => boolean;
   array: () => ItemState[];
   key: (itemState: ItemState, index: number) => string | number;
@@ -474,14 +481,14 @@ interface MutableSpriteObjBase<P, S, I> {
     device: Device;
     getInputs: () => I;
     getContext: <T>(context: Context<T>) => T;
-  }) => AllMutSprite[];
+  }) => MutableSprite[];
 }
 
 export const r = {
   if: (
     condition: () => boolean,
-    sprites: () => AllMutSprite[]
-  ): MutConditionalItem => {
+    sprites: () => MutableSprite[]
+  ): MutableConditionalItem => {
     return {
       type: "conditional",
       condition,
@@ -491,9 +498,9 @@ export const r = {
   },
   ifElse: (
     condition: () => boolean,
-    trueSprites: () => AllMutSprite[],
-    falseSprites: () => AllMutSprite[]
-  ): MutConditionalItem => {
+    trueSprites: () => MutableSprite[],
+    falseSprites: () => MutableSprite[]
+  ): MutableConditionalItem => {
     return {
       type: "conditional",
       condition,
@@ -503,15 +510,15 @@ export const r = {
   },
   onChange: <T>(
     value: () => T,
-    sprites: () => AllMutSprite[]
-  ): MutRerenderOnChange<T> => {
+    sprites: () => MutableSprite[]
+  ): MutableRerenderOnChange<T> => {
     return {
       type: "onChange",
       value,
       sprites,
     };
   },
-  run: (fn: () => void): MutRun => {
+  run: (fn: () => void): MutableRun => {
     return {
       type: "run",
       fn,
@@ -519,20 +526,20 @@ export const r = {
   },
 };
 
-export type MutConditionalItem = {
+export type MutableConditionalItem = {
   type: "conditional";
   condition: () => boolean;
-  trueSprites: () => AllMutSprite[];
-  falseSprites: () => AllMutSprite[];
+  trueSprites: () => MutableSprite[];
+  falseSprites: () => MutableSprite[];
 };
 
-export type MutRerenderOnChange<T> = {
+export type MutableRerenderOnChange<T> = {
   type: "onChange";
   value: () => T;
-  sprites: () => AllMutSprite[];
+  sprites: () => MutableSprite[];
 };
 
-export type MutRun = {
+export type MutableRun = {
   type: "run";
   fn: () => void;
 };

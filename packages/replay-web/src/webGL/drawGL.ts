@@ -10,12 +10,25 @@ import {
   handleTextTexture,
 } from "./canvasGL";
 import { m2d, Matrix2D } from "@replay/core/dist/matrix";
-import { LineTexture, TextTexture, TextureFont } from "@replay/core/dist/t";
-import { getDrawLine, getDrawLineGrad } from "./lineGL";
-import { getDrawCircle } from "./circleGL";
+import {
+  LineArrayProps,
+  TextArrayProps,
+  TextureFont,
+} from "@replay/core/dist/t";
+import {
+  getDrawLine,
+  getDrawLineGrad,
+  WebLineTextureState,
+  WebLineArrayTextureState,
+} from "./lineGL";
+import {
+  getDrawCircle,
+  WebCircleTextureState,
+  WebCircleArrayTextureState,
+} from "./circleGL";
 import { createGradTexture, hexToRGB, RenderState } from "./glUtils";
-import { getDrawImageBatch } from "./imageBatchGL";
-import { getDrawRectBatch } from "./rectBatchGL";
+import { getDrawImageBatch, WebImageArrayTextureState } from "./imageBatchGL";
+import { getDrawRectBatch, WebRectArrayTextureState } from "./rectBatchGL";
 import { applyTransformMut } from "@replay/core/dist/transform";
 
 export function draw(
@@ -29,7 +42,7 @@ export function draw(
   defaultFont: TextureFont,
   bgColor: string,
   devicePixelRatio: number
-): PlatformRender {
+): PlatformRender<TextureState> {
   const canvasWidth = gl.canvas.width;
   const canvasHeight = gl.canvas.height;
   const pxPerPoint = (canvasWidth * devicePixelRatio) / gameWidth;
@@ -177,9 +190,9 @@ export function draw(
   const [bgR, bgG, bgB] = hexToRGB(bgColor);
 
   function handleLineTextureLocal(
-    textureProps: LineTexture["props"],
+    textureProps: LineArrayProps,
     stackOpacity: number,
-    textureState: any
+    textureState: WebLineTextureState
   ) {
     const tState = textureState || {
       lineCaps: null,
@@ -255,7 +268,7 @@ export function draw(
   }
 
   function handleTextTextureLocal(
-    textureProps: TextTexture["props"],
+    textureProps: TextArrayProps,
     stackOpacity: number
   ) {
     const { text, color, strokeColor, font } = textureProps;
@@ -339,21 +352,17 @@ export function draw(
       }
     },
     renderTexture: (topStack, texture, textureState) => {
-      if (
-        texture.type === "imageArray" ||
-        texture.type === "mutImageArrayRender"
-      ) {
+      if (texture.type === "imageArray") {
         if (texture.props.length === 0) return;
+
+        const imageArrayTextureState = textureState as WebImageArrayTextureState;
 
         applyMask(texture.mask, topStack.transformation);
 
         const imageInfo = getImage(imageElements, texture.fileName);
         drawImageBatch(
           imageInfo.texture,
-          textureState || {
-            matrices: new Float32Array(),
-            opacities: new Float32Array(),
-          },
+          imageArrayTextureState,
           topStack.transformation,
           topStack.opacity,
           texture.props
@@ -364,20 +373,16 @@ export function draw(
         }
         return;
       }
-      if (
-        texture.type === "rectangleArray" ||
-        texture.type === "mutRectangleArrayRender"
-      ) {
+      if (texture.type === "rectangleArray") {
         if (texture.props.length === 0) return;
+
+        const rectangleArrayTextureState = textureState as WebRectArrayTextureState;
 
         applyMask(texture.mask, topStack.transformation);
 
         drawRectBatch(
           topStack.transformation,
-          textureState || {
-            matrices: new Float32Array(),
-            colours: new Float32Array(),
-          },
+          rectangleArrayTextureState,
           topStack.opacity,
           texture.props
         );
@@ -387,7 +392,7 @@ export function draw(
         }
         return;
       }
-      if (texture.type === "mutTextArrayRender") {
+      if (texture.type === "textArray") {
         if (texture.props.length === 0) return;
 
         applyMask(texture.mask, topStack.transformation);
@@ -403,20 +408,25 @@ export function draw(
         }
         return;
       }
-      if (texture.type === "mutCircleArrayRender") {
+      if (texture.type === "circleArray") {
         if (texture.props.length === 0) return;
+
+        const circleArrayTextureState = textureState as WebCircleArrayTextureState;
 
         applyMask(texture.mask, topStack.transformation);
 
         const length = texture.props.length;
-        const lengthChange = length - textureState.pointsByIndex.length;
+        const lengthChange =
+          length - circleArrayTextureState.pointsByIndex.length;
 
         if (lengthChange > 0) {
           for (let i = 0; i < lengthChange; i++) {
-            textureState.pointsByIndex.push({ points: new Float32Array() });
+            circleArrayTextureState.pointsByIndex.push({
+              points: new Float32Array(),
+            });
           }
         } else if (lengthChange < 0) {
-          textureState.pointsByIndex.length = texture.props.length;
+          circleArrayTextureState.pointsByIndex.length = texture.props.length;
         }
 
         for (let index = 0; index < texture.props.length; index++) {
@@ -427,7 +437,7 @@ export function draw(
 
           drawCircle(
             newMatrix,
-            textureState.pointsByIndex[index],
+            circleArrayTextureState.pointsByIndex[index],
             circleProps.color,
             circleProps.radius,
             gameWidth,
@@ -443,24 +453,26 @@ export function draw(
         }
         return;
       }
-      if (texture.type === "mutLineArrayRender") {
+      if (texture.type === "lineArray") {
         if (texture.props.length === 0) return;
+
+        const lineArrayTextureState = textureState as WebLineArrayTextureState;
 
         applyMask(texture.mask, topStack.transformation);
 
         const length = texture.props.length;
-        const lengthChange = length - textureState.stateByIndex.length;
+        const lengthChange = length - lineArrayTextureState.stateByIndex.length;
 
         if (lengthChange > 0) {
           for (let i = 0; i < lengthChange; i++) {
-            textureState.stateByIndex.push({
+            lineArrayTextureState.stateByIndex.push({
               lineCaps: null,
               linePath: new Float32Array(),
               strokePath: new Float32Array(),
             });
           }
         } else if (lengthChange < 0) {
-          textureState.stateByIndex.length = texture.props.length;
+          lineArrayTextureState.stateByIndex.length = texture.props.length;
         }
 
         for (let index = 0; index < texture.props.length; index++) {
@@ -471,7 +483,7 @@ export function draw(
           handleLineTextureLocal(
             lineProps,
             topStack.opacity,
-            textureState.stateByIndex[index]
+            lineArrayTextureState.stateByIndex[index]
           );
         }
 
@@ -494,9 +506,7 @@ export function draw(
       );
 
       switch (texture.type) {
-        case "mutImage":
         case "image":
-        case "mutSpriteSheet":
         case "spriteSheet": {
           const imageInfo = getImage(imageElements, texture.props.fileName);
           drawImage(
@@ -505,20 +515,21 @@ export function draw(
             texture.props.width,
             texture.props.height,
             texture.props.opacity * topStack.opacity,
-            texture.type === "spriteSheet" || texture.type === "mutSpriteSheet"
-              ? texture.props
-              : null
+            texture.type === "spriteSheet" ? texture.props : null
           );
           break;
         }
 
-        case "mutLine":
         case "line": {
-          handleLineTextureLocal(texture.props, topStack.opacity, textureState);
+          const lineTextureState = textureState as WebLineTextureState;
+          handleLineTextureLocal(
+            texture.props,
+            topStack.opacity,
+            lineTextureState
+          );
           break;
         }
 
-        case "mutRectangle":
         case "rectangle": {
           const gradient = texture.props.gradient;
           if (gradient) {
@@ -561,14 +572,11 @@ export function draw(
           break;
         }
 
-        case "mutCircle":
         case "circle": {
-          const tState = textureState || {
-            points: new Float32Array(),
-          };
+          const circleTextureState = textureState as WebCircleTextureState;
           drawCircle(
             newMatrix,
-            tState,
+            circleTextureState,
             texture.props.color,
             texture.props.radius,
             gameWidth,
@@ -580,7 +588,6 @@ export function draw(
           break;
         }
 
-        case "mutText":
         case "text": {
           handleTextTextureLocal(texture.props, topStack.opacity);
           break;
@@ -603,6 +610,54 @@ export function draw(
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     },
+    getInitTextureState: (texture) => {
+      switch (texture.type) {
+        case "imageArray":
+          return {
+            matrices: new Float32Array(),
+            opacities: new Float32Array(),
+          };
+
+        case "line":
+          return {
+            lineCaps: null,
+            linePath: new Float32Array(),
+            strokePath: new Float32Array(),
+          };
+
+        case "circle":
+          return {
+            points: new Float32Array(),
+          };
+
+        case "rectangleArray":
+          return {
+            matrices: new Float32Array(),
+            colours: new Float32Array(),
+          };
+
+        case "circleArray":
+          return {
+            pointsByIndex: Array.from({
+              length: texture.array().length,
+            }).map(() => ({ points: new Float32Array() })),
+          };
+
+        case "lineArray":
+          return {
+            stateByIndex: Array.from({
+              length: texture.array().length,
+            }).map(() => ({
+              lineCaps: null,
+              linePath: new Float32Array(),
+              strokePath: new Float32Array(),
+            })),
+          };
+
+        default:
+          return null;
+      }
+    },
   };
 }
 
@@ -618,3 +673,12 @@ const getImage = (imageElements: AssetMap<ImageFileData>, fileName: string) => {
   }
   return imageElement.data;
 };
+
+export type TextureState =
+  | WebCircleTextureState
+  | WebCircleArrayTextureState
+  | WebImageArrayTextureState
+  | WebLineTextureState
+  | WebLineArrayTextureState
+  | WebRectArrayTextureState
+  | null;
