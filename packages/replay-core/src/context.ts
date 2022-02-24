@@ -20,6 +20,12 @@ export function makeContext<T>(): Context<T> {
       sprites,
       context: contextThis,
     }),
+    Single: ({ context, sprites }) => ({
+      type: "mutContext",
+      value: context,
+      sprites,
+      context: contextThis,
+    }),
   };
   return contextThis;
 }
@@ -27,4 +33,9 @@ export function makeContext<T>(): Context<T> {
 export type ContextValue<T = unknown> = {
   context: Context<T>;
   value: T;
+};
+
+export type MutableContextValue<T = unknown> = {
+  context: Context<T>;
+  value: () => T;
 };

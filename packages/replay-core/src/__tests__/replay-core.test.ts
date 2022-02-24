@@ -6,7 +6,6 @@ import {
   FullTestGame,
   TestGameWithSprites,
   gameProps,
-  NestedSpriteGame,
   LocalStorageGame,
   nativeSpriteSettings,
   NativeSpriteGame,
@@ -15,7 +14,6 @@ import {
   widgetCallback,
   MaskGame,
   CallbackPropGame,
-  NestedSpriteGame2,
   PureSpriteGame,
   pureSpriteAlwaysRendersFn,
   pureSpriteNeverRendersFn,
@@ -28,9 +26,16 @@ import {
   TestContextErrorGame,
   DuplicatePureSpriteIdsGame,
   AssetsUnmountRemountGame,
+  TestMutableGame,
+  mutableSpriteRendersFn,
+  mutableSpriteInnerRendersFn,
+  TestMutableArrayGame,
 } from "./utils";
 import { NativeSpriteUtils } from "../sprite";
-import { TextTexture, CircleTexture } from "../t";
+import { TextTexture, CircleTexture, RectangleTexture, Texture } from "../t";
+
+// Note: deeply nested sprite positions and inputs tests are handled by the
+// platforms (there's a test case for this in replay-web)
 
 test("can render simple game and runNextFrame", () => {
   const { platform, mutInputs, textures } = getTestPlatform();
@@ -68,6 +73,8 @@ test("can render simple game and runNextFrame", () => {
         anchorX: 0,
         anchorY: 0,
         mask: null,
+        show: true,
+        testId: undefined,
       },
     },
   ]);
@@ -89,6 +96,8 @@ test("can render simple game and runNextFrame", () => {
       anchorX: 0,
       anchorY: 0,
       mask: null,
+      show: true,
+      testId: undefined,
     },
   });
 
@@ -110,6 +119,8 @@ test("can render simple game and runNextFrame", () => {
       anchorX: 0,
       anchorY: 0,
       mask: null,
+      show: true,
+      testId: undefined,
     },
   });
 
@@ -153,12 +164,15 @@ test("can render simple game with sprites", () => {
       scaleX: 1,
       scaleY: 1,
       mask: null,
+      show: true,
+      testId: undefined,
     },
   });
 
   nextFrame();
 
-  expect(platformSpy.getInputs).toBeCalledTimes(2);
+  // Once in loop, once in render
+  expect(platformSpy.getInputs).toBeCalledTimes(3);
 
   expect(textures[0]).toEqual({
     type: "circle",
@@ -174,6 +188,8 @@ test("can render simple game with sprites", () => {
       scaleX: 1,
       scaleY: 1,
       mask: null,
+      show: true,
+      testId: undefined,
     },
   });
 
@@ -202,6 +218,8 @@ test("can render simple game with sprites", () => {
       scaleX: 1,
       scaleY: 1,
       mask: null,
+      show: true,
+      testId: undefined,
     },
   });
 });
@@ -212,6 +230,8 @@ test("Can render simple game with sprites in landscape", () => {
     height: 300,
     widthMargin: 0,
     heightMargin: 0,
+    fullWidth: 500,
+    fullHeight: 300,
     deviceWidth: 500,
     deviceHeight: 300,
   });
@@ -228,6 +248,8 @@ test("Can render simple game with sprites in portrait", () => {
     height: 500,
     widthMargin: 0,
     heightMargin: 0,
+    fullWidth: 300,
+    fullHeight: 500,
     deviceWidth: 300,
     deviceHeight: 500,
   });
@@ -244,6 +266,8 @@ test("Can render simple game with sprites in XL landscape", () => {
     height: 300,
     widthMargin: 0,
     heightMargin: 0,
+    fullWidth: 500,
+    fullHeight: 300,
     deviceWidth: 1500,
     deviceHeight: 900,
   });
@@ -260,6 +284,8 @@ test("Can render simple game with sprites in XL portrait", () => {
     height: 500,
     widthMargin: 0,
     heightMargin: 0,
+    fullWidth: 300,
+    fullHeight: 500,
     deviceWidth: 900,
     deviceHeight: 1500,
   });
@@ -658,6 +684,8 @@ test("supports local storage", async () => {
         scaleX: 1,
         scaleY: 1,
         mask: null,
+        show: true,
+        testId: undefined,
         font: undefined,
       },
     },
@@ -675,6 +703,8 @@ test("supports local storage", async () => {
         scaleX: 1,
         scaleY: 1,
         mask: null,
+        show: true,
+        testId: undefined,
       },
     },
   ]);
@@ -838,52 +868,6 @@ test("supports masks on Sprites", () => {
     x: 0,
     y: 0,
   });
-});
-
-test("deeply nested input position", () => {
-  // Note: deeply nested sprite positions are handled by the platforms (there's
-  // a test case for this in replay-test)
-
-  const {
-    platform,
-    mutableTestDevice,
-    mutInputs,
-    textures,
-  } = getTestPlatform();
-  const logSpy = jest.spyOn(mutableTestDevice, "log");
-
-  mutInputs.ref.x = 50;
-  mutInputs.ref.y = 50;
-
-  replayCore(platform, nativeSpriteSettings, NestedSpriteGame(gameProps));
-
-  // Sprite positions local
-
-  const nested = textures[0];
-
-  // These props are local to sprite and calculated on platform side
-  expect(nested.props.x).toBe(10);
-  expect(nested.props.y).toBe(20);
-  expect(nested.props.rotation).toBe(180);
-  expect(nested.props.opacity).toBe(0.8);
-
-  // Pointer positions global
-
-  expect(logSpy).toBeCalledWith("NestedSpriteGame x: 50, y: 50");
-  expect(logSpy).toBeCalledWith("NestedFirstSprite x: 30, y: -30");
-  expect(logSpy).toBeCalledWith("NestedSecondSprite x: -50, y: 20");
-});
-
-test("nested sprites and input position with scale", () => {
-  const { platform, mutableTestDevice, mutInputs } = getTestPlatform();
-  const logSpy = jest.spyOn(mutableTestDevice, "log");
-
-  mutInputs.ref.x = 10;
-  mutInputs.ref.y = 10;
-
-  replayCore(platform, nativeSpriteSettings, NestedSpriteGame2(gameProps));
-
-  expect(logSpy).toBeCalledWith("NestedFirstSprite2 x: -20, y: -10");
 });
 
 test("loop and render order for callback prop change on low render FPS", () => {
@@ -1239,6 +1223,8 @@ test("supports Native Sprites", () => {
       heightMargin: 0,
       deviceWidth: 500,
       deviceHeight: 300,
+      fullWidth: 300,
+      fullHeight: 200,
     },
   };
 
@@ -1338,4 +1324,123 @@ test("context will throw error if not passed in", () => {
   expect(() =>
     replayCore(platform, nativeSpriteSettings, TestContextErrorGame(gameProps))
   ).toThrowError("No context setup");
+});
+
+test("can render Mutable sprites", () => {
+  const {
+    platform,
+    mutInputs,
+    textures,
+    mutableTestDevice,
+  } = getTestPlatform();
+
+  const { runNextFrame } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    TestMutableGame(gameProps)
+  );
+
+  let time = 1;
+  const nextFrame = () => {
+    time += 1000 * (1 / 60);
+    runNextFrame(time, jest.fn());
+  };
+
+  expect(textures.length).toBe(3);
+  expect(textures[0].props.x).toBe(50);
+  expect((textures[1] as TextTexture).props.text).toBe("True");
+  expect((textures[2] as TextTexture).props.text).toBe("true");
+
+  expect(mutableTestDevice.log).toHaveBeenCalledWith("Show: true");
+
+  nextFrame();
+
+  expect(textures[0].props.x).toBe(51);
+
+  nextFrame();
+
+  expect(textures[0].props.x).toBe(52);
+
+  mutInputs.ref.buttonPressed.show = false;
+
+  nextFrame();
+
+  // Disappeared
+  expect(textures.length).toBe(2);
+
+  expect((textures[0] as TextTexture).props.text).toBe("False");
+  expect((textures[1] as TextTexture).props.text).toBe("false");
+
+  expect(mutableTestDevice.log).toHaveBeenCalledWith("Show: false");
+
+  mutInputs.ref.buttonPressed.show = true;
+
+  nextFrame();
+
+  expect(textures.length).toBe(3);
+
+  // sprite state reset after removed
+  expect(textures[0].props.x).toBe(50);
+
+  // Render called once
+  expect(mutableSpriteRendersFn).toBeCalledTimes(1);
+  // But props update called every frame
+  expect(mutableSpriteInnerRendersFn).toBeCalledTimes(6);
+});
+
+test("can render array of Mutable Sprites and Textures", () => {
+  const { platform, textures } = getTestPlatform();
+
+  const { runNextFrame } = replayCore(
+    platform,
+    nativeSpriteSettings,
+    TestMutableArrayGame(gameProps)
+  );
+
+  let time = 1;
+  const nextFrame = () => {
+    time += 1000 * (1 / 60);
+    runNextFrame(time, jest.fn());
+  };
+
+  const expectHasFields = (
+    rectTexture: Texture,
+    arg: { x: number; y: number; width: number }
+  ) => {
+    const texture = rectTexture as RectangleTexture;
+    expect(texture.props.x).toBe(arg.x);
+    expect(texture.props.y).toBe(arg.y);
+    expect(texture.props.width).toBe(arg.width);
+  };
+
+  expect(textures.length).toBe(12);
+  expectHasFields(textures[0], { x: -30, y: 0, width: 10 });
+  expectHasFields(textures[1], { x: -30, y: 10, width: 20 });
+  expectHasFields(textures[2], { x: -30, y: 20, width: 30 });
+  expectHasFields(textures[3], { x: -30, y: 30, width: 40 });
+  expectHasFields(textures[4], { x: 0, y: 0, width: 10 });
+  expectHasFields(textures[5], { x: 0, y: 10, width: 20 });
+  expectHasFields(textures[6], { x: 0, y: 20, width: 30 });
+  expectHasFields(textures[7], { x: 0, y: 30, width: 40 });
+  expectHasFields(textures[8], { x: 30, y: 0, width: 10 });
+  expectHasFields(textures[9], { x: 30, y: 10, width: 20 });
+  expectHasFields(textures[10], { x: 30, y: 20, width: 30 });
+  expectHasFields(textures[11], { x: 30, y: 30, width: 40 });
+
+  nextFrame();
+
+  // x values increased
+  expect(textures.length).toBe(12);
+  expectHasFields(textures[0], { x: -29, y: 0, width: 10 });
+  expectHasFields(textures[1], { x: -29, y: 10, width: 20 });
+  expectHasFields(textures[2], { x: -29, y: 20, width: 30 });
+  expectHasFields(textures[3], { x: -29, y: 30, width: 40 });
+  expectHasFields(textures[4], { x: 1, y: 0, width: 10 });
+  expectHasFields(textures[5], { x: 1, y: 10, width: 20 });
+  expectHasFields(textures[6], { x: 1, y: 20, width: 30 });
+  expectHasFields(textures[7], { x: 1, y: 30, width: 40 });
+  expectHasFields(textures[8], { x: 31, y: 0, width: 10 });
+  expectHasFields(textures[9], { x: 31, y: 10, width: 20 });
+  expectHasFields(textures[10], { x: 31, y: 20, width: 30 });
+  expectHasFields(textures[11], { x: 31, y: 30, width: 40 });
 });
