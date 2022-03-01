@@ -1,19 +1,23 @@
 import { draw } from "../webGL/drawGL";
 import { canvasToImage } from "./utils";
-import { t, DeviceSize, mask, Texture } from "@replay/core";
+import { t, DeviceSize, mask, Texture, t2 } from "@replay/core";
+import { m2d } from "@replay/core/src/matrix";
+import { MutableTexture, newArrayProps } from "@replay/core/dist/t2";
 
 const deviceSize: DeviceSize = {
   width: 300,
   height: 300,
   widthMargin: 0,
   heightMargin: 0,
+  fullWidth: 300,
+  fullHeight: 300,
   deviceWidth: 500,
   deviceHeight: 500,
 };
 
 let canvas: HTMLCanvasElement;
 let offscreenCanvas: HTMLCanvasElement;
-let render: (textures: Texture[]) => void;
+let render: (textures: (Texture | MutableTexture)[]) => void;
 
 beforeAll(() => {
   render = (textures) => {
@@ -29,7 +33,7 @@ beforeAll(() => {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
-    const renderTexture = draw(
+    const { renderTexture, getInitTextureState } = draw(
       gl,
       glInstArrays,
       glVao,
@@ -40,14 +44,42 @@ beforeAll(() => {
       { family: "Courier", size: 12 },
       "white",
       1
-    ).renderTexture;
+    );
 
-    textures.forEach(renderTexture);
+    textures.forEach((texture) => {
+      if ("isMut" in texture && "newProps" in texture) {
+        const array = texture.array();
+        texture.props = Array.from({ length: array.length }).map((_, index) => {
+          const props = newArrayProps(
+            texture,
+            texture.newProps(array[index], index)
+          );
+          texture.update?.(props as any, array[index], index);
+          return props;
+        }) as any;
+      }
+
+      renderTexture(
+        {
+          opacity: 1,
+          transformation: m2d.getScaleMatrix(
+            2 / deviceSize.fullWidth,
+            2 / deviceSize.fullHeight
+          ),
+          transformationGameCoords: m2d.identityMatrix,
+          hasMask: false,
+        },
+        texture,
+        getInitTextureState(texture)
+      );
+    });
   };
 });
 
 // Text doesn't show: https://github.com/stackgl/headless-gl/issues/149
 test.skip("Can draw text", () => {
+  const array = [10, 5];
+
   render([
     t.text({
       x: -100,
@@ -66,27 +98,48 @@ test.skip("Can draw text", () => {
       color: "red",
       text: "Hello Test",
     }),
+
+    t2.textArray({
+      props: (numb, index) => ({
+        color: "blue",
+        text: `${numb}`,
+        x: 50,
+        y: 50 - 100 * index,
+      }),
+      array: () => array,
+    }),
   ]);
 
   expect(canvasToImage(canvas)).toMatchImageSnapshot();
 });
 
 test("Can draw circles", () => {
+  const array = [10, 5];
+
   render([
     t.circle({
-      x: 0,
+      x: -50,
       y: 50,
       rotation: 45,
       radius: 25,
       color: "blue",
     }),
     t.circle({
-      x: 0,
+      x: -50,
       y: -50,
       rotation: 0,
       opacity: 0.5,
       radius: 50,
       color: "red",
+    }),
+    t2.circleArray({
+      props: (radius, index) => ({
+        color: "blue",
+        radius,
+        x: 50,
+        y: 50 - 100 * index,
+      }),
+      array: () => array,
     }),
   ]);
 
@@ -131,11 +184,13 @@ test("Can draw rectangles", () => {
 });
 
 test("Can batch draw rectangles", () => {
+  const array = [10, 5];
+
   render([
     t.rectangleArray({
       props: [
         {
-          x: 0,
+          x: -50,
           y: 50,
           rotation: 45,
           opacity: 0.5,
@@ -144,7 +199,7 @@ test("Can batch draw rectangles", () => {
           color: "blue",
         },
         {
-          x: 0,
+          x: -50,
           y: -50,
           rotation: 0,
           opacity: 1,
@@ -153,11 +208,23 @@ test("Can batch draw rectangles", () => {
           color: "red",
         },
         {
+          x: -50,
           width: 20,
           height: 20,
           color: "green",
         },
       ],
+    }),
+
+    t2.rectangleArray({
+      props: (width, index) => ({
+        color: "blue",
+        width,
+        height: 20,
+        x: 50,
+        y: 50 - 100 * index,
+      }),
+      array: () => array,
     }),
   ]);
 
@@ -165,9 +232,11 @@ test("Can batch draw rectangles", () => {
 });
 
 test("Can draw lines", () => {
+  const array = [10, 5];
+
   render([
     t.line({
-      x: 0,
+      x: -50,
       y: 50,
       color: "blue",
       opacity: 0.5,
@@ -178,7 +247,7 @@ test("Can draw lines", () => {
       ],
     }),
     t.line({
-      x: 0,
+      x: -50,
       y: -50,
       rotation: 90,
       thickness: 5,
@@ -190,11 +259,25 @@ test("Can draw lines", () => {
       lineCap: "round",
     }),
     t.line({
-      x: 0,
+      x: -50,
       y: 0,
       thickness: 5,
       color: "red",
       path: [], // nothing drawn
+    }),
+
+    t2.lineArray({
+      props: (width, index) => ({
+        color: "blue",
+        path: [
+          [0, 0],
+          [width, width],
+          [width, -width],
+        ],
+        x: 50,
+        y: 50 - 100 * index,
+      }),
+      array: () => array,
     }),
   ]);
 
@@ -202,9 +285,11 @@ test("Can draw lines", () => {
 });
 
 test("Can draw shapes", () => {
+  const array = [10, 5];
+
   render([
     t.line({
-      x: 0,
+      x: -50,
       y: 50,
       fillColor: "blue",
       path: [
@@ -214,6 +299,7 @@ test("Can draw shapes", () => {
       ],
     }),
     t.line({
+      x: -50,
       fillColor: "red",
       path: [
         [0, 0],
@@ -223,6 +309,20 @@ test("Can draw shapes", () => {
         [50, -50],
         [0, 0],
       ],
+    }),
+
+    t2.lineArray({
+      props: (width, index) => ({
+        fillColor: "blue",
+        path: [
+          [0, 0],
+          [width, width],
+          [width, -width],
+        ],
+        x: 50,
+        y: 50 - 100 * index,
+      }),
+      array: () => array,
     }),
   ]);
 

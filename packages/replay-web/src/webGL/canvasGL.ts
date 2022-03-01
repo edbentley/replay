@@ -1,6 +1,6 @@
-import { Gradient, TextTexture, TextureFont } from "@replay/core/dist/t";
-import { createProgram, hexToRGB } from "./glUtils";
-import { m2d, Matrix2D } from "./matrix";
+import { Gradient, TextArrayProps, TextureFont } from "@replay/core/dist/t";
+import { createProgram, hexToRGBPooled, RenderState } from "./glUtils";
+import { m2d, Matrix2D } from "@replay/core/dist/matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_position;
@@ -35,7 +35,8 @@ void main() {
 
 export function getDrawCanvas(
   gl: WebGLRenderingContext,
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
@@ -94,19 +95,22 @@ export function getDrawCanvas(
   // -- Done
   glVao.bindVertexArrayOES(null);
 
+  const uMatrixPooled = m2d.getNewIdentity3fv();
+
   return function drawCanvas(
     offscreenTexture: WebGLTexture,
     matrix: Matrix2D,
     width: number,
     height: number,
     opacity: number,
-    devicePixelRatio: number,
-    prevProgram: WebGLProgram | null
-  ): { program: WebGLProgram; texture: WebGLTexture } {
+    devicePixelRatio: number
+  ) {
     gl.bindTexture(gl.TEXTURE_2D, offscreenTexture);
+    mutRenderState.texture = offscreenTexture;
 
-    if (program !== prevProgram) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
     }
 
@@ -114,13 +118,17 @@ export function getDrawCanvas(
     // where
     // u_matrix = matrix * scale
     // scale converts position (which is -0.5 / 0.5 points) to the size of the image
-    const uMatrixValue = m2d.multiply(
+    const uMatrixValue = m2d.multiplyPooled(
       matrix,
-      m2d.getScaleMatrix(width / devicePixelRatio, height / devicePixelRatio)
+      m2d.getScaleMatrixPooled(
+        width / devicePixelRatio,
+        height / devicePixelRatio
+      )
     );
+    m2d.toUniform3fvMut(uMatrixValue, uMatrixPooled);
 
     // Set the matrix which will be u_matrix * a_position
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(uMatrixValue));
+    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     // Tell the shader to get the texture from texture unit 0
     gl.uniform1i(uTextureLocation, 0);
@@ -130,8 +138,6 @@ export function getDrawCanvas(
 
     // draw the quad (2 triangles, 6 vertices)
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-    return { program, texture: offscreenTexture };
   };
 }
 
@@ -157,14 +163,14 @@ export function createCanvasTexture(
 /**
  * Returns required align
  */
-export function handleTextTexture(
-  texture: TextTexture,
+export function drawTextTexture(
+  textureProps: TextArrayProps,
   offscreenCanvas: HTMLCanvasElement,
   offscreenCanvasCtx: CanvasRenderingContext2D,
   defaultFont: TextureFont,
   devicePixelRatio: number
 ): "left" | "center" | "right" {
-  const fontDetails = { ...defaultFont, ...texture.props.font };
+  const fontDetails = { ...defaultFont, ...textureProps.font };
 
   const {
     size = 10,
@@ -177,7 +183,7 @@ export function handleTextTexture(
   const fontString = `${style} ${weight} ${size ? `${size}px` : ""} ${
     family ? `${family}` : ""
   }`;
-  const { text, strokeThickness = 1, color } = texture.props;
+  const { text, strokeThickness = 1, color } = textureProps;
 
   resetCanvas(
     offscreenCanvas,
@@ -195,8 +201,8 @@ export function handleTextTexture(
     strokeThickness,
     baseline,
     "center",
-    texture.props.gradient,
-    texture.props.strokeColor
+    textureProps.gradient,
+    textureProps.strokeColor
   );
 
   return align;
@@ -241,19 +247,21 @@ const generateGradient = (
           gradient.height / 2
         );
 
-  gradient.colors.forEach((colour, index) => {
+  for (let index = 0; index < gradient.colors.length; index++) {
+    let colour = gradient.colors[index];
+
     if (gradient.opacities) {
       const a = gradient.opacities[index];
       if (a !== undefined) {
         // Add alpha to colour value
-        const [r, g, b] = hexToRGB(colour);
+        const { r, g, b } = hexToRGBPooled(colour);
         colour = `rgba(${r * 255}, ${g * 255}, ${b * 255}, ${a}`;
       }
     }
 
     const offset = index / (gradient.colors.length - 1);
     canvasGradient.addColorStop(offset, colour);
-  });
+  }
 
   return canvasGradient;
 };

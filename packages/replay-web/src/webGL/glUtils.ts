@@ -1,6 +1,4 @@
-import { SpriteBaseProps } from "@replay/core/dist/props";
 import { Gradient } from "@replay/core/dist/t";
-import { m2d, Matrix2D } from "./matrix";
 
 export function createProgram(
   gl: WebGLRenderingContext,
@@ -63,10 +61,8 @@ const cssLevel1Colours: Record<string, string> = {
   aqua: "#00ffff",
 };
 
-export function hexToRGB(
-  hex: string,
-  premultiplyAlpha?: number
-): [number, number, number] {
+const rgbResult = { r: 0, g: 0, b: 0 };
+export function hexToRGBPooled(hex: string, premultiplyAlpha?: number) {
   if (!hex.startsWith("#")) {
     hex = cssLevel1Colours[hex] || cssLevel1Colours.black;
   }
@@ -77,14 +73,16 @@ export function hexToRGB(
   const blue = number & 255;
 
   if (premultiplyAlpha !== undefined) {
-    return [
-      premultiplyAlpha * (red / 255),
-      premultiplyAlpha * (green / 255),
-      premultiplyAlpha * (blue / 255),
-    ];
+    rgbResult.r = premultiplyAlpha * (red / 255);
+    rgbResult.g = premultiplyAlpha * (green / 255);
+    rgbResult.b = premultiplyAlpha * (blue / 255);
+  } else {
+    rgbResult.r = red / 255;
+    rgbResult.g = green / 255;
+    rgbResult.b = blue / 255;
   }
 
-  return [red / 255, green / 255, blue / 255];
+  return rgbResult;
 }
 
 export function setupRampTexture(
@@ -145,8 +143,10 @@ export function createGradTexture(
 function getRampData(gradient: Gradient) {
   const array = Array.from<number>({ length: gradient.colors.length * 4 });
 
-  gradient.colors.forEach((colour, index) => {
-    const [r, g, b] = hexToRGB(colour);
+  for (let index = 0; index < gradient.colors.length; index++) {
+    const colour = gradient.colors[index];
+
+    const { r, g, b } = hexToRGBPooled(colour);
     let a = 1;
     if (gradient.opacities) {
       const value = gradient.opacities[index];
@@ -160,30 +160,12 @@ function getRampData(gradient: Gradient) {
     array[n + 1] = g * 255;
     array[n + 2] = b * 255;
     array[n + 3] = a * 255;
-  });
+  }
 
   return new Uint8Array(array);
 }
 
-export function applyTransform(
-  matrix: Matrix2D,
-  baseProps: Omit<SpriteBaseProps, "mask">,
-  // These are for scaling vertices in image and rect shaders
-  withScaleX = 1,
-  withScaleY = 1
-): Matrix2D {
-  return m2d.transform(
-    matrix,
-    baseProps.x,
-    baseProps.y,
-    baseProps.scaleX,
-    baseProps.scaleY,
-    -baseProps.rotation * toRad,
-    -baseProps.anchorX,
-    -baseProps.anchorY,
-    withScaleX,
-    withScaleY
-  );
-}
-
-const toRad = Math.PI / 180;
+export type RenderState = {
+  texture: WebGLTexture | null;
+  program: WebGLProgram | null;
+};

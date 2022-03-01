@@ -1,5 +1,6 @@
-import { createProgram, hexToRGB } from "./glUtils";
-import { m2d, Matrix2D } from "./matrix";
+import { createProgram, hexToRGBPooled, RenderState } from "./glUtils";
+import { m2d, Matrix2D } from "@replay/core/dist/matrix";
+import { CircleArrayTexture } from "@replay/core/dist/t";
 
 const vertexShaderSource = `
 #define PI 3.1415926538
@@ -38,7 +39,8 @@ void main() {
 
 export function getDrawCircle(
   gl: WebGLRenderingContext,
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
@@ -68,19 +70,22 @@ export function getDrawCircle(
   // -- Done
   glVao.bindVertexArrayOES(null);
 
+  const uMatrixPooled = m2d.getNewIdentity3fv();
+
   return function drawCircle(
     matrix: Matrix2D,
+    mutTextureState: WebCircleTextureState,
     colour: string,
     radius: number,
     gameWidth: number,
     gameHeight: number,
     pxPerPoint: number,
     opacity: number,
-    semiCircle: boolean,
-    prevProgram: WebGLProgram | null
-  ): WebGLProgram {
-    if (program !== prevProgram) {
+    semiCircle: boolean
+  ) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
 
       // Only 1 buffer so don't have to rebind every time
@@ -88,32 +93,65 @@ export function getDrawCircle(
     }
 
     // Calculate number points to draw based on one pixel resolution
-    const [scaleX, scaleY] = m2d.getScale(matrix);
+    const { scaleX, scaleY } = m2d.getScalePooled(matrix);
     const scale = Math.max(scaleX * gameWidth, scaleY * gameHeight) / 2; // Undo initial transform in matrix (* gameSize/2)
     const numVertex = Math.ceil(Math.PI * radius * scale * pxPerPoint); // 2πr * scale / 2
 
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array(
-        // 0th element is centre point
-        [-1].concat(
-          Array.from({ length: numVertex + 1 }).map((_, index) => index)
-        )
-      ),
-      gl.DYNAMIC_DRAW
-    );
+    generatePoints(mutTextureState, numVertex);
 
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(matrix));
+    gl.bufferData(gl.ARRAY_BUFFER, mutTextureState.points, gl.DYNAMIC_DRAW);
+
+    m2d.toUniform3fvMut(matrix, uMatrixPooled);
+    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     // Set uniforms
-    gl.uniform4f(uColourLocation, ...hexToRGB(colour, opacity), opacity);
+    const { r, g, b } = hexToRGBPooled(colour, opacity);
+    gl.uniform4f(uColourLocation, r, g, b, opacity);
     gl.uniform1f(uNumVertexLocation, numVertex);
     gl.uniform1f(uRadiusLocation, radius);
     gl.uniform1f(uAngleMultiplierLocation, semiCircle ? 0.5 : 1);
 
     // draw
     gl.drawArrays(gl.TRIANGLE_FAN, 0, numVertex + 2);
-
-    return program;
   };
+}
+
+export type WebCircleTextureState = {
+  points: Float32Array;
+};
+export type WebCircleArrayTextureState = {
+  pointsByIndex: WebCircleTextureState[];
+};
+
+function generatePoints(
+  mutTextureState: WebCircleTextureState,
+  numVertex: number
+) {
+  const length = numVertex + 2;
+
+  if (mutTextureState.points.length !== length) {
+    mutTextureState.points = new Float32Array(length);
+    for (let i = -1; i < length - 1; i++) {
+      // 0th element is centre point
+      mutTextureState.points[i] = i;
+    }
+  }
+}
+
+export function generateCircleArrayPoints(
+  mutTextureState: WebCircleArrayTextureState,
+  texture: CircleArrayTexture
+) {
+  const length = texture.props.length;
+  const lengthChange = length - mutTextureState.pointsByIndex.length;
+
+  if (lengthChange > 0) {
+    for (let i = 0; i < lengthChange; i++) {
+      mutTextureState.pointsByIndex.push({
+        points: new Float32Array(),
+      });
+    }
+  } else if (lengthChange < 0) {
+    mutTextureState.pointsByIndex.length = texture.props.length;
+  }
 }
