@@ -9,10 +9,13 @@ public class ReplayViewController: UIViewController {
         userStyles: String = "",
         jsRun: String = "renderCanvas.run();",
         onJsCallback: @escaping (String) -> Void = {_ in },
-        onJsCrash: @escaping (String) -> Void = {message in fatalError(message) }
+        onJsCrash: @escaping (String) -> Void = {message in fatalError(message) },
+        webWorkerFiles: [String] = []
     ) {
         self.hideStatusBar = hideStatusBar
-        self.webView = ReplayWebViewManager(userStyles: userStyles, jsRun: jsRun, onJsCallback: onJsCallback, onJsCrash: onJsCrash).webView
+        self.webView = ReplayWebViewManager(
+            userStyles: userStyles, jsRun: jsRun, onJsCallback: onJsCallback, onJsCrash: onJsCrash, webWorkerFiles: webWorkerFiles
+        ).webView
         super.init(nibName: nil, bundle: nil)
     }
     

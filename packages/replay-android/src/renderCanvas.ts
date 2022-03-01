@@ -26,7 +26,12 @@ function fileFetch(url: RequestInfo) {
 }
 
 export function run() {
-  renderCanvas(game.Game(game.gameProps), game.options, {
+  // Ensure game was loaded correctly
+  if (typeof game === "undefined" || !game.Game) {
+    return Error("Game is not defined");
+  }
+
+  return renderCanvas(game.Game(game.gameProps), game.options, {
     fileFetch,
     device: {
       storage: {
