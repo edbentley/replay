@@ -52,7 +52,7 @@ We've registered our `MyWidget` Native Sprite with a `"MyWidget"` name. This nam
 All Native Sprites must define an `id` prop.
 :::
 
-You can then call your Native Sprite within other Custom Sprites:
+You can then call your Native Sprite within other Custom or Mutable Sprites:
 
 ```js
 import { MyWidget } from "./my-widget";
@@ -80,7 +80,7 @@ Native Sprite implementations are an object with a `create`, `loop` and `destroy
 Called on initial creation of Sprite. Use this to run anything you need on setup. Returns the initial `state`.
 
 ```js
-  create({ props, parentGlobalId, getState, updateState, utils }) {
+  create({ props, parentGlobalId, getState, utils }) {
     return { ... };
   },
 ```
@@ -90,10 +90,6 @@ Called on initial creation of Sprite. Use this to run anything you need on setup
 - `props`: The props passed in by the parent Sprite.
 - `parentGlobalId`: A globally unique ID for the parent Sprite.
 - `getState`: A function which returns the current state of the Sprite.
-- `updateState`: A callback to update the `state` of the Sprite. Pass an object which will be merged into the existing `state`. E.g:
-   ```js
-   updateState({ shoot: true });
-   ```
 - `utils`: An object with fields:
   - `didResize`: A boolean to check if the device was just resized.
   - `scale`: Ratio of the game and platform's screen size.
@@ -103,11 +99,11 @@ Called on initial creation of Sprite. Use this to run anything you need on setup
 
 ### `loop`
 
-Called 60 times a second. Returns the next frame's `state`.
+Called 60 times a second. Mutate `state` directly to update it.
 
 ```js
   loop({ props, state, parentGlobalId, utils }) {
-    return { ... };
+    state.x++;
   },
 ```
 
@@ -116,8 +112,7 @@ Called 60 times a second. Returns the next frame's `state`.
 - `props`: The props passed in by the parent Sprite.
 - `state`: The current state of the Sprite.
 - `parentGlobalId`: A globally unique ID for the parent Sprite.
-- `parentX`: The parent Sprite's `x` game coordinate (assumes no rotations / scaling).
-- `parentY`: The parent Sprite's `y` game coordinate (assumes no rotations / scaling).
+- `spriteToGameCoords(x, y, out)`: Convert a local `x, y` coordinate to game coordinates. Mutates `x` and `y` fields on `out` to set the result.
 - `utils`: An object with fields:
   - `didResize`: A boolean to check if the device was just resized.
   - `scale`: Ratio of the game and platform's screen size.
@@ -155,7 +150,7 @@ Called when Sprite is removed. Use this to clean up anything related to the Spri
 
 ```js
 export const MyWidgetWeb = {
-  create({ props, parentGlobalId, getState, updateState, utils }) {
+  create({ props, parentGlobalId, getState, utils }) {
     // Setup code
 
     // Use parentGlobalId to obtain a globally unique ID
@@ -167,8 +162,7 @@ export const MyWidgetWeb = {
   loop({ props, state, parentGlobalId, utils }) {
     // Loop code
 
-    // Return next frame's state
-    return { someNumber: state.someNumber + 1 };
+    state.someNumber++;
   },
   cleanup({ state, parentGlobalId }) {
     // Cleanup code
@@ -190,7 +184,7 @@ export const MyWidgetWeb: NativeSpriteImplementation<
   MyWidgetProps,
   MyWidgetState
 > = {
-  create({ props, parentGlobalId, getState, updateState, utils }) {
+  create({ props, parentGlobalId, getState, utils }) {
     // Setup code
 
     // Use parentGlobalId to obtain a globally unique ID
@@ -202,8 +196,7 @@ export const MyWidgetWeb: NativeSpriteImplementation<
   loop({ props, state, parentGlobalId, utils }) {
     // Loop code
 
-    // Return next frame's state
-    return { someNumber: state.someNumber + 1 };
+    state.someNumber++;
   },
   cleanup({ state, parentGlobalId }) {
     // Cleanup code

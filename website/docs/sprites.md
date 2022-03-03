@@ -296,7 +296,7 @@ An alternative render method run for large screens if the device is in portrait.
 Called when Sprite is removed. Useful for cleaning up any external libraries stored in state.
 
 ```js
-  cleanup({ state, device, getInputs }) {
+  cleanup({ state, device }) {
     // Cleanup
   },
 ```

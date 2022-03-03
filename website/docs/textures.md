@@ -9,7 +9,12 @@ Textures are the basic building blocks of things to render on the screen, like a
 
 ## Common Props
 
-Textures share the same [common props as Sprites](sprites.md#common-props), except for `id` which isn't required. Textures also accept a `testId` prop which is used by [Replay Test](test.md).
+Textures share the same [common props as Sprites](sprites.md#common-props), except for `id` which isn't required.
+
+Textures also accept the optional props:
+
+- `testId`: Used by [Replay Test](test.md).
+- `show`: Show or hide a texture (default `true`).
 
 ## Array Textures
 

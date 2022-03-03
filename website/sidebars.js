@@ -12,6 +12,7 @@ module.exports = {
       "mask",
       "context",
       "pure-sprites",
+      "mutable-sprites",
     ],
     Testing: ["test"],
     Platforms: ["web", "ios", "android"],
