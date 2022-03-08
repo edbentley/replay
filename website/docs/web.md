@@ -19,6 +19,8 @@ Render the game to a canvas. Can return an error if [WebGL](https://developer.mo
   - `nativeSpriteMap`: (Optional) A map of [Native Sprite](native-sprites.md) names and their web implementation.
   - `canvas`: (Optional) A canvas element to render to. If omitted, Replay will create a canvas in the document.
   - `windowSize`: (Optional) An object with width and height fields. Use to override the view size, instead of using the window size.
+  - `imageResolution`: (Optional) Resolution of images provided in assets. E.g. for a DPI of 3 a 30 game coordinate image would be 90 x 90px. Default `3`.
+  - `maxPixels`: (Optional) Adjust default resolution game is rendered at (to reduce # pixels drawn in shaders).
 
 ```js
 import { renderCanvas } from "@replay/web";

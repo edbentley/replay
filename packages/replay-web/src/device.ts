@@ -239,6 +239,8 @@ export function getStorage(): Device["storage"] {
   };
 }
 
+export const RESOLUTION_KEY = "__replay_resolution_v1__";
+
 export function getClipboard(): Device["clipboard"] {
   return {
     copy: (text, onComplete) => {

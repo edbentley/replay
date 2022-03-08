@@ -33,6 +33,7 @@ import {
   AudioData,
   ImageFileData,
   getClipboard,
+  RESOLUTION_KEY,
 } from "./device";
 import { isTouchDevice } from "./isTouchDevice";
 import { draw, MaskState, TextureState } from "./webGL/drawGL";
@@ -79,6 +80,16 @@ export type RenderCanvasOptions = {
    * End of timer to test game's performance
    */
   statsEnd?: () => void;
+  /**
+   * Resolution of images provided in assets
+   *
+   * @default 3
+   */
+  imageResolution?: number;
+  /**
+   * Adjust resolution game is rendered at (reduces # pixels drawn in shaders)
+   */
+  maxPixels?: number;
 };
 
 type PlatformOptions = {
@@ -106,6 +117,8 @@ export function renderCanvas<S>(
     windowSize,
     statsBegin,
     statsEnd,
+    imageResolution = 3,
+    maxPixels,
   } = options || {};
 
   const canvas = userCanvas || document.createElement("canvas");
@@ -241,15 +254,36 @@ export function renderCanvas<S>(
 
     const devicePixelRatio = window.devicePixelRatio || 1;
 
-    // Reduce large image resolutions (e.g. iPad).
-    // Technically it should be fullWidth * imageResolution, but we assume lower
-    // resolution devices can't support that many pixels in their GPU.
-    const canvasWidth =
-      Math.min(mutDevice.size.deviceWidth, mutDevice.size.fullWidth) *
-      devicePixelRatio;
-    const canvasHeight =
-      Math.min(mutDevice.size.deviceHeight, mutDevice.size.fullHeight) *
-      devicePixelRatio;
+    const canvasWidthDevice =
+      mutDevice.size.deviceWidth * devicePixelRatio * mutResolution.resolution;
+    const canvasWidthGame = mutDevice.size.fullWidth * imageResolution;
+
+    let canvasWidth, canvasHeight;
+    if (canvasWidthDevice > canvasWidthGame) {
+      // Game is limited by image resolution
+      canvasWidth = Math.round(canvasWidthGame);
+      canvasHeight = Math.round(mutDevice.size.fullHeight * imageResolution);
+    } else {
+      // Game is limited by device size
+      canvasWidth = Math.round(canvasWidthDevice);
+      canvasHeight = Math.round(
+        mutDevice.size.deviceHeight *
+          devicePixelRatio *
+          mutResolution.resolution
+      );
+    }
+    const canvasScale = canvasWidth / mutDevice.size.fullWidth;
+
+    if (
+      maxPixels &&
+      !mutResolution.hasSet &&
+      canvasWidth * canvasHeight > maxPixels &&
+      mutResolution.resolution > 0.15
+    ) {
+      mutResolution.resolution -= 0.1;
+      updateDeviceSize();
+      return;
+    }
 
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
@@ -273,7 +307,7 @@ export function renderCanvas<S>(
       imageElements,
       defaultFont,
       bgColor,
-      devicePixelRatio
+      canvasScale
     );
     const deviceWidth = mutDevice.size.deviceWidth;
     const scale = deviceWidth / fullWidth;
@@ -469,6 +503,20 @@ export function renderCanvas<S>(
     getInitMaskState: () => ({ value: null }),
   };
 
+  const mutResolution = {
+    resolution: 1,
+    hasSet: false,
+    get() {
+      return this.resolution;
+    },
+    set(resolution: number) {
+      this.resolution = resolution;
+      this.hasSet = true;
+      updateDeviceSize();
+      mutDevice.storage.setItem(RESOLUTION_KEY, String(resolution));
+    },
+  };
+
   const mutDevice = mutDeviceCreator(
     audioContext,
     calculateDeviceSize(
@@ -478,8 +526,18 @@ export function renderCanvas<S>(
       gameSprite.props.size
     ),
     assetUtils,
-    platformOptions?.device || {}
+    platformOptions?.device || {},
+    mutResolution
   );
+
+  mutDevice.storage.getItem(RESOLUTION_KEY).then((value) => {
+    if (value !== null) {
+      const resolution = Number(value);
+      if (!isNaN(resolution)) {
+        mutResolution.set(resolution);
+      }
+    }
+  });
 
   const domPlatform: ReplayPlatform<Inputs, TextureState, MaskState> = {
     mutDevice,
@@ -613,7 +671,8 @@ function mutDeviceCreator(
   audioContext: AudioContext,
   size: DeviceSize,
   assetUtils: AssetUtils<AudioData, ImageFileData>,
-  platformOverrides: Partial<Device>
+  platformOverrides: Partial<Device>,
+  resolution: Device["resolution"]
 ): Device {
   return {
     isTouchScreen: isTouchDevice(),
@@ -637,6 +696,7 @@ function mutDeviceCreator(
     clipboard: getClipboard(),
     size,
     now: () => new Date(),
+    resolution,
     ...platformOverrides,
   };
 }

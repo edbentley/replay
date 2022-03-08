@@ -14,6 +14,17 @@ export interface Device {
   size: DeviceSize;
 
   /**
+   * Resolution game is rendered at (# pixels drawn in shaders)
+   */
+  resolution: {
+    get: () => number;
+    /**
+     * Preference is automatically saved on device storage
+     */
+    set: (resolution: number) => void;
+  };
+
+  /**
    * Log a message to platform's standard output
    */
   log: (message: unknown) => void;

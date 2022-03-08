@@ -148,15 +148,68 @@ test("Dimension 'scale-up' renders up to browser size and resizes", () => {
   // so a margin of 10 game coordinates allowed on each side = 40px extra width
   expect(canvas.style.width).toBe("440px");
   expect(canvas.style.height).toBe("400px");
-  expect(canvas.width).toBe(220);
-  expect(canvas.height).toBe(200);
+  expect(canvas.width).toBe(440);
+  expect(canvas.height).toBe(400);
 
   resizeWindow(300, 600); // scale 1.5
 
   expect(canvas.style.width).toBe("300px");
   expect(canvas.style.height).toBe("360px");
-  expect(canvas.width).toBe(200);
-  expect(canvas.height).toBe(240);
+  expect(canvas.width).toBe(300);
+  expect(canvas.height).toBe(360);
+
+  // Higher DPR
+  (window as any).devicePixelRatio = 2;
+  resizeWindow(300, 600); // scale 1.5
+
+  expect(canvas.style.width).toBe("300px");
+  expect(canvas.style.height).toBe("360px");
+  expect(canvas.width).toBe(600);
+  expect(canvas.height).toBe(720);
+
+  (window as any).devicePixelRatio = 1;
+});
+
+test("Canvas max size limited by image resolution", () => {
+  const canvas = document.createElement("canvas");
+  (window as any).innerWidth = 400;
+  (window as any).innerHeight = 400;
+
+  const props: GameProps = {
+    id: "Game",
+    size: { width: 200, height: 200, maxWidthMargin: 0, maxHeightMargin: 0 },
+  };
+  renderCanvas(TestGame(props), {
+    dimensions: "scale-up",
+    canvas,
+    imageResolution: 1.5,
+  });
+
+  expect(canvas.style.width).toBe("400px");
+  expect(canvas.style.height).toBe("400px");
+  expect(canvas.width).toBe(300);
+  expect(canvas.height).toBe(300);
+});
+
+test("Canvas max size limited by max pixels", () => {
+  const canvas = document.createElement("canvas");
+  (window as any).innerWidth = 400;
+  (window as any).innerHeight = 400;
+
+  const props: GameProps = {
+    id: "Game",
+    size: { width: 200, height: 200, maxWidthMargin: 0, maxHeightMargin: 0 },
+  };
+  renderCanvas(TestGame(props), {
+    dimensions: "scale-up",
+    canvas,
+    maxPixels: 10000,
+  });
+
+  expect(canvas.style.width).toBe("400px");
+  expect(canvas.style.height).toBe("400px");
+  expect(canvas.width).toBeLessThan(100);
+  expect(canvas.height).toBeLessThan(100);
 });
 
 // Error "Server responded with 404"
