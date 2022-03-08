@@ -44,7 +44,7 @@ export function draw(
   defaultFont: TextureFont,
   bgColor: string,
   devicePixelRatio: number
-): PlatformRender<TextureState> {
+): PlatformRender<TextureState, MaskState> {
   const canvasWidth = gl.canvas.width;
   const canvasHeight = gl.canvas.height;
   const pxPerPoint = (canvasWidth * devicePixelRatio) / gameWidth;
@@ -82,6 +82,7 @@ export function draw(
 
   function applyMask(
     mask: MaskShape,
+    maskState: MaskState | null,
     matrix: Matrix2D,
     x?: number,
     y?: number
@@ -121,11 +122,19 @@ export function draw(
     gl.colorMask(false, false, false, false);
 
     switch (mask.type) {
-      case "circleMask":
+      case "circleMask": {
+        if (maskState === null) {
+          maskState = { value: null };
+        }
+        if (maskState.value?.type !== "circleMask") {
+          maskState.value = {
+            type: "circleMask",
+            points: new Float32Array(),
+          };
+        }
         drawCircle(
           newMatrix,
-          // TODO: mask state
-          { points: new Float32Array() },
+          maskState.value,
           "",
           mask.radius,
           gameWidth,
@@ -135,16 +144,23 @@ export function draw(
           false
         );
         break;
+      }
 
-      case "lineMask":
-        drawLine(
-          newMatrix,
-          // TODO: mask state
-          {
+      case "lineMask": {
+        if (maskState === null) {
+          maskState = { value: null };
+        }
+        if (maskState.value?.type !== "lineMask") {
+          maskState.value = {
+            type: "lineMask",
             lineCaps: null,
             linePath: new Float32Array(),
             strokePath: new Float32Array(),
-          },
+          };
+        }
+        drawLine(
+          newMatrix,
+          maskState.value,
           mask.path,
           0,
           undefined,
@@ -153,6 +169,7 @@ export function draw(
           1
         );
         break;
+      }
 
       case "rectangleMask":
         drawRect(newMatrix, "", mask.width, mask.height, 1);
@@ -340,21 +357,21 @@ export function draw(
       mutRenderState.program = null;
       mutRenderState.texture = null;
     },
-    startRenderSprite: (baseProps, stackItem) => {
-      applyMask(baseProps.mask, stackItem.transformation);
+    startRenderSprite: (baseProps, stackItem, maskState) => {
+      applyMask(baseProps.mask, maskState, stackItem.transformation);
     },
     endRenderSprite: (stackItem) => {
       if (stackItem.hasMask) {
         clearMask();
       }
     },
-    renderTexture: (topStack, texture, textureState) => {
+    renderTexture: (topStack, texture, textureState, maskState) => {
       if (texture.type === "imageArray") {
         if (texture.props.length === 0) return;
 
         const imageArrayTextureState = textureState as WebImageArrayTextureState;
 
-        applyMask(texture.mask, topStack.transformation);
+        applyMask(texture.mask, maskState, topStack.transformation);
 
         const imageInfo = getImage(imageElements, texture.fileName);
         drawImageBatch(
@@ -375,7 +392,7 @@ export function draw(
 
         const rectangleArrayTextureState = textureState as WebRectArrayTextureState;
 
-        applyMask(texture.mask, topStack.transformation);
+        applyMask(texture.mask, maskState, topStack.transformation);
 
         drawRectBatch(
           topStack.transformation,
@@ -392,7 +409,7 @@ export function draw(
       if (texture.type === "textArray") {
         if (texture.props.length === 0) return;
 
-        applyMask(texture.mask, topStack.transformation);
+        applyMask(texture.mask, maskState, topStack.transformation);
 
         for (const textProps of texture.props) {
           if (!textProps.show) continue;
@@ -410,7 +427,7 @@ export function draw(
 
         const circleArrayTextureState = textureState as WebCircleArrayTextureState;
 
-        applyMask(texture.mask, topStack.transformation);
+        applyMask(texture.mask, maskState, topStack.transformation);
 
         generateCircleArrayPoints(circleArrayTextureState, texture);
 
@@ -443,7 +460,7 @@ export function draw(
 
         const lineArrayTextureState = textureState as WebLineArrayTextureState;
 
-        applyMask(texture.mask, topStack.transformation);
+        applyMask(texture.mask, maskState, topStack.transformation);
 
         generateLineArrayState(lineArrayTextureState, texture);
 
@@ -472,6 +489,7 @@ export function draw(
       applyTransformMut(topStack.transformation, newMatrix, texture.props);
       applyMask(
         texture.props.mask,
+        maskState,
         topStack.transformation,
         texture.props.x,
         texture.props.y
@@ -626,6 +644,32 @@ export function draw(
           return null;
       }
     },
+    getInitMaskState: (maskShape) => {
+      if (maskShape === null) return { value: null };
+
+      switch (maskShape.type) {
+        case "lineMask":
+          return {
+            value: {
+              type: maskShape.type,
+              lineCaps: null,
+              linePath: new Float32Array(),
+              strokePath: new Float32Array(),
+            },
+          };
+
+        case "circleMask":
+          return {
+            value: {
+              type: maskShape.type,
+              points: new Float32Array(),
+            },
+          };
+
+        case "rectangleMask":
+          return { value: null };
+      }
+    },
   };
 }
 
@@ -650,3 +694,10 @@ export type TextureState =
   | WebLineArrayTextureState
   | WebRectArrayTextureState
   | null;
+
+export type MaskState = {
+  value:
+    | ({ type: "circleMask" } & WebCircleTextureState)
+    | ({ type: "lineMask" } & WebLineTextureState)
+    | null;
+};

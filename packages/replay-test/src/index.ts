@@ -388,7 +388,7 @@ export function testSprite<P, S, I>(
   const audioElements: AssetMap<Record<string, string>> = {};
   const imageElements: AssetMap<Record<string, string>> = {};
 
-  const testPlatform: ReplayPlatform<I, null> = {
+  const testPlatform: ReplayPlatform<I, null, null> = {
     isTestPlatform: true,
     getInputs: (matrix) => {
       return mapInputCoordinates(matrix, inputs);
@@ -565,6 +565,7 @@ export function testSprite<P, S, I>(
       startNativeSprite: () => null,
       endNativeSprite: () => null,
       getInitTextureState: () => null,
+      getInitMaskState: () => null,
     },
   };
 

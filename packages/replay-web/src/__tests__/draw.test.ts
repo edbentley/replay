@@ -33,7 +33,7 @@ beforeAll(() => {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
-    const { renderTexture, getInitTextureState } = draw(
+    const { renderTexture, getInitTextureState, getInitMaskState } = draw(
       gl,
       glInstArrays,
       glVao,
@@ -70,7 +70,8 @@ beforeAll(() => {
           hasMask: false,
         },
         texture,
-        getInitTextureState(texture)
+        getInitTextureState(texture),
+        getInitMaskState(null)
       );
     });
   };

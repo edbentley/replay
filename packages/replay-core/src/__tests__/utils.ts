@@ -221,7 +221,7 @@ export function getTestPlatform(customSize?: DeviceSize) {
 
   const masks: MaskShape[] = [];
 
-  const platform: ReplayPlatform<TestPlatformInputs, TextureState> = {
+  const platform: ReplayPlatform<TestPlatformInputs, TextureState, null> = {
     getInputs: (matrix, localMutInputs) => {
       localMutInputs.buttonPressed = mutInputs.ref.buttonPressed;
       localMutInputs.x = mutInputs.ref.x;
@@ -330,6 +330,7 @@ export function getTestPlatform(customSize?: DeviceSize) {
       startNativeSprite: jest.fn(),
       endNativeSprite: jest.fn(),
       getInitTextureState: () => null,
+      getInitMaskState: () => null,
     },
   };
 

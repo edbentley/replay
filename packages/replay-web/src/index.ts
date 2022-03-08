@@ -35,7 +35,7 @@ import {
   getClipboard,
 } from "./device";
 import { isTouchDevice } from "./isTouchDevice";
-import { draw, TextureState } from "./webGL/drawGL";
+import { draw, MaskState, TextureState } from "./webGL/drawGL";
 import { createTextureInfo } from "./webGL/imageGL";
 
 export { Inputs as WebInputs, mapInputCoordinates } from "./input";
@@ -287,6 +287,7 @@ export function renderCanvas<S>(
     mutRender.startNativeSprite = renderCanvasResult.startNativeSprite;
     mutRender.endNativeSprite = renderCanvasResult.endNativeSprite;
     mutRender.getInitTextureState = renderCanvasResult.getInitTextureState;
+    mutRender.getInitMaskState = renderCanvasResult.getInitMaskState;
 
     nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
       canvasOffsetLeft: canvas.offsetLeft,
@@ -456,7 +457,7 @@ export function renderCanvas<S>(
     },
   };
 
-  const mutRender: PlatformRender<TextureState> = {
+  const mutRender: PlatformRender<TextureState, MaskState> = {
     newFrame: () => null,
     endFrame: () => null,
     startRenderSprite: () => null,
@@ -465,6 +466,7 @@ export function renderCanvas<S>(
     startNativeSprite: () => null,
     endNativeSprite: () => null,
     getInitTextureState: () => null,
+    getInitMaskState: () => ({ value: null }),
   };
 
   const mutDevice = mutDeviceCreator(
@@ -479,7 +481,7 @@ export function renderCanvas<S>(
     platformOptions?.device || {}
   );
 
-  const domPlatform: ReplayPlatform<Inputs, TextureState> = {
+  const domPlatform: ReplayPlatform<Inputs, TextureState, MaskState> = {
     mutDevice,
     getInputs: getInputsMut,
     newInputs,
@@ -531,7 +533,7 @@ export function renderCanvas<S>(
 
     updateDeviceSize();
 
-    const { runNextFrame } = replayCore<S, Inputs, TextureState>(
+    const { runNextFrame } = replayCore<S, Inputs, TextureState, MaskState>(
       domPlatform,
       {
         nativeSpriteMap,

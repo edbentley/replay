@@ -22,6 +22,7 @@ import {
 } from "./t2";
 import { m2d, Matrix2D } from "./matrix";
 import { applyTransformMut } from "./transform";
+import { MaskShape } from "./mask";
 
 /**
  * The props type a game should take.
@@ -79,7 +80,7 @@ export interface GameOrientationSize {
 /**
  * Interface a platform that implements Replay must fit.
  */
-export interface ReplayPlatform<I, T> {
+export interface ReplayPlatform<I, T, M> {
   /**
    * Get the inputs for an individual sprite
    */
@@ -96,27 +97,30 @@ export interface ReplayPlatform<I, T> {
    */
   mutDevice: Device;
 
-  render: PlatformRender<T>;
+  render: PlatformRender<T, M>;
 
   isTestPlatform: boolean;
 }
 
-export type PlatformRender<T> = {
+export type PlatformRender<T, M> = {
   newFrame: () => void;
   endFrame: () => void;
   startRenderSprite: (
     baseProps: SpriteBaseProps,
-    stateStackItem: StateStackItem
+    stateStackItem: StateStackItem,
+    maskState: M | null
   ) => void;
   endRenderSprite: (stateStackItem: StateStackItem) => void;
   renderTexture: (
     stateStackItem: StateStackItem,
     texture: Texture | MutableTexture,
-    textureState: T
+    textureState: T,
+    maskState: M | null
   ) => void;
   startNativeSprite: () => void;
   endNativeSprite: () => void;
   getInitTextureState: (texture: Texture | MutableTexture) => T;
+  getInitMaskState: (mask: MaskShape) => M;
 };
 
 export type NativeSpriteMap = Record<
@@ -143,8 +147,8 @@ type StateStackFns = {
   getTopStack: () => StateStackItem;
 };
 
-export function replayCore<S, I, T>(
-  platform: ReplayPlatform<I, T>,
+export function replayCore<S, I, T, M>(
+  platform: ReplayPlatform<I, T, M>,
   nativeSpriteSettings: NativeSpriteSettings,
   gameSprite: CustomSprite<GameProps, S, I>,
   /**
@@ -234,7 +238,7 @@ export function replayCore<S, I, T>(
     },
   };
 
-  const gameContainer = createCustomSpriteContainer<GameProps, S, I, T>(
+  const gameContainer = createCustomSpriteContainer<GameProps, S, I, T, M>(
     gameSprite,
     mutDevice,
     getInputsPlatform,
@@ -251,7 +255,7 @@ export function replayCore<S, I, T>(
   let prevTime = 0;
   let currentLag = 0;
 
-  const mutPlatformRender: PlatformRender<T> & { isEmpty: boolean } = {
+  const mutPlatformRender: PlatformRender<T, M> & { isEmpty: boolean } = {
     isEmpty: false,
     newFrame: platform.render.newFrame,
     endFrame: platform.render.endFrame,
@@ -261,11 +265,12 @@ export function replayCore<S, I, T>(
     startNativeSprite: platform.render.startNativeSprite,
     endNativeSprite: platform.render.endNativeSprite,
     getInitTextureState: platform.render.getInitTextureState,
+    getInitMaskState: platform.render.getInitMaskState,
   };
 
   mutPlatformRender.newFrame();
 
-  traverseCustomSpriteContainer<GameProps, I, T>(
+  traverseCustomSpriteContainer<GameProps, I, T, M>(
     gameContainer,
     gameSprite.props,
     mutDevice,
@@ -284,7 +289,7 @@ export function replayCore<S, I, T>(
 
   mutPlatformRender.endFrame();
 
-  const emptyRender: PlatformRender<T> = {
+  const emptyRender: PlatformRender<T, M> = {
     newFrame: () => null,
     endFrame: () => null,
     startRenderSprite: () => null,
@@ -293,6 +298,7 @@ export function replayCore<S, I, T>(
     startNativeSprite: () => null,
     endNativeSprite: () => null,
     getInitTextureState: platform.render.getInitTextureState,
+    getInitMaskState: platform.render.getInitMaskState,
   };
 
   return {
@@ -348,7 +354,7 @@ export function replayCore<S, I, T>(
 
         mutPlatformRender.newFrame();
 
-        traverseCustomSpriteContainer<GameProps, I, T>(
+        traverseCustomSpriteContainer<GameProps, I, T, M>(
           gameContainer,
           gameSprite.props,
           mutDevice,
@@ -381,19 +387,19 @@ export function replayCore<S, I, T>(
  * sprites to update a tree of sprite containers, or create / destroy containers
  * as appropriate.
  */
-function traverseCustomSpriteContainer<P, I, T>(
-  customSpriteContainer: CustomSpriteContainer<P, unknown, I, T>,
+function traverseCustomSpriteContainer<P, I, T, M>(
+  customSpriteContainer: CustomSpriteContainer<P, unknown, I, T, M>,
   spriteProps: CustomSpriteProps<P>,
   mutDevice: Device,
   stateStackFns: StateStackFns,
-  getInputsPlatform: ReplayPlatform<I, T>["getInputs"],
+  getInputsPlatform: ReplayPlatform<I, T, M>["getInputs"],
   newInputs: () => I,
   initCreation: boolean,
   renderMethod: RenderMethod,
   extrapolateFactor: number,
   parentGlobalId: string,
   nativeSpriteSettings: NativeSpriteSettings,
-  platformRender: PlatformRender<T>,
+  platformRender: PlatformRender<T, M>,
   isTestPlatform: boolean,
   contextValues: ContextValue[]
 ) {
@@ -422,7 +428,7 @@ function traverseCustomSpriteContainer<P, I, T>(
     unusedChildIds.delete(id);
   };
 
-  platformRender.startRenderSprite(baseProps, stackItem);
+  platformRender.startRenderSprite(baseProps, stackItem, null);
 
   handleSprites(
     sprites,
@@ -472,8 +478,8 @@ function traverseCustomSpriteContainer<P, I, T>(
 }
 
 // Run cleanup of Sprites on all the removed child containers
-function recursiveSpriteCleanup<I, T>(
-  containers: { [id: string]: SpriteContainer<unknown, unknown, I, T> },
+function recursiveSpriteCleanup<I, T, M>(
+  containers: { [id: string]: SpriteContainer<unknown, unknown, I, T, M> },
   containerParentGlobalId: string,
   mutDevice: Device
 ) {
@@ -500,18 +506,18 @@ function recursiveSpriteCleanup<I, T>(
   }
 }
 
-function handleSprites<P, I, T>(
+function handleSprites<P, I, T, M>(
   sprites: Sprite[],
-  customSpriteContainer: CustomSpriteContainer<P, unknown, I, T>,
+  customSpriteContainer: CustomSpriteContainer<P, unknown, I, T, M>,
   mutDevice: Device,
   stateStackFns: StateStackFns,
-  getInputsPlatform: ReplayPlatform<I, T>["getInputs"],
+  getInputsPlatform: ReplayPlatform<I, T, M>["getInputs"],
   newInputs: () => I,
   renderMethod: RenderMethod,
   extrapolateFactor: number,
   parentGlobalId: string,
   nativeSpriteSettings: NativeSpriteSettings,
-  platformRender: PlatformRender<T>,
+  platformRender: PlatformRender<T, M>,
   isTestPlatform: boolean,
   contextValues: ContextValue[],
   addChildId: (id: string) => void
@@ -703,7 +709,7 @@ function handleSprites<P, I, T>(
           platformRender,
           isTestPlatform,
           nativeSpriteSettings
-        ) as MutableSpriteContainer<SpriteBaseProps, unknown, I, T>;
+        ) as MutableSpriteContainer<SpriteBaseProps, unknown, I, T, M>;
         if (lookupMutableSpriteContainer.type !== "mutable") {
           throw Error("Can only render mutable Sprite");
         }
@@ -722,7 +728,8 @@ function handleSprites<P, I, T>(
       );
       platformRender.startRenderSprite(
         lookupMutableSpriteContainer.props as SpriteBaseProps,
-        stackItem
+        stackItem,
+        lookupMutableSpriteContainer.maskState
       );
       lookupMutableSpriteContainer.updateSprites(spriteInitCreation);
       platformRender.endRenderSprite(stateStackFns.removeFromStack());
@@ -730,7 +737,8 @@ function handleSprites<P, I, T>(
       platformRender.renderTexture(
         stateStackFns.getTopStack(),
         sprite,
-        platformRender.getInitTextureState(sprite)
+        platformRender.getInitTextureState(sprite),
+        null
       );
     }
   }
@@ -745,16 +753,16 @@ const REPLAY_TIME_PER_UPDATE_MS = 1000 * (1 / 60);
  * Returns a container of the state of the sprite. Should only be called once
  * per creation of sprite.
  */
-function createCustomSpriteContainer<P, S, I, T>(
+function createCustomSpriteContainer<P, S, I, T, M>(
   sprite: CustomSprite<P, S, I>,
   mutDevice: Device,
-  getInputsPlatform: ReplayPlatform<I, T>["getInputs"],
+  getInputsPlatform: ReplayPlatform<I, T, M>["getInputs"],
   newInputs: () => I,
   stateStackFns: StateStackFns,
   currentTime: number,
   globalId: string,
   contextValues: ContextValue[]
-): CustomSpriteContainer<P, S, I, T> {
+): CustomSpriteContainer<P, S, I, T, M> {
   const { spriteObj, props: initProps } = sprite;
 
   // Use a queue so state is updated after rendering
@@ -764,7 +772,7 @@ function createCustomSpriteContainer<P, S, I, T>(
     updateStateQueue.push(update);
   };
 
-  let spriteContainer: null | CustomSpriteContainer<P, S, I, T> = null;
+  let spriteContainer: null | CustomSpriteContainer<P, S, I, T, M> = null;
   let initState;
   let loadFilesPromise: null | Promise<void> = null;
   if (spriteObj.init) {
@@ -948,9 +956,9 @@ function getRenderMethod(
   return supportsLandscapeAndPortrait && isPortrait ? "renderP" : "render";
 }
 
-function handleAllMutableContainer<I, T>(
-  container: AllMutableSpriteContainer<I, T>,
-  platformRender: PlatformRender<T>,
+function handleAllMutableContainer<I, T, M>(
+  container: AllMutableSpriteContainer<I, T, M>,
+  platformRender: PlatformRender<T, M>,
   stateStackFns: StateStackFns,
   initCreation: boolean
 ) {
@@ -958,7 +966,11 @@ function handleAllMutableContainer<I, T>(
     case "mutable":
       container.updateSelf(); // update props
       const stackItem = stateStackFns.addToStack(container.props);
-      platformRender.startRenderSprite(container.props, stackItem);
+      platformRender.startRenderSprite(
+        container.props,
+        stackItem,
+        container.maskState
+      );
       container.updateSprites(initCreation);
       platformRender.endRenderSprite(stateStackFns.removeFromStack());
       break;
@@ -968,7 +980,11 @@ function handleAllMutableContainer<I, T>(
       for (const key in container.containersArray) {
         const containerEl = container.containersArray[key];
         const stackItem = stateStackFns.addToStack(containerEl.props);
-        platformRender.startRenderSprite(containerEl.props, stackItem);
+        platformRender.startRenderSprite(
+          containerEl.props,
+          stackItem,
+          containerEl.maskState
+        );
         containerEl.updateSprites(initCreation);
         platformRender.endRenderSprite(stateStackFns.removeFromStack());
       }
@@ -979,7 +995,8 @@ function handleAllMutableContainer<I, T>(
       platformRender.renderTexture(
         stateStackFns.getTopStack(),
         container.texture,
-        container.textureState
+        container.textureState,
+        container.maskState
       );
       break;
 
@@ -1000,7 +1017,8 @@ function handleAllMutableContainer<I, T>(
       platformRender.renderTexture(
         stateStackFns.getTopStack(),
         container.texture,
-        container.textureState
+        container.textureState,
+        container.maskState
       );
       break;
 
@@ -1028,19 +1046,19 @@ function handleAllMutableContainer<I, T>(
   }
 }
 
-function createMutableSpriteContainer<S, I, T>(
+function createMutableSpriteContainer<S, I, T, M>(
   sprite: MutableSprite,
   mutDevice: Device,
   stateStackFns: StateStackFns,
-  getInputsPlatform: ReplayPlatform<I, T>["getInputs"],
+  getInputsPlatform: ReplayPlatform<I, T, M>["getInputs"],
   newInputs: () => I,
   currentTime: number,
   globalId: string,
   contextValues: MutableContextValue[],
-  platformRender: PlatformRender<T>,
+  platformRender: PlatformRender<T, M>,
   isTestPlatform: boolean,
   nativeSpriteSettings: NativeSpriteSettings
-): AllMutableSpriteContainer<I, T> | null {
+): AllMutableSpriteContainer<I, T, M> | null {
   if (sprite === null) return null;
 
   switch (sprite.type) {
@@ -1061,6 +1079,7 @@ function createMutableSpriteContainer<S, I, T>(
         type: "mutTexture",
         texture: sprite,
         textureState: platformRender.getInitTextureState(sprite),
+        maskState: platformRender.getInitMaskState(sprite.props.mask),
         updateTexture() {
           update?.(this.texture.props);
         },
@@ -1098,6 +1117,7 @@ function createMutableSpriteContainer<S, I, T>(
         texture: sprite,
         array: sprite.array,
         textureState: platformRender.getInitTextureState(sprite),
+        maskState: platformRender.getInitMaskState(sprite.mask),
         cleanup: () => null,
         pooledProps: [],
         updateTextureArray() {
@@ -1408,7 +1428,8 @@ function createMutableSpriteContainer<S, I, T>(
         SpriteBaseProps,
         I,
         unknown,
-        T
+        T,
+        M
       > = {
         type: "mutableArray",
         props: sprite.props,
@@ -1443,7 +1464,7 @@ function createMutableSpriteContainer<S, I, T>(
               platformRender,
               isTestPlatform,
               nativeSpriteSettings
-            ) as MutableSpriteContainer<SpriteBaseProps, unknown, I, T>;
+            ) as MutableSpriteContainer<SpriteBaseProps, unknown, I, T, M>;
 
             return obj;
           }, {}),
@@ -1540,7 +1561,8 @@ function createMutableSpriteContainer<S, I, T>(
         SpriteBaseProps,
         S,
         I,
-        T
+        T,
+        M
       > | null = null;
 
       const state = spriteObj.init?.({
@@ -1594,6 +1616,7 @@ function createMutableSpriteContainer<S, I, T>(
         state,
         inputs: newInputs(),
         stackIndex: null,
+        maskState: platformRender.getInitMaskState(sprite.props.mask),
         childContainers: spriteObj
           .render({
             props,
@@ -1671,33 +1694,35 @@ function createMutableSpriteContainer<S, I, T>(
   }
 }
 
-type SpriteContainer<P, S, I, T> =
-  | CustomSpriteContainer<P, S, I, T>
-  | MutableSpriteContainer<P, S, I, T>
+type SpriteContainer<P, S, I, T, M> =
+  | CustomSpriteContainer<P, S, I, T, M>
+  | MutableSpriteContainer<P, S, I, T, M>
   | PureCustomSpriteContainer<P>
   | NativeSpriteContainer<P, S>;
 
-type MutableTextureContainer<T> = {
+type MutableTextureContainer<T, M> = {
   type: "mutTexture";
   texture: MutableSingleTexture;
   textureState: T;
+  maskState: M;
   updateTexture: () => void;
   cleanup: () => void;
 };
-type MutableArrayTextureContainer<T, A> = {
+type MutableArrayTextureContainer<T, A, M> = {
   type: "mutArrayTexture";
   texture: MutableArrayTexture;
   array: () => A[];
   textureState: T;
+  maskState: M;
   pooledProps: MutableArrayTexture["props"];
   updateTextureArray: () => void;
   cleanup: () => void;
 };
 
-type MutableOnChangeContainer<I, V, T> = {
+type MutableOnChangeContainer<I, V, T, M> = {
   type: "mutOnChange";
   value: V;
-  containers: AllMutableSpriteContainer<I, T>[];
+  containers: AllMutableSpriteContainer<I, T, M>[];
   updateOnChange: () => boolean;
   cleanup: () => void;
 };
@@ -1708,23 +1733,23 @@ type MutableRunContainer = {
   cleanup: () => void;
 };
 
-type AllMutableSpriteContainer<I, T> =
-  | MutableSpriteContainer<SpriteBaseProps, unknown, I, T>
-  | MutableSpriteArrayContainer<SpriteBaseProps, I, unknown, T>
-  | MutableTextureContainer<T>
-  | MutableOnChangeContainer<I, unknown, T>
+type AllMutableSpriteContainer<I, T, M> =
+  | MutableSpriteContainer<SpriteBaseProps, unknown, I, T, M>
+  | MutableSpriteArrayContainer<SpriteBaseProps, I, unknown, T, M>
+  | MutableTextureContainer<T, M>
+  | MutableOnChangeContainer<I, unknown, T, M>
   | MutableRunContainer
-  | MutableArrayTextureContainer<T, unknown>
-  | MutableContextContainer<I, T>
+  | MutableArrayTextureContainer<T, unknown, M>
+  | MutableContextContainer<I, T, M>
   | NativeSpriteContainer<SpriteBaseProps, unknown>;
 
-type CustomSpriteContainer<P, S, I, T> = {
+type CustomSpriteContainer<P, S, I, T, M> = {
   type: "custom";
   state: S;
   inputs: I;
   childContainers: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [id: string]: SpriteContainer<unknown, any, I, T>;
+    [id: string]: SpriteContainer<unknown, any, I, T, M>;
   };
   // stored for memory pooling
   baseProps: SpriteBaseProps;
@@ -1745,17 +1770,18 @@ type CustomSpriteContainer<P, S, I, T> = {
   cleanup: () => void;
 };
 
-type MutableContextContainer<I, T> = {
+type MutableContextContainer<I, T, M> = {
   type: "mutContext";
-  containers: AllMutableSpriteContainer<I, T>[];
+  containers: AllMutableSpriteContainer<I, T, M>[];
   cleanup: () => void;
 };
 
-type MutableSpriteContainer<P, S, I, T> = {
+type MutableSpriteContainer<P, S, I, T, M> = {
   type: "mutable";
   props: P;
   state: S;
-  childContainers: AllMutableSpriteContainer<I, T>[];
+  maskState: M;
+  childContainers: AllMutableSpriteContainer<I, T, M>[];
   loadFilesPromise: null | Promise<void>;
   stackIndex: null | number;
   inputs: I;
@@ -1764,7 +1790,7 @@ type MutableSpriteContainer<P, S, I, T> = {
   cleanup: () => void;
 };
 
-type MutableSpriteArrayContainer<P, I, ItemState, T> = {
+type MutableSpriteArrayContainer<P, I, ItemState, T, M> = {
   type: "mutableArray";
   props: (itemState: ItemState, index: number) => P;
   update?: (thisProps: P, itemState: ItemState, index: number) => void;
@@ -1773,7 +1799,7 @@ type MutableSpriteArrayContainer<P, I, ItemState, T> = {
   key: (itemState: ItemState, index: number) => string | number;
   containersArray: Record<
     string | number,
-    MutableSpriteContainer<SpriteBaseProps, unknown, I, T>
+    MutableSpriteContainer<SpriteBaseProps, unknown, I, T, M>
   >;
   updateSprites: () => void;
   cleanup: () => void;
@@ -1851,14 +1877,14 @@ function createPureCustomSpriteContainer<P>(
   };
 }
 
-function traversePureCustomSpriteContainer<P, T>(
+function traversePureCustomSpriteContainer<P, T, M>(
   pureSpriteContainer: PureCustomSpriteContainer<P>,
   spriteProps: CustomSpriteProps<P>,
   stateStackFns: StateStackFns,
   deviceSize: DeviceSize,
   didResize: boolean,
   renderMethod: RenderMethod,
-  platformRender: PlatformRender<T>
+  platformRender: PlatformRender<T, M>
 ): PureSpriteCache {
   const { baseProps } = pureSpriteContainer;
   mutateBaseProps(baseProps, spriteProps);
@@ -1888,14 +1914,14 @@ function traversePureCustomSpriteContainer<P, T>(
   );
 }
 
-function traversePureCustomSpriteContainerNotCached<P, T>(
+function traversePureCustomSpriteContainerNotCached<P, T, M>(
   pureSpriteContainer: PureCustomSpriteContainer<P>,
   sprites: PureSprite<unknown>[],
   stateStackFns: StateStackFns,
   deviceSize: DeviceSize,
   didResize: boolean,
   renderMethod: RenderMethod,
-  platformRender: PlatformRender<T>
+  platformRender: PlatformRender<T, M>
 ): PureSpriteCache {
   const { baseProps } = pureSpriteContainer;
 
@@ -1907,7 +1933,8 @@ function traversePureCustomSpriteContainerNotCached<P, T>(
 
   platformRender.startRenderSprite(
     baseProps,
-    stateStackFns.addToStack(baseProps)
+    stateStackFns.addToStack(baseProps),
+    null
   );
 
   const cacheItems = new Array<PureSpriteCache | Texture>(sprites.length);
@@ -1952,7 +1979,8 @@ function traversePureCustomSpriteContainerNotCached<P, T>(
       platformRender.renderTexture(
         stateStackFns.getTopStack(),
         sprite,
-        platformRender.getInitTextureState(sprite)
+        platformRender.getInitTextureState(sprite),
+        null
       );
 
       cacheItems[cacheItemIndex] = sprite;
@@ -1994,13 +2022,13 @@ function traversePureCustomSpriteContainerNotCached<P, T>(
   return cache;
 }
 
-function traversePureSpriteCache<T>(
+function traversePureSpriteCache<T, M>(
   cache: PureSpriteCache,
-  platformRender: PlatformRender<T>,
+  platformRender: PlatformRender<T, M>,
   stateStackFns: StateStackFns
 ) {
   const stackItem = stateStackFns.addToStack(cache.baseProps);
-  platformRender.startRenderSprite(cache.baseProps, stackItem);
+  platformRender.startRenderSprite(cache.baseProps, stackItem, null);
 
   for (let i = 0; i < cache.items.length; i++) {
     const sprite = cache.items[i];
@@ -2010,7 +2038,8 @@ function traversePureSpriteCache<T>(
       platformRender.renderTexture(
         stackItem,
         sprite,
-        platformRender.getInitTextureState(sprite)
+        platformRender.getInitTextureState(sprite),
+        null
       );
     }
   }
