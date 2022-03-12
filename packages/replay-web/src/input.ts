@@ -23,7 +23,7 @@ export interface Inputs {
   };
 }
 
-let mutableInputs = newInputs();
+const mutableInputs = newInputs();
 
 let pointerIds: number[] = [];
 
@@ -100,7 +100,7 @@ export function keyDownHandler(e: KeyboardEvent) {
 }
 
 export function keyUpHandler(e: KeyboardEvent) {
-  delete mutableInputs.keysDown[e.key];
+  mutableInputs.keysDown[e.key] = undefined;
 }
 
 /**
@@ -179,13 +179,11 @@ export function pointerCancelHandler(pointerId: number) {
 }
 
 export function resetInputs() {
-  mutableInputs = {
-    keysDown: mutableInputs.keysDown,
-    keysJustPressed: {},
-    pointer: {
-      ...mutableInputs.pointer,
-      justPressed: false,
-      justReleased: false,
-    },
-  };
+  // Clear just pressed fields
+  for (const key in mutableInputs.keysJustPressed) {
+    mutableInputs.keysJustPressed[key] = undefined;
+  }
+
+  mutableInputs.pointer.justPressed = false;
+  mutableInputs.pointer.justReleased = false;
 }

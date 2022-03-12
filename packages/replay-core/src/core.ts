@@ -1424,6 +1424,7 @@ function createMutableSpriteContainer<S, I, T, M>(
           props,
         };
       };
+      const prevIds: string[] = [];
       const spriteContainer: MutableSpriteArrayContainer<
         SpriteBaseProps,
         I,
@@ -1437,8 +1438,10 @@ function createMutableSpriteContainer<S, I, T, M>(
         filter: sprite.filter,
         array: sprite.array,
         key: sprite.key,
-        prevIds: [],
-        prevIdsSet: new Set(),
+        prevIdsA: prevIds, // initially share a ref with B
+        prevIdsB: prevIds,
+        isOnSamePrevIdRef: true,
+        onPrevIdA: true,
         containersArray: sprite
           .array()
           .map((arrayEl, index) => {
@@ -1471,9 +1474,11 @@ function createMutableSpriteContainer<S, I, T, M>(
         updateSprites() {
           const array = this.array();
 
-          const unusedIds = this.prevIdsSet;
-          const ids = this.prevIds;
+          const ids = this.onPrevIdA ? this.prevIdsA : this.prevIdsB;
+          const prevIds = this.onPrevIdA ? this.prevIdsB : this.prevIdsA;
           let idIndex = 0;
+
+          let newSprites = 0;
 
           for (let index = 0; index < array.length; index++) {
             const arrayEl = array[index];
@@ -1483,11 +1488,11 @@ function createMutableSpriteContainer<S, I, T, M>(
 
             ids[idIndex] = id;
             idIndex++;
-            unusedIds.delete(id);
 
             let container = this.containersArray[id];
 
             if (!container) {
+              newSprites++;
               container = createMutableSpriteContainer(
                 newMutSprite(arrayEl, index),
                 mutDevice,
@@ -1512,21 +1517,35 @@ function createMutableSpriteContainer<S, I, T, M>(
           if (idIndex < ids.length) {
             ids.length = idIndex;
           }
-          for (const id of unusedIds) {
-            this.containersArray[id].cleanup();
-            delete this.containersArray[id];
-          }
 
-          this.prevIdsSet.clear();
-          for (const id of ids) {
-            this.prevIdsSet.add(id);
-          }
+          const newLength = ids.length;
+          const predictedLength = prevIds.length + newSprites;
 
-          if (this.prevIdsSet.size < ids.length) {
+          if (newLength > predictedLength) {
+            // Check for duplicates
             const duplicate = ids.find(
               (item, index) => ids.indexOf(item) !== index
             );
             throw Error(`Duplicate key ${duplicate}`);
+          } else if (newLength < predictedLength) {
+            // Some were removed
+            const unusedIdsSet = new Set(prevIds);
+            for (const id of ids) {
+              unusedIdsSet.delete(id);
+            }
+            for (const id of unusedIdsSet) {
+              this.containersArray[id].cleanup();
+              delete this.containersArray[id];
+            }
+          }
+
+          // Alternate
+          this.onPrevIdA = !this.onPrevIdA;
+
+          if (this.isOnSamePrevIdRef) {
+            this.isOnSamePrevIdRef = false;
+            // Separate refs
+            this.prevIdsB = [...this.prevIdsB];
           }
         },
         cleanup() {
@@ -1803,8 +1822,11 @@ type MutableSpriteArrayContainer<P, I, ItemState, T, M> = {
   >;
   updateSprites: () => void;
   cleanup: () => void;
-  prevIds: (string | number)[];
-  prevIdsSet: Set<string | number>;
+  // Two arrays to alternate and avoid GC
+  prevIdsA: (string | number)[];
+  prevIdsB: (string | number)[];
+  onPrevIdA: boolean;
+  isOnSamePrevIdRef: boolean;
 };
 
 type PureCustomSpriteContainer<P> = {
