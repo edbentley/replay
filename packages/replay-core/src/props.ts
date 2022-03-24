@@ -45,6 +45,11 @@ export type SpriteBaseProps = {
    * Only render the content that fits within the outline of this shape.
    */
   mask: MaskShape;
+  /**
+   * Show or hide texture
+   * @default true
+   */
+  show: boolean; // TODO: only in Textures currently
 };
 
 /**
@@ -67,6 +72,7 @@ export function getDefaultProps(
     anchorX: props.anchorX || 0,
     anchorY: props.anchorY || 0,
     mask: props.mask || null,
+    show: props.show || true,
   };
 }
 
@@ -84,5 +90,6 @@ export function mutateBaseProps<T extends SpriteBaseProps>(
   toAddProps.anchorX = props.anchorX || 0;
   toAddProps.anchorY = props.anchorY || 0;
   toAddProps.mask = props.mask || null;
+  toAddProps.show = props.show ?? true;
   return toAddProps;
 }

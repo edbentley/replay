@@ -8,7 +8,8 @@ import {
 import { CustomSprite, NativeSpriteUtils } from "@replay/core/dist/sprite";
 import { AssetUtils, AssetMap } from "@replay/core/dist/device";
 import {
-  getInputs,
+  getInputsMut,
+  newInputs,
   keyUpHandler as inputKeyUpHandler,
   keyDownHandler as inputKeyDownHandler,
   resetInputs,
@@ -34,7 +35,7 @@ import {
   getClipboard,
 } from "./device";
 import { isTouchDevice } from "./isTouchDevice";
-import { draw } from "./webGL/drawGL";
+import { draw, MaskState, TextureState } from "./webGL/drawGL";
 import { createTextureInfo } from "./webGL/imageGL";
 
 export { Inputs as WebInputs, mapInputCoordinates } from "./input";
@@ -122,14 +123,23 @@ export function renderCanvas<S>(
   const pointerUpEv = window.PointerEvent ? "pointerup" : "touchend";
   const pointerCancelEv = window.PointerEvent ? "pointercancel" : "touchcancel";
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const gl = canvas.getContext("webgl", { stencil: true })!;
+  const glFeature = canvas.getContext("webgl", { stencil: true });
+  if (!glFeature) {
+    return Error("WebGL not supported");
+  }
+  const gl = glFeature;
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const glInstArrays = gl.getExtension("ANGLE_instanced_arrays")!;
+  const glInstArraysFeature = gl.getExtension("ANGLE_instanced_arrays");
+  if (!glInstArraysFeature) {
+    return Error("WebGL instancing not supported");
+  }
+  const glInstArrays = glInstArraysFeature;
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const glVao = gl.getExtension("OES_vertex_array_object")!;
+  const glVaoFeature = gl.getExtension("OES_vertex_array_object");
+  if (!glVaoFeature) {
+    return Error("WebGL VAO not supported");
+  }
+  const glVao = glVaoFeature;
 
   // Enable alpha
   gl.enable(gl.BLEND);
@@ -230,8 +240,19 @@ export function renderCanvas<S>(
     }
 
     const devicePixelRatio = window.devicePixelRatio || 1;
-    canvas.width = mutDevice.size.deviceWidth * devicePixelRatio;
-    canvas.height = mutDevice.size.deviceHeight * devicePixelRatio;
+
+    // Reduce large image resolutions (e.g. iPad).
+    // Technically it should be fullWidth * imageResolution, but we assume lower
+    // resolution devices can't support that many pixels in their GPU.
+    const canvasWidth =
+      Math.min(mutDevice.size.deviceWidth, mutDevice.size.fullWidth) *
+      devicePixelRatio;
+    const canvasHeight =
+      Math.min(mutDevice.size.deviceHeight, mutDevice.size.fullHeight) *
+      devicePixelRatio;
+
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
     canvas.style.width = `${mutDevice.size.deviceWidth}px`;
     canvas.style.height = `${mutDevice.size.deviceHeight}px`;
 
@@ -265,6 +286,8 @@ export function renderCanvas<S>(
     mutRender.renderTexture = renderCanvasResult.renderTexture;
     mutRender.startNativeSprite = renderCanvasResult.startNativeSprite;
     mutRender.endNativeSprite = renderCanvasResult.endNativeSprite;
+    mutRender.getInitTextureState = renderCanvasResult.getInitTextureState;
+    mutRender.getInitMaskState = renderCanvasResult.getInitMaskState;
 
     nativeSpriteUtils.gameXToPlatformX = getGameXToWebX({
       canvasOffsetLeft: canvas.offsetLeft,
@@ -434,7 +457,7 @@ export function renderCanvas<S>(
     },
   };
 
-  const mutRender: PlatformRender = {
+  const mutRender: PlatformRender<TextureState, MaskState> = {
     newFrame: () => null,
     endFrame: () => null,
     startRenderSprite: () => null,
@@ -442,6 +465,8 @@ export function renderCanvas<S>(
     renderTexture: () => null,
     startNativeSprite: () => null,
     endNativeSprite: () => null,
+    getInitTextureState: () => null,
+    getInitMaskState: () => ({ value: null }),
   };
 
   const mutDevice = mutDeviceCreator(
@@ -456,10 +481,12 @@ export function renderCanvas<S>(
     platformOptions?.device || {}
   );
 
-  const domPlatform: ReplayPlatform<Inputs> = {
+  const domPlatform: ReplayPlatform<Inputs, TextureState, MaskState> = {
     mutDevice,
-    getInputs,
+    getInputs: getInputsMut,
+    newInputs,
     render: mutRender,
+    isTestPlatform: false,
   };
 
   const nativeSpriteUtils: NativeSpriteUtils = {
@@ -506,7 +533,7 @@ export function renderCanvas<S>(
 
     updateDeviceSize();
 
-    const { runNextFrame } = replayCore<S, Inputs>(
+    const { runNextFrame } = replayCore<S, Inputs, TextureState, MaskState>(
       domPlatform,
       {
         nativeSpriteMap,
@@ -519,31 +546,33 @@ export function renderCanvas<S>(
 
     function loop() {
       statsEnd?.();
-      window.requestAnimationFrame(function newFrame(time) {
-        if (isCleanedUp) {
-          return;
-        }
-        statsBegin?.();
-        if (initTime === null) {
-          initTime = time - 1 / 60;
-        }
+      window.requestAnimationFrame(newWebFrame);
+    }
 
-        // Wait until visible before running to avoid bad timestamps
-        if (!isPageVisible) {
-          loop();
-          return;
-        }
+    function newWebFrame(time: number) {
+      if (isCleanedUp) {
+        return;
+      }
+      statsBegin?.();
+      if (initTime === null) {
+        initTime = time - 1 / 60;
+      }
 
-        if (needsToUpdateNotVisibleTime) {
-          needsToUpdateNotVisibleTime = false;
-          totalPageNotVisibleTime += time - lastPageNotVisibleTime;
-        }
-        lastTimeValue = time;
-
-        runNextFrame(time - initTime - totalPageNotVisibleTime, resetInputs);
-
+      // Wait until visible before running to avoid bad timestamps
+      if (!isPageVisible) {
         loop();
-      });
+        return;
+      }
+
+      if (needsToUpdateNotVisibleTime) {
+        needsToUpdateNotVisibleTime = false;
+        totalPageNotVisibleTime += time - lastPageNotVisibleTime;
+      }
+      lastTimeValue = time;
+
+      runNextFrame(time - initTime - totalPageNotVisibleTime, resetInputs);
+
+      loop();
     }
 
     loop();

@@ -186,7 +186,7 @@ A mock clipboard object.
 expect(clipboard.copy).toBeCalledWith("ABCDEFG", expect.any(Function));
 ```
 
-## `mockContext(context, mockValue)`
+## `mockContext(context, mockValue)` / `mockMutContext(context, mockValue)`
 
 Mock a [Context](context.md) value, to be passed into `options.contexts` of `testSprite`.
 
@@ -197,6 +197,9 @@ testSprite(MyGame(gameProps), gameProps, {
   contexts: [
     mockContext(myContext1, { val: "hello" }),
     mockContext(myContext2, { example: 100 }),
+  ],
+  mutContexts: [
+    mockMutContext(myContext3, { score: 0 }),
   ],
 });
 ```

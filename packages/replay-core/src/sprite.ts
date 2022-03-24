@@ -1,5 +1,6 @@
 import { Device, DeviceSize, Assets } from "./device";
 import { Texture } from "./t";
+import { MutableTexture } from "./t2";
 import { SpriteBaseProps, ExcludeSpriteBaseProps } from "./props";
 
 /**
@@ -13,6 +14,7 @@ export type Sprite<P = any, S = any, I = any> =
   | NativeSprite<P>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | ContextSprite<any>
+  | MutableCustomSprite<P, S, I>
   | Texture
   | null;
 
@@ -104,11 +106,7 @@ interface SpriteObjBase<P, S, I> {
   /**
    * Called on sprite unmount.
    */
-  cleanup?: (params: {
-    state: Readonly<S>;
-    device: Device;
-    getInputs: () => I;
-  }) => void;
+  cleanup?: (params: { state: Readonly<S>; device: Device }) => void;
 
   // -- render methods
 
@@ -256,6 +254,7 @@ export type NativeSprite<P> = {
   type: "native";
   name: string;
   props: P;
+  update?: (thisProps: P) => void;
 };
 
 export type NativeSpriteImplementation<P, S> = {
@@ -263,7 +262,6 @@ export type NativeSpriteImplementation<P, S> = {
     props: P;
     parentGlobalId: string;
     getState: () => S;
-    updateState: (mergeState: Partial<S>) => void;
     utils: NativeSpriteUtils;
   }) => S;
   loop: (params: {
@@ -271,10 +269,12 @@ export type NativeSpriteImplementation<P, S> = {
     state: S;
     parentGlobalId: string;
     utils: NativeSpriteUtils;
-    // TODO: handle with shared matrices
-    parentX: number;
-    parentY: number;
-  }) => S;
+    spriteToGameCoords: <T extends { x: number; y: number }>(
+      x: number,
+      y: number,
+      out: T
+    ) => void;
+  }) => void;
   cleanup: (params: { state: S; parentGlobalId: string }) => void;
 };
 
@@ -301,11 +301,12 @@ export type NativeSpriteUtils = {
  */
 export function makeNativeSprite<P extends { id: string }>(
   name: string
-): (props: P) => NativeSprite<P> {
-  return (props) => ({
+): (props: P, update?: (thisProps: P) => void) => NativeSprite<P> {
+  return (props, update) => ({
     type: "native",
     name,
     props,
+    update,
   });
 }
 
@@ -316,6 +317,228 @@ export type ContextSprite<T> = {
   sprites: Sprite[];
 };
 
+export type MutableContextSprite<T> = {
+  type: "mutContext";
+  context: Context<T>;
+  value: () => T;
+  sprites: MutableSprite[];
+};
+
 export type Context<T> = {
   Sprite: (args: { context: T; sprites: Sprite[] }) => ContextSprite<T>;
+  Single: (args: {
+    context: () => T;
+    sprites: MutableSprite[];
+  }) => MutableContextSprite<T>;
+};
+
+// -- Mutable
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type MutableSprite<P = any, S = any, I = any> =
+  | MutableCustomSprite<P, S, I>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | MutableSpriteArray<P, S, I, any>
+  | MutableTexture
+  | MutableConditional
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | MutableOnChange<any>
+  | MutableRun
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | MutableContextSprite<any>
+  | NativeSprite<P>
+  | null;
+
+export type MutableCustomSpriteProps<P> = P &
+  Partial<SpriteBaseProps> & {
+    /**
+     * Only required if NOT in Mutable Sprite
+     */
+    id?: string;
+  };
+
+/**
+ * Mutable
+ */
+export function makeMutableSprite<
+  P extends ExcludeSpriteBaseProps<P>,
+  S = undefined,
+  I = {}
+>(spriteObj: MutableSpriteObj<P, S, I>) {
+  return {
+    Single: function makeSpriteCallback(
+      props: MutableCustomSpriteProps<P>,
+      update?: (thisProps: MutableCustomSpriteProps<P>) => void
+    ): MutableCustomSprite<P, S, I> {
+      return {
+        type: "mutable",
+        spriteObj,
+        props,
+        update,
+      };
+    },
+    Array: function makeSpriteArrayCallback<ItemState>({
+      props,
+      update,
+      updateAll,
+      filter,
+      array,
+      key,
+    }: {
+      props: (
+        itemState: ItemState,
+        index: number
+      ) => MutableCustomSpriteProps<P>;
+      update?: (
+        thisProps: MutableCustomSpriteProps<P>,
+        itemState: ItemState,
+        index: number
+      ) => void;
+      updateAll?: (thisProps: MutableCustomSpriteProps<P>) => void;
+      filter?: (itemState: ItemState, index: number) => boolean;
+      array: () => ItemState[];
+      key: (itemState: ItemState, index: number) => string | number;
+    }): MutableSpriteArray<P, S, I, ItemState> {
+      return {
+        type: "mutableArray",
+        spriteObj,
+        props,
+        update,
+        updateAll,
+        filter,
+        array,
+        key,
+      };
+    },
+  };
+}
+
+export interface MutableCustomSprite<P, S, I> {
+  type: "mutable";
+  spriteObj: MutableSpriteObj<P, S, I>;
+  props: MutableCustomSpriteProps<P>;
+  update?: (arg: P) => void;
+}
+export interface MutableSpriteArray<P, S, I, ItemState> {
+  type: "mutableArray";
+  spriteObj: MutableSpriteObj<P, S, I>;
+  props: (itemState: ItemState, index: number) => MutableCustomSpriteProps<P>;
+  update?: (thisProps: P, itemState: ItemState, index: number) => void;
+  updateAll?: (thisProps: MutableCustomSpriteProps<P>) => void;
+  filter?: (itemState: ItemState, index: number) => boolean;
+  array: () => ItemState[];
+  key: (itemState: ItemState, index: number) => string | number;
+}
+
+type MutableSpriteObj<P, S, I> = S extends undefined
+  ? Partial<MutableSpriteObjInit<P, S, I>> & MutableSpriteObjBase<P, S, I>
+  : MutableSpriteObjInit<P, S, I> & MutableSpriteObjBase<P, S, I>;
+
+interface MutableSpriteObjInit<P, S, I> {
+  /**
+   * Called on sprite mount. Returns initial state.
+   */
+  init: (params: {
+    props: Readonly<P>;
+    getState: () => S;
+    device: Device;
+    getInputs: () => I;
+    /**
+     * Asset file names to preload for this Sprite. They'll be cleared from
+     * memory when the Sprite is unmounted.
+     */
+    preloadFiles: (assets: Assets) => Promise<void>;
+    getContext: <T>(context: Context<T>) => T;
+  }) => S;
+}
+
+interface MutableSpriteObjBase<P, S, I> {
+  /**
+   * Called every frame to update the state of the sprite.
+   */
+  loop?: (params: {
+    props: Readonly<P>;
+    state: S;
+    device: Device;
+    getInputs: () => I;
+    getContext: <T>(context: Context<T>) => T;
+  }) => void;
+
+  /**
+   * Called on sprite unmount.
+   */
+  cleanup?: (params: { state: Readonly<S>; device: Device }) => void;
+
+  // -- render methods
+
+  /**
+   * Return an array of sprites to render. This is only called once.
+   */
+  render: (params: {
+    props: Readonly<P>;
+    state: S;
+    device: Device;
+    getInputs: () => I;
+    getContext: <T>(context: Context<T>) => T;
+  }) => MutableSprite[];
+}
+
+export const r = {
+  if: (
+    condition: () => boolean,
+    sprites: () => MutableSprite[]
+  ): MutableConditional => {
+    return {
+      type: "conditional",
+      condition,
+      trueSprites: sprites,
+      falseSprites: () => [],
+    };
+  },
+  ifElse: (
+    condition: () => boolean,
+    trueSprites: () => MutableSprite[],
+    falseSprites: () => MutableSprite[]
+  ): MutableConditional => {
+    return {
+      type: "conditional",
+      condition,
+      trueSprites,
+      falseSprites,
+    };
+  },
+  onChange: <T>(
+    value: () => T,
+    sprites: () => MutableSprite[]
+  ): MutableOnChange<T> => {
+    return {
+      type: "onChange",
+      value,
+      sprites,
+    };
+  },
+  run: (fn: () => void): MutableRun => {
+    return {
+      type: "run",
+      fn,
+    };
+  },
+};
+
+export type MutableConditional = {
+  type: "conditional";
+  condition: () => boolean;
+  trueSprites: () => MutableSprite[];
+  falseSprites: () => MutableSprite[];
+};
+
+export type MutableOnChange<T> = {
+  type: "onChange";
+  value: () => T;
+  sprites: () => MutableSprite[];
+};
+
+export type MutableRun = {
+  type: "run";
+  fn: () => void;
 };

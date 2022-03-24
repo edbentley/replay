@@ -7,6 +7,7 @@ import {
   Texture,
   makeContext,
 } from "@replay/core";
+import { m2d } from "@replay/core/dist/matrix";
 import { mockContext, testSprite } from "../index";
 
 test("getTextures, nextFrame", () => {
@@ -35,6 +36,7 @@ test("getTextures, nextFrame", () => {
           "rotation": 0,
           "scaleX": 1,
           "scaleY": 1,
+          "show": true,
           "testId": "player",
           "x": 0,
           "y": 100,
@@ -56,6 +58,7 @@ test("getTextures, nextFrame", () => {
           "rotation": 0,
           "scaleX": 1,
           "scaleY": 1,
+          "show": true,
           "strokeColor": undefined,
           "strokeThickness": undefined,
           "testId": undefined,
@@ -77,6 +80,7 @@ test("getTextures, nextFrame", () => {
           "rotation": 0,
           "scaleX": 1,
           "scaleY": 1,
+          "show": true,
           "strokeColor": undefined,
           "strokeThickness": undefined,
           "testId": undefined,
@@ -110,6 +114,7 @@ test("getTextures, nextFrame", () => {
           "rotation": 0,
           "scaleX": 1,
           "scaleY": 1,
+          "show": true,
           "testId": "player",
           "x": 1,
           "y": 100,
@@ -131,6 +136,7 @@ test("getTextures, nextFrame", () => {
           "rotation": 0,
           "scaleX": 1,
           "scaleY": 1,
+          "show": true,
           "strokeColor": undefined,
           "strokeThickness": undefined,
           "testId": undefined,
@@ -152,6 +158,7 @@ test("getTextures, nextFrame", () => {
           "rotation": 0,
           "scaleX": 1,
           "scaleY": 1,
+          "show": true,
           "strokeColor": undefined,
           "strokeThickness": undefined,
           "testId": undefined,
@@ -573,12 +580,18 @@ test("can map input coordinates to relative coordinates within Sprite", () => {
     initInputs: {
       x: 20,
     },
-    mapInputCoordinates(getLocalCoords, inputs) {
-      const { x = 0 } = inputs;
-      const localX = getLocalCoords({ x, y: 0 }).x;
+    mapInputCoordinates(matrix, inputs) {
+      const invertMatrix = m2d.invertPooled(matrix);
+      if (!invertMatrix) return inputs;
+
+      const result = m2d.multiply(
+        invertMatrix,
+        m2d.getTranslateMatrix(inputs.x || 0, 0)
+      );
+
       return {
         ...inputs,
-        x: localX,
+        x: result[4],
       };
     },
   });

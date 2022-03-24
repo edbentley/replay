@@ -37,6 +37,7 @@ Your image and audio assets also need to be added to your Xcode project. See [Re
 - `userStyles`: (Optional) CSS code which will be injected into the web view. Useful for defining custom fonts.
 - `jsRun`: (Optional) The JS code that starts the game - can be overridden to load assets before starting game. Default `"renderCanvas.run();"`.
 - `onJsCallback`: (Optional) A callback for messages sent from your game. See [Bridge](#bridge).
+- `webWorkerFiles`: (Optional) An array of additional Web Worker JS file names (without `.js` extension) to load (e.g. `["file1", "file2"]`).
 
 #### Methods
 

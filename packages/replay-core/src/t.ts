@@ -103,7 +103,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): TextTexture => {
     return {
       type: "text",
       props: mutateBaseProps(
@@ -136,7 +136,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): CircleTexture => {
     return {
       type: "circle",
       props: mutateBaseProps(
@@ -167,7 +167,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): RectangleTexture => {
     return {
       type: "rectangle",
       props: mutateBaseProps(
@@ -252,7 +252,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): LineTexture => {
     return {
       type: "line",
       props: mutateBaseProps(
@@ -286,7 +286,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): ImageTexture => {
     return {
       type: "image",
       props: mutateBaseProps(
@@ -353,7 +353,7 @@ export const t = {
     y?: number;
     rotation?: number;
     testId?: string;
-  }): Texture => {
+  }): SpriteSheetTexture => {
     return {
       type: "spriteSheet",
       props: mutateBaseProps(
@@ -392,7 +392,7 @@ export type SingleTexture =
 export type Texture = SingleTexture | RectangleArrayTexture | ImageArrayTexture;
 
 // -- Text
-type TextProps = BaseProps & {
+export type TextProps = BaseProps & {
   font?: TextureFont;
   text: string;
   color: string;
@@ -404,9 +404,15 @@ export interface TextTexture {
   type: "text";
   props: TextProps;
 }
+export type TextArrayProps = Omit<TextProps, "mask">;
+export interface TextArrayTexture {
+  type: "textArray";
+  mask: MaskShape;
+  props: TextArrayProps[];
+}
 
 // -- Circle
-type CircleProps = BaseProps & {
+export type CircleProps = BaseProps & {
   radius: number;
   color: string;
   gradient?: Gradient;
@@ -415,9 +421,15 @@ export interface CircleTexture {
   type: "circle";
   props: CircleProps;
 }
+export type CircleArrayProps = Omit<CircleProps, "mask">;
+export interface CircleArrayTexture {
+  type: "circleArray";
+  mask: MaskShape;
+  props: CircleArrayProps[];
+}
 
 // -- Rectangle
-type RectangleProps = BaseProps & {
+export type RectangleProps = BaseProps & {
   width: number;
   height: number;
   color: string;
@@ -427,15 +439,15 @@ export interface RectangleTexture {
   type: "rectangle";
   props: RectangleProps;
 }
-
+export type RectangleArrayProps = Omit<RectangleProps, "mask" | "gradient">;
 export interface RectangleArrayTexture {
   type: "rectangleArray";
   mask: MaskShape;
-  props: Omit<RectangleProps, "mask" | "gradient">[];
+  props: RectangleArrayProps[];
 }
 
 // -- Line
-type LineProps = BaseProps & {
+export type LineProps = BaseProps & {
   color?: string;
   thickness: number;
   path: [number, number][];
@@ -448,9 +460,15 @@ export interface LineTexture {
   type: "line";
   props: LineProps;
 }
+export type LineArrayProps = Omit<LineProps, "mask">;
+export interface LineArrayTexture {
+  type: "lineArray";
+  mask: MaskShape;
+  props: LineArrayProps[];
+}
 
 // -- Image
-type ImageProps = BaseProps & {
+export type ImageProps = BaseProps & {
   fileName: string;
   width: number;
   height: number;
@@ -459,16 +477,16 @@ export interface ImageTexture {
   type: "image";
   props: ImageProps;
 }
-
+export type ImageArrayProps = Omit<ImageProps, "fileName" | "mask">;
 export interface ImageArrayTexture {
   type: "imageArray";
   fileName: string;
   mask: MaskShape;
-  props: Omit<ImageProps, "fileName" | "mask">[];
+  props: ImageArrayProps[];
 }
 
 // -- SpriteSheet
-type SpriteSheetProps = BaseProps & {
+export type SpriteSheetProps = BaseProps & {
   fileName: string;
   columns: number;
   rows: number;

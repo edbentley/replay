@@ -210,10 +210,12 @@ Array [
 
 test("Can play audio, pause and get position", async () => {
   fetchMock.getOnce("shoot.wav", { arrayBuffer: jest.fn() });
+  fetchMock.getOnce("enemy.png", {});
 
-  const { audioElements, audioContext } = renderCanvas(
-    TestGameWithAssets(testGameProps)
-  );
+  const result = renderCanvas(TestGameWithAssets(testGameProps));
+
+  if (result instanceof Error) throw result;
+  const { audioElements, audioContext } = result;
 
   await loadAssets();
 

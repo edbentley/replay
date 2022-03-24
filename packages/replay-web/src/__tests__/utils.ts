@@ -403,6 +403,129 @@ export const TestNativeSpriteWeb: NativeSpriteImplementation<
   },
 };
 
+/// -- Nested Sprite test
+
+export const NestedSpriteGame = makeSprite<GameProps, undefined, Inputs>({
+  render({ device, getInputs }) {
+    const inputs = getInputs();
+
+    device.log(
+      `NestedSpriteGame x: ${inputs.pointer.x}, y: ${inputs.pointer.y}`
+    );
+
+    return [
+      // Grid
+      t.circle({
+        color: "gray",
+        radius: 5,
+      }),
+      ...Array.from({ length: 20 }, (_, i) =>
+        t.line({
+          color: "gray",
+          path: [
+            [-100, 0],
+            [100, 0],
+          ],
+          y: 100 - i * 10,
+        })
+      ),
+      ...Array.from({ length: 20 }, (_, i) =>
+        t.line({
+          color: "gray",
+          path: [
+            [0, 100],
+            [0, -100],
+          ],
+          x: 100 - i * 10,
+        })
+      ),
+
+      NestedFirstSprite({
+        id: "first",
+        x: 20,
+        y: 20,
+        rotation: -90,
+        opacity: 0.8,
+      }),
+    ];
+  },
+});
+
+const NestedFirstSprite = makeSprite<{}, undefined, Inputs>({
+  render({ device, getInputs }) {
+    const inputs = getInputs();
+
+    device.log(
+      `NestedFirstSprite x: ${Math.round(inputs.pointer.x)}, y: ${Math.round(
+        inputs.pointer.y
+      )}`
+    );
+
+    return [
+      NestedSecondSprite({
+        id: "second",
+        x: 50,
+        y: 20,
+        rotation: -90,
+        opacity: 0.8,
+      }),
+    ];
+  },
+});
+
+const NestedSecondSprite = makeSprite<{}, undefined, Inputs>({
+  render({ device, getInputs }) {
+    const inputs = getInputs();
+
+    device.log(
+      `NestedSecondSprite x: ${Math.round(inputs.pointer.x)}, y: ${Math.round(
+        inputs.pointer.y
+      )}`
+    );
+
+    return [
+      t.rectangle({
+        color: "red",
+        x: 10,
+        y: 20,
+        width: 10,
+        height: 4,
+        rotation: 135,
+        opacity: 0.8,
+      }),
+    ];
+  },
+});
+
+/// -- Nested Sprite for testing scale bug
+
+export const NestedSpriteGame2 = makeSprite<GameProps, undefined, Inputs>({
+  render() {
+    return [
+      NestedFirstSprite2({
+        id: "first",
+        x: 20,
+        y: 20,
+        scaleX: 0.5,
+      }),
+    ];
+  },
+});
+
+const NestedFirstSprite2 = makeSprite<{}, undefined, Inputs>({
+  render({ device, getInputs }) {
+    const inputs = getInputs();
+    if (inputs.pointer.x) {
+      device.log(
+        `NestedFirstSprite2 x: ${Math.round(inputs.pointer.x)}, y: ${Math.round(
+          inputs.pointer.y
+        )}`
+      );
+    }
+    return [];
+  },
+});
+
 /**
  * Assets used for test game
  */

@@ -1,6 +1,11 @@
-import { Gradient } from "@replay/core/dist/t";
-import { createProgram, hexToRGB, setupRampTexture } from "./glUtils";
-import { m2d, Matrix2D } from "./matrix";
+import { Gradient, LineArrayTexture } from "@replay/core/dist/t";
+import {
+  createProgram,
+  hexToRGBPooled,
+  RenderState,
+  setupRampTexture,
+} from "./glUtils";
+import { m2d, Matrix2D } from "@replay/core/dist/matrix";
 
 // TODO: better line joins to avoid overlaps
 
@@ -39,7 +44,8 @@ void main() {
 
 export function getDrawLine(
   gl: WebGLRenderingContext,
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
@@ -101,44 +107,46 @@ export function getDrawLine(
   // -- Done
   glVao.bindVertexArrayOES(null);
 
+  const uMatrixPooled = m2d.getNewIdentity3fv();
+
   return function drawLine(
     matrix: Matrix2D,
+    mutTextureState: WebLineTextureState,
     path: [number, number][],
     lineWidth: number,
     strokeColor: string | undefined,
     fillColor: string | undefined,
     lineCap: "butt" | "round",
-    opacity: number,
-    prevProgram: WebGLProgram | null
-  ): { program: WebGLProgram | null; lineCaps: LineCaps[] } {
+    opacity: number
+  ) {
     if (path.length <= 1) {
-      return { program: prevProgram, lineCaps: [] };
+      mutTextureState.lineCaps = null;
+      return;
     }
 
-    const lineCaps: LineCaps[] = [];
-
-    if (program !== prevProgram) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
 
       // Only 1 buffer so don't have to rebind every time
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     }
 
+    generatePathDataStroke(mutTextureState, path);
+
     // Add the path to GPU
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      generatePathDataStroke(path),
-      gl.DYNAMIC_DRAW
-    );
+    gl.bufferData(gl.ARRAY_BUFFER, mutTextureState.strokePath, gl.DYNAMIC_DRAW);
 
     // Set the matrix which will be u_matrix * a_position
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(matrix));
+    m2d.toUniform3fvMut(matrix, uMatrixPooled);
+    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     gl.uniform1f(uHalfThicknessLocation, lineWidth / 2);
 
     if (fillColor) {
       // Set colour
-      gl.uniform4f(uColourLocation, ...hexToRGB(fillColor, opacity), opacity);
+      const { r, g, b } = hexToRGBPooled(fillColor, opacity);
+      gl.uniform4f(uColourLocation, r, g, b, opacity);
 
       glVao.bindVertexArrayOES(vaoFill);
 
@@ -146,10 +154,10 @@ export function getDrawLine(
       gl.drawArrays(gl.TRIANGLE_FAN, 0, path.length);
     }
     if (strokeColor) {
-      const rgb = hexToRGB(strokeColor, opacity);
+      const { r, g, b } = hexToRGBPooled(strokeColor, opacity);
 
       // Set colour
-      gl.uniform4f(uColourLocation, ...rgb, opacity);
+      gl.uniform4f(uColourLocation, r, g, b, opacity);
 
       glVao.bindVertexArrayOES(vaoStroke);
 
@@ -157,11 +165,13 @@ export function getDrawLine(
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, path.length * 4);
 
       if (lineCap === "round") {
-        lineCaps.push(...generateLineCaps(path));
+        generateLineCaps(path, mutTextureState);
+      } else {
+        mutTextureState.lineCaps = null;
       }
+    } else {
+      mutTextureState.lineCaps = null;
     }
-
-    return { program, lineCaps };
   };
 }
 
@@ -169,12 +179,29 @@ export type LineCaps = {
   x: number;
   y: number;
   angleRad: number;
+  textureState: { points: Float32Array };
 };
 
-function generatePathDataStroke(path: [number, number][]): Float32Array {
+export type WebLineTextureState = {
+  lineCaps: [LineCaps, LineCaps] | null;
+  linePath: Float32Array;
+  strokePath: Float32Array;
+};
+export type WebLineArrayTextureState = {
+  stateByIndex: WebLineTextureState[];
+};
+
+function generatePathDataStroke(
+  mutTextureState: WebLineTextureState,
+  path: [number, number][]
+) {
   const floatsPerPoint = 24;
 
-  const out = new Float32Array(path.length * floatsPerPoint);
+  const strokePathLength = path.length * floatsPerPoint;
+  if (mutTextureState.strokePath.length !== strokePathLength) {
+    mutTextureState.strokePath = new Float32Array(strokePathLength);
+  }
+  const out = mutTextureState.strokePath;
 
   let prevPointX: number | undefined = undefined;
   let prevPointY: number | undefined = undefined;
@@ -236,46 +263,86 @@ function generatePathDataStroke(path: [number, number][]): Float32Array {
     out[n + 22] = pointX;
     out[n + 23] = pointY;
   }
-
-  return out;
 }
 
-function generatePathDataFill(path: [number, number][]): Float32Array {
+function generatePathDataFill(
+  path: [number, number][],
+  mutTextureState: WebLineTextureState
+) {
   const floatsPerPoint = 2;
-  const out = new Float32Array(path.length * floatsPerPoint);
 
-  path.forEach(([x, y], index) => {
+  const pathLength = path.length * floatsPerPoint;
+  if (mutTextureState.linePath.length !== pathLength) {
+    mutTextureState.linePath = new Float32Array(pathLength);
+  }
+  const out = mutTextureState.linePath;
+
+  for (let index = 0; index < path.length; index++) {
+    const [x, y] = path[index];
+
     const n = index * floatsPerPoint;
 
     out[n] = x;
     out[n + 1] = y;
-  });
-
-  return out;
+  }
 }
 
-function generateLineCaps(path: [number, number][]): LineCaps[] {
+function generateLineCaps(
+  path: [number, number][],
+  mutTextureState: WebLineTextureState
+) {
   const first = path[0];
   const second = path[1];
 
   const secondLast = path[path.length - 2];
   const last = path[path.length - 1];
 
-  return [
-    {
-      x: first[0],
-      y: first[1],
-      angleRad:
-        Math.atan2(second[1] - first[1], second[0] - first[0]) + Math.PI / 2,
-    },
-    {
-      x: last[0],
-      y: last[1],
-      angleRad:
-        Math.atan2(last[1] - secondLast[1], last[0] - secondLast[0]) -
-        Math.PI / 2,
-    },
-  ];
+  if (!mutTextureState.lineCaps) {
+    mutTextureState.lineCaps = [
+      {
+        x: 0,
+        y: 0,
+        angleRad: 0,
+        textureState: { points: new Float32Array() },
+      },
+      {
+        x: 0,
+        y: 0,
+        angleRad: 0,
+        textureState: { points: new Float32Array() },
+      },
+    ];
+  }
+
+  mutTextureState.lineCaps[0].x = first[0];
+  mutTextureState.lineCaps[0].y = first[1];
+  mutTextureState.lineCaps[0].angleRad =
+    Math.atan2(second[1] - first[1], second[0] - first[0]) + Math.PI / 2;
+
+  mutTextureState.lineCaps[1].x = last[0];
+  mutTextureState.lineCaps[1].y = last[1];
+  mutTextureState.lineCaps[1].angleRad =
+    Math.atan2(last[1] - secondLast[1], last[0] - secondLast[0]) - Math.PI / 2;
+}
+
+export function generateLineArrayState(
+  mutTextureState: WebLineArrayTextureState,
+  texture: LineArrayTexture
+) {
+  const length = texture.props.length;
+  const lengthChange = length - mutTextureState.stateByIndex.length;
+
+  if (lengthChange > 0) {
+    for (let i = 0; i < lengthChange; i++) {
+      mutTextureState.stateByIndex.push({
+        lineCaps: null,
+        linePath: new Float32Array(),
+        strokePath: new Float32Array(),
+      });
+    }
+  } else if (lengthChange < 0) {
+    mutTextureState.stateByIndex.length = texture.props.length;
+  }
 }
 
 const vertexShaderGradSource = `
@@ -330,7 +397,8 @@ void main() {
 
 export function getDrawLineGrad(
   gl: WebGLRenderingContext,
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(
     gl,
@@ -365,37 +433,39 @@ export function getDrawLineGrad(
   // -- Done
   glVao.bindVertexArrayOES(null);
 
+  const uMatrixPooled = m2d.getNewIdentity3fv();
+
   return function drawLineGrad(
     matrix: Matrix2D,
+    mutTextureState: WebLineTextureState,
     gradTexture: WebGLTexture,
     path: [number, number][],
     fillGradient: Gradient,
-    opacity: number,
-    prevProgram: WebGLProgram | null,
-    prevTexture: WebGLTexture | null
-  ): { program: WebGLProgram | null; texture: WebGLTexture | null } {
+    opacity: number
+  ) {
     if (path.length <= 1) {
-      return {
-        program: prevProgram,
-        texture: prevTexture,
-      };
+      return;
     }
-    if (gradTexture !== prevTexture) {
+    if (gradTexture !== mutRenderState.texture) {
       gl.bindTexture(gl.TEXTURE_2D, gradTexture);
+      mutRenderState.texture = gradTexture;
     }
 
-    if (program !== prevProgram) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
 
       // Only 1 buffer so don't have to rebind every time
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     }
 
-    gl.bufferData(gl.ARRAY_BUFFER, generatePathDataFill(path), gl.DYNAMIC_DRAW);
+    generatePathDataFill(path, mutTextureState);
+    gl.bufferData(gl.ARRAY_BUFFER, mutTextureState.linePath, gl.DYNAMIC_DRAW);
 
     // Set the matrix which will be u_matrix * a_position
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(matrix));
+    m2d.toUniform3fvMut(matrix, uMatrixPooled);
+    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     // Set opacity
     gl.uniform1f(uOpacityLocation, opacity);
@@ -413,7 +483,5 @@ export function getDrawLineGrad(
 
     // draw the line shape
     gl.drawArrays(gl.TRIANGLE_FAN, 0, path.length);
-
-    return { program, texture: gradTexture };
   };
 }

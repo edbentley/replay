@@ -7,6 +7,8 @@ To render a game for the browser use the `@replay/web` package.
 
 ### `renderCanvas(game, options)`
 
+Render the game to a canvas. Can return an error if [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) features are not supported.
+
 #### Parameters
 
 - `game`: Your [Top-Level Game](top-level-game.md) Sprite called with its props passed in, e.g. `Game(gameProps)`.

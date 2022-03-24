@@ -1,6 +1,7 @@
+import { Matrix2D } from "@replay/core/dist/matrix";
 import { ImageArrayTexture } from "@replay/core/dist/t";
-import { applyTransform, createProgram } from "./glUtils";
-import { Matrix2D } from "./matrix";
+import { applyTransformPooled } from "@replay/core/dist/transform";
+import { createProgram, RenderState } from "./glUtils";
 
 const vertexShaderSource = `
 attribute vec2 a_position;
@@ -44,7 +45,8 @@ void main() {
 export function getDrawImageBatch(
   gl: WebGLRenderingContext,
   glInstArrays: ANGLE_instanced_arrays,
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
@@ -131,32 +133,29 @@ export function getDrawImageBatch(
 
   return function drawImageBatch(
     texture: WebGLTexture,
+    mutTextureState: WebImageArrayTextureState,
     matrix: Matrix2D,
     opacity: number,
-    elements: ImageArrayTexture["props"],
-    prevProgram: WebGLProgram | null,
-    prevTexture: WebGLTexture | null
-  ): { program: WebGLProgram; texture: WebGLTexture } {
-    if (texture !== prevTexture) {
+    elements: ImageArrayTexture["props"]
+  ) {
+    if (texture !== mutRenderState.texture) {
       gl.bindTexture(gl.TEXTURE_2D, texture);
+      mutRenderState.texture = texture;
     }
 
-    if (program !== prevProgram) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
     }
 
-    const { matrices, opacities } = getMatricesOpacityData(
-      elements,
-      matrix,
-      opacity
-    );
+    setMatricesOpacityData(mutTextureState, elements, matrix, opacity);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, matrices, gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, mutTextureState.matrices, gl.DYNAMIC_DRAW);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, opacitiesBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, opacities, gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, mutTextureState.opacities, gl.DYNAMIC_DRAW);
 
     glInstArrays.drawArraysInstancedANGLE(
       gl.TRIANGLES,
@@ -164,12 +163,16 @@ export function getDrawImageBatch(
       6, // num vertices per instance
       elements.length // num instances
     );
-
-    return { program, texture };
   };
 }
 
-function getMatricesOpacityData(
+export type WebImageArrayTextureState = {
+  matrices: Float32Array;
+  opacities: Float32Array;
+};
+
+function setMatricesOpacityData(
+  mutTextureState: WebImageArrayTextureState,
   elements: ImageArrayTexture["props"],
   matrix: Matrix2D,
   opacity: number
@@ -177,15 +180,23 @@ function getMatricesOpacityData(
   // floats per mat3
   const floatsPerMatrix = 6;
 
-  const matrices = new Float32Array(elements.length * floatsPerMatrix);
+  const matricesLength = elements.length * floatsPerMatrix;
+  if (mutTextureState.matrices.length !== matricesLength) {
+    mutTextureState.matrices = new Float32Array(matricesLength);
+  }
+  const matrices = mutTextureState.matrices;
 
   // 1 float for opacity
-  const opacities = new Float32Array(elements.length);
+  const opacitiesLength = elements.length;
+  if (mutTextureState.opacities.length !== opacitiesLength) {
+    mutTextureState.opacities = new Float32Array(opacitiesLength);
+  }
+  const opacities = mutTextureState.opacities;
 
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
 
-    const newMatrix = applyTransform(
+    const newMatrix = applyTransformPooled(
       matrix,
       element,
       // This converts vertices in shader (which is -0.5 / 0.5 points) to the
@@ -202,8 +213,7 @@ function getMatricesOpacityData(
     matrices[n + 4] = newMatrix[4];
     matrices[n + 5] = newMatrix[5];
 
-    opacities[i] = element.opacity * opacity;
+    // TODO: more efficient hiding
+    opacities[i] = element.show ? element.opacity * opacity : 0;
   }
-
-  return { matrices, opacities };
 }

@@ -1,6 +1,11 @@
 import { Gradient } from "@replay/core/dist/t";
-import { createProgram, hexToRGB, setupRampTexture } from "./glUtils";
-import { m2d, Matrix2D } from "./matrix";
+import {
+  createProgram,
+  hexToRGBPooled,
+  RenderState,
+  setupRampTexture,
+} from "./glUtils";
+import { m2d, Matrix2D } from "@replay/core/dist/matrix";
 
 const vertexShaderSource = `
 attribute vec2 a_position;
@@ -25,7 +30,8 @@ void main() {
 export function getDrawRect(
   gl: WebGLRenderingContext,
 
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
@@ -61,16 +67,18 @@ export function getDrawRect(
   // -- Done
   glVao.bindVertexArrayOES(null);
 
+  const uMatrixPooled = m2d.getNewIdentity3fv();
+
   return function drawRect(
     matrix: Matrix2D,
     colour: string,
     width: number,
     height: number,
-    opacity: number,
-    prevProgram: WebGLProgram | null
-  ): WebGLProgram {
-    if (program !== prevProgram) {
+    opacity: number
+  ) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
     }
 
@@ -78,21 +86,21 @@ export function getDrawRect(
     // where
     // u_matrix = matrix * scale
     // scale converts position (which is -0.5 / 0.5 points) to the size of the image
-    const uMatrixValue = m2d.multiply(
+    const uMatrixValue = m2d.multiplyPooled(
       matrix,
-      m2d.getScaleMatrix(width, height)
+      m2d.getScaleMatrixPooled(width, height)
     );
+    m2d.toUniform3fvMut(uMatrixValue, uMatrixPooled);
 
     // Set the matrix which will be u_matrix * a_position
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(uMatrixValue));
+    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     // Set colour
-    gl.uniform4f(uColourLocation, ...hexToRGB(colour, opacity), opacity);
+    const { r, g, b } = hexToRGBPooled(colour, opacity);
+    gl.uniform4f(uColourLocation, r, g, b, opacity);
 
     // draw the quad (2 triangles, 6 vertices)
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-    return program;
   };
 }
 
@@ -149,7 +157,8 @@ void main() {
 
 export function getDrawRectGrad(
   gl: WebGLRenderingContext,
-  glVao: OES_vertex_array_object
+  glVao: OES_vertex_array_object,
+  mutRenderState: RenderState
 ) {
   const program = createProgram(
     gl,
@@ -196,31 +205,34 @@ export function getDrawRectGrad(
   // -- Done
   glVao.bindVertexArrayOES(null);
 
+  const uMatrixPooled = m2d.getNewIdentity3fv();
+
   return function drawRectGrad(
     matrix: Matrix2D,
     gradTexture: WebGLTexture,
     gradient: Gradient,
     width: number,
     height: number,
-    opacity: number,
-    prevProgram: WebGLProgram | null,
-    prevTexture: WebGLTexture | null
-  ): { program: WebGLProgram; texture: WebGLTexture } {
-    if (gradTexture !== prevTexture) {
+    opacity: number
+  ) {
+    if (gradTexture !== mutRenderState.texture) {
       gl.bindTexture(gl.TEXTURE_2D, gradTexture);
+      mutRenderState.texture = gradTexture;
     }
 
-    if (program !== prevProgram) {
+    if (program !== mutRenderState.program) {
       gl.useProgram(program);
+      mutRenderState.program = program;
       glVao.bindVertexArrayOES(vao);
     }
 
-    const uMatrixValue = m2d.multiply(
+    const uMatrixValue = m2d.multiplyPooled(
       matrix,
-      m2d.getScaleMatrix(width, height)
+      m2d.getScaleMatrixPooled(width, height)
     );
+    m2d.toUniform3fvMut(uMatrixValue, uMatrixPooled);
 
-    gl.uniformMatrix3fv(uMatrixLocation, false, m2d.toUniform3fv(uMatrixValue));
+    gl.uniformMatrix3fv(uMatrixLocation, false, uMatrixPooled);
 
     gl.uniform1f(uOpacityLocation, opacity);
 
@@ -236,7 +248,5 @@ export function getDrawRectGrad(
     );
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-    return { program, texture: gradTexture };
   };
 }

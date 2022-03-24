@@ -7,15 +7,31 @@ import { getDrawRect, getDrawRectGrad } from "./rectGL";
 import {
   createCanvasTexture,
   getDrawCanvas,
-  handleTextTexture,
+  drawTextTexture,
 } from "./canvasGL";
-import { m2d, Matrix2D } from "./matrix";
-import { TextureFont } from "@replay/core/dist/t";
-import { getDrawLine, getDrawLineGrad } from "./lineGL";
-import { getDrawCircle } from "./circleGL";
-import { applyTransform, createGradTexture, hexToRGB } from "./glUtils";
-import { getDrawImageBatch } from "./imageBatchGL";
-import { getDrawRectBatch } from "./rectBatchGL";
+import { m2d, Matrix2D } from "@replay/core/dist/matrix";
+import {
+  LineArrayProps,
+  TextArrayProps,
+  TextureFont,
+} from "@replay/core/dist/t";
+import {
+  getDrawLine,
+  getDrawLineGrad,
+  WebLineTextureState,
+  WebLineArrayTextureState,
+  generateLineArrayState,
+} from "./lineGL";
+import {
+  getDrawCircle,
+  WebCircleTextureState,
+  WebCircleArrayTextureState,
+  generateCircleArrayPoints,
+} from "./circleGL";
+import { createGradTexture, hexToRGBPooled, RenderState } from "./glUtils";
+import { getDrawImageBatch, WebImageArrayTextureState } from "./imageBatchGL";
+import { getDrawRectBatch, WebRectArrayTextureState } from "./rectBatchGL";
+import { applyTransformMut } from "@replay/core/dist/transform";
 
 export function draw(
   gl: WebGLRenderingContext,
@@ -28,7 +44,7 @@ export function draw(
   defaultFont: TextureFont,
   bgColor: string,
   devicePixelRatio: number
-): PlatformRender {
+): PlatformRender<TextureState, MaskState> {
   const canvasWidth = gl.canvas.width;
   const canvasHeight = gl.canvas.height;
   const pxPerPoint = (canvasWidth * devicePixelRatio) / gameWidth;
@@ -39,32 +55,34 @@ export function draw(
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const offscreenCanvasCtx = offscreenCanvas.getContext("2d")!;
 
-  const drawImage = getDrawImage(gl, glVao);
-  const drawImageBatch = getDrawImageBatch(gl, glInstArrays, glVao);
-  const drawRect = getDrawRect(gl, glVao);
-  const drawRectBatch = getDrawRectBatch(gl, glInstArrays, glVao);
-  const drawRectGrad = getDrawRectGrad(gl, glVao);
-  const drawLine = getDrawLine(gl, glVao);
-  const drawLineGrad = getDrawLineGrad(gl, glVao);
-  const drawCircle = getDrawCircle(gl, glVao);
-  const drawCanvas = getDrawCanvas(gl, glVao);
+  const mutRenderState: RenderState = {
+    texture: null,
+    program: null,
+  };
 
-  const stateStack: {
-    opacity: number;
-    transformation: Matrix2D;
-    hasMask: boolean;
-  }[] = [
-    {
-      opacity: 1,
-      // Game coordinates to clip space -1/+1
-      // This is the last matrix applied
-      transformation: m2d.getScaleMatrix(2 / gameWidth, 2 / gameHeight),
-      hasMask: false,
-    },
-  ];
+  const drawImage = getDrawImage(gl, glVao, mutRenderState);
+  const drawImageBatch = getDrawImageBatch(
+    gl,
+    glInstArrays,
+    glVao,
+    mutRenderState
+  );
+  const drawRect = getDrawRect(gl, glVao, mutRenderState);
+  const drawRectBatch = getDrawRectBatch(
+    gl,
+    glInstArrays,
+    glVao,
+    mutRenderState
+  );
+  const drawRectGrad = getDrawRectGrad(gl, glVao, mutRenderState);
+  const drawLine = getDrawLine(gl, glVao, mutRenderState);
+  const drawLineGrad = getDrawLineGrad(gl, glVao, mutRenderState);
+  const drawCircle = getDrawCircle(gl, glVao, mutRenderState);
+  const drawCanvas = getDrawCanvas(gl, glVao, mutRenderState);
 
   function applyMask(
     mask: MaskShape,
+    maskState: MaskState | null,
     matrix: Matrix2D,
     x?: number,
     y?: number
@@ -104,42 +122,57 @@ export function draw(
     gl.colorMask(false, false, false, false);
 
     switch (mask.type) {
-      case "circleMask":
-        prevProgram = drawCircle(
+      case "circleMask": {
+        if (maskState === null) {
+          maskState = { value: null };
+        }
+        if (maskState.value?.type !== "circleMask") {
+          maskState.value = {
+            type: "circleMask",
+            points: new Float32Array(),
+          };
+        }
+        drawCircle(
           newMatrix,
+          maskState.value,
           "",
           mask.radius,
           gameWidth,
           gameHeight,
           devicePixelRatio,
           1,
-          false,
-          prevProgram
+          false
         );
         break;
+      }
 
-      case "lineMask":
-        prevProgram = drawLine(
+      case "lineMask": {
+        if (maskState === null) {
+          maskState = { value: null };
+        }
+        if (maskState.value?.type !== "lineMask") {
+          maskState.value = {
+            type: "lineMask",
+            lineCaps: null,
+            linePath: new Float32Array(),
+            strokePath: new Float32Array(),
+          };
+        }
+        drawLine(
           newMatrix,
+          maskState.value,
           mask.path,
           0,
           undefined,
           " ", // Non empty string
           "butt",
-          1,
-          prevProgram
+          1
         );
         break;
+      }
 
       case "rectangleMask":
-        prevProgram = drawRect(
-          newMatrix,
-          "",
-          mask.width,
-          mask.height,
-          1,
-          prevProgram
-        );
+        drawRect(newMatrix, "", mask.width, mask.height, 1);
         break;
     }
 
@@ -170,12 +203,135 @@ export function draw(
       align: "center" | "left" | "right";
     }
   > = {};
-  let unusedTextures = new Set<string>();
+  const unusedTextures = new Set<string>();
 
-  let prevTexture: WebGLTexture | null = null;
-  let prevProgram: WebGLProgram | null = null;
+  const newMatrix: Matrix2D = [0, 0, 0, 0, 0, 0];
 
-  const [bgR, bgG, bgB] = hexToRGB(bgColor);
+  const { r: bgR, g: bgG, b: bgB } = hexToRGBPooled(bgColor);
+
+  function handleLineTexture(
+    textureProps: LineArrayProps,
+    stackOpacity: number,
+    textureState: WebLineTextureState
+  ) {
+    const gradient = textureProps.fillGradient;
+    if (gradient) {
+      const gradCacheKey = `${gradient.type}-${gradient.colors.join("")}-${(
+        gradient.opacities || []
+      ).join("")}`;
+
+      let cacheValue = textureMap[gradCacheKey];
+
+      if (!cacheValue) {
+        cacheValue = {
+          texture: createGradTexture(gl, gradient),
+          // unused
+          width: 0,
+          height: 0,
+          align: "center",
+        };
+        textureMap[gradCacheKey] = cacheValue;
+      } else {
+        unusedTextures.delete(gradCacheKey);
+      }
+
+      drawLineGrad(
+        newMatrix,
+        // Default for non-mut line
+        textureState,
+        cacheValue.texture,
+        textureProps.path,
+        gradient,
+        textureProps.opacity * stackOpacity
+      );
+    }
+    if (textureProps.color || textureProps.fillColor) {
+      drawLine(
+        newMatrix,
+        textureState,
+        textureProps.path,
+        textureProps.thickness,
+        textureProps.color,
+        textureProps.fillColor,
+        textureProps.lineCap,
+        textureProps.opacity * stackOpacity
+      );
+
+      const capColor = textureProps.color;
+      if (textureState.lineCaps && capColor) {
+        for (const circle of textureState.lineCaps) {
+          const m1 = m2d.multiplyPooled(
+            m2d.getTranslateMatrixPooled(circle.x, circle.y),
+            m2d.getRotateMatrixPooled(circle.angleRad)
+          );
+          const m2 = m2d.multiplyPooled(newMatrix, m1);
+          drawCircle(
+            m2,
+            circle.textureState,
+            capColor,
+            textureProps.thickness / 2,
+            gameWidth,
+            gameHeight,
+            pxPerPoint,
+            textureProps.opacity * stackOpacity,
+            true
+          );
+        }
+      }
+    }
+  }
+
+  function handleTextTexture(
+    textureProps: TextArrayProps,
+    stackOpacity: number
+  ) {
+    const { text, color, strokeColor, font } = textureProps;
+    const cacheKey = font
+      ? `${text}-${color}-${strokeColor}-${font.size}-${font.weight}-${font.style}-${font.align}`
+      : `${text}-${color}-${strokeColor}`;
+
+    let cacheValue = textureMap[cacheKey];
+
+    if (!cacheValue) {
+      const align = drawTextTexture(
+        textureProps,
+        offscreenCanvas,
+        offscreenCanvasCtx,
+        defaultFont,
+        devicePixelRatio
+      );
+
+      cacheValue = {
+        texture: createCanvasTexture(gl, offscreenCanvas),
+        width: offscreenCanvas.width,
+        height: offscreenCanvas.height,
+        align,
+      };
+
+      textureMap[cacheKey] = cacheValue;
+    } else {
+      unusedTextures.delete(cacheKey);
+    }
+
+    const { align, width, height } = cacheValue;
+
+    drawCanvas(
+      cacheValue.texture,
+      align === "center"
+        ? newMatrix
+        : m2d.multiplyPooled(
+            newMatrix,
+            m2d.getTranslateMatrixPooled(
+              (width / (2 * devicePixelRatio)) * (align === "left" ? 1 : -1),
+              0
+            )
+          ),
+      width,
+      height,
+      textureProps.opacity * stackOpacity,
+      devicePixelRatio
+    );
+  }
 
   return {
     newFrame: () => {
@@ -183,11 +339,14 @@ export function draw(
       gl.clearColor(bgR, bgG, bgB, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
-      unusedTextures.forEach((key) => {
+      for (const key of unusedTextures) {
         gl.deleteTexture(textureMap[key].texture);
         delete textureMap[key];
-      });
-      unusedTextures = new Set(Object.keys(textureMap));
+      }
+      unusedTextures.clear();
+      for (const key in textureMap) {
+        unusedTextures.add(key);
+      }
 
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -195,47 +354,33 @@ export function draw(
     endFrame: () => {
       // Reset for any Native Sprites rendering before next frame
       glVao.bindVertexArrayOES(null);
-      prevProgram = null;
-      prevTexture = null;
+      mutRenderState.program = null;
+      mutRenderState.texture = null;
     },
-    startRenderSprite: (baseProps) => {
-      const topStack = stateStack[0];
-      const newMatrix = applyTransform(topStack.transformation, baseProps);
-
-      applyMask(baseProps.mask, newMatrix);
-
-      stateStack.unshift({
-        opacity: topStack.opacity * baseProps.opacity,
-        transformation: newMatrix,
-        hasMask: baseProps.mask !== null,
-      });
+    startRenderSprite: (baseProps, stackItem, maskState) => {
+      applyMask(baseProps.mask, maskState, stackItem.transformation);
     },
-    endRenderSprite: () => {
-      const state = stateStack.shift();
-
-      if (state?.hasMask) {
+    endRenderSprite: (stackItem) => {
+      if (stackItem.hasMask) {
         clearMask();
       }
     },
-    renderTexture: (texture) => {
-      const topStack = stateStack[0];
-
+    renderTexture: (topStack, texture, textureState, maskState) => {
       if (texture.type === "imageArray") {
         if (texture.props.length === 0) return;
 
-        applyMask(texture.mask, topStack.transformation);
+        const imageArrayTextureState = textureState as WebImageArrayTextureState;
+
+        applyMask(texture.mask, maskState, topStack.transformation);
 
         const imageInfo = getImage(imageElements, texture.fileName);
-        const result = drawImageBatch(
+        drawImageBatch(
           imageInfo.texture,
+          imageArrayTextureState,
           topStack.transformation,
           topStack.opacity,
-          texture.props,
-          prevProgram,
-          prevTexture
+          texture.props
         );
-        prevProgram = result.program;
-        prevTexture = result.texture;
 
         if (texture.mask) {
           clearMask();
@@ -245,13 +390,15 @@ export function draw(
       if (texture.type === "rectangleArray") {
         if (texture.props.length === 0) return;
 
-        applyMask(texture.mask, topStack.transformation);
+        const rectangleArrayTextureState = textureState as WebRectArrayTextureState;
 
-        prevProgram = drawRectBatch(
+        applyMask(texture.mask, maskState, topStack.transformation);
+
+        drawRectBatch(
           topStack.transformation,
+          rectangleArrayTextureState,
           topStack.opacity,
-          texture.props,
-          prevProgram
+          texture.props
         );
 
         if (texture.mask) {
@@ -259,10 +406,90 @@ export function draw(
         }
         return;
       }
+      if (texture.type === "textArray") {
+        if (texture.props.length === 0) return;
 
-      const newMatrix = applyTransform(topStack.transformation, texture.props);
+        applyMask(texture.mask, maskState, topStack.transformation);
+
+        for (const textProps of texture.props) {
+          if (!textProps.show) continue;
+          applyTransformMut(topStack.transformation, newMatrix, textProps);
+          handleTextTexture(textProps, topStack.opacity);
+        }
+
+        if (texture.mask) {
+          clearMask();
+        }
+        return;
+      }
+      if (texture.type === "circleArray") {
+        if (texture.props.length === 0) return;
+
+        const circleArrayTextureState = textureState as WebCircleArrayTextureState;
+
+        applyMask(texture.mask, maskState, topStack.transformation);
+
+        generateCircleArrayPoints(circleArrayTextureState, texture);
+
+        for (let index = 0; index < texture.props.length; index++) {
+          const circleProps = texture.props[index];
+          if (!circleProps.show) continue;
+
+          applyTransformMut(topStack.transformation, newMatrix, circleProps);
+
+          drawCircle(
+            newMatrix,
+            circleArrayTextureState.pointsByIndex[index],
+            circleProps.color,
+            circleProps.radius,
+            gameWidth,
+            gameHeight,
+            pxPerPoint,
+            circleProps.opacity * topStack.opacity,
+            false
+          );
+        }
+
+        if (texture.mask) {
+          clearMask();
+        }
+        return;
+      }
+      if (texture.type === "lineArray") {
+        if (texture.props.length === 0) return;
+
+        const lineArrayTextureState = textureState as WebLineArrayTextureState;
+
+        applyMask(texture.mask, maskState, topStack.transformation);
+
+        generateLineArrayState(lineArrayTextureState, texture);
+
+        for (let index = 0; index < texture.props.length; index++) {
+          const lineProps = texture.props[index];
+          if (!lineProps.show) continue;
+
+          applyTransformMut(topStack.transformation, newMatrix, lineProps);
+          handleLineTexture(
+            lineProps,
+            topStack.opacity,
+            lineArrayTextureState.stateByIndex[index]
+          );
+        }
+
+        if (texture.mask) {
+          clearMask();
+        }
+        return;
+      }
+
+      if (!texture.props.show) {
+        return;
+      }
+
+      applyTransformMut(topStack.transformation, newMatrix, texture.props);
       applyMask(
         texture.props.mask,
+        maskState,
         topStack.transformation,
         texture.props.x,
         texture.props.y
@@ -272,95 +499,20 @@ export function draw(
         case "image":
         case "spriteSheet": {
           const imageInfo = getImage(imageElements, texture.props.fileName);
-          const result = drawImage(
+          drawImage(
             imageInfo.texture,
             newMatrix,
             texture.props.width,
             texture.props.height,
             texture.props.opacity * topStack.opacity,
-            texture.type === "spriteSheet"
-              ? {
-                  columns: texture.props.columns,
-                  rows: texture.props.rows,
-                  index: texture.props.index,
-                }
-              : null,
-            prevProgram,
-            prevTexture
+            texture.type === "spriteSheet" ? texture.props : null
           );
-          prevProgram = result.program;
-          prevTexture = result.texture;
           break;
         }
 
         case "line": {
-          const gradient = texture.props.fillGradient;
-          if (gradient) {
-            const gradCacheKey = `${gradient.type}-${gradient.colors.join(
-              ""
-            )}-${(gradient.opacities || []).join("")}`;
-
-            let cacheValue = textureMap[gradCacheKey];
-
-            if (!cacheValue) {
-              cacheValue = {
-                texture: createGradTexture(gl, gradient),
-                // unused
-                width: 0,
-                height: 0,
-                align: "center",
-              };
-              textureMap[gradCacheKey] = cacheValue;
-            } else {
-              unusedTextures.delete(gradCacheKey);
-            }
-
-            const result = drawLineGrad(
-              newMatrix,
-              cacheValue.texture,
-              texture.props.path,
-              gradient,
-              texture.props.opacity * topStack.opacity,
-              prevProgram,
-              prevTexture
-            );
-            prevProgram = result.program;
-            prevTexture = result.texture;
-          }
-          if (texture.props.color || texture.props.fillColor) {
-            const result = drawLine(
-              newMatrix,
-              texture.props.path,
-              texture.props.thickness,
-              texture.props.color,
-              texture.props.fillColor,
-              texture.props.lineCap,
-              texture.props.opacity * topStack.opacity,
-              prevProgram
-            );
-            prevProgram = result.program;
-
-            const capColor = texture.props.color;
-            if (capColor) {
-              result.lineCaps.forEach((circle) => {
-                prevProgram = drawCircle(
-                  m2d.multiplyMultiple([
-                    newMatrix,
-                    m2d.getTranslateMatrix(circle.x, circle.y),
-                    m2d.getRotateMatrix(circle.angleRad),
-                  ]) || newMatrix,
-                  capColor,
-                  texture.props.thickness / 2,
-                  gameWidth,
-                  gameHeight,
-                  pxPerPoint,
-                  texture.props.opacity * topStack.opacity,
-                  true,
-                  prevProgram
-                );
-              });
-            }
-          }
+          const lineTextureState = textureState as WebLineTextureState;
+          handleLineTexture(texture.props, topStack.opacity, lineTextureState);
           break;
         }
 
@@ -386,97 +538,44 @@ export function draw(
               unusedTextures.delete(gradCacheKey);
             }
 
-            const result = drawRectGrad(
+            drawRectGrad(
               newMatrix,
               cacheValue.texture,
               gradient,
               texture.props.width,
               texture.props.height,
-              texture.props.opacity * topStack.opacity,
-              prevProgram,
-              prevTexture
+              texture.props.opacity * topStack.opacity
             );
-            prevProgram = result.program;
-            prevTexture = result.texture;
           } else {
-            prevProgram = drawRect(
+            drawRect(
               newMatrix,
               texture.props.color,
               texture.props.width,
               texture.props.height,
-              texture.props.opacity * topStack.opacity,
-              prevProgram
+              texture.props.opacity * topStack.opacity
             );
           }
           break;
         }
 
-        case "circle":
-          prevProgram = drawCircle(
+        case "circle": {
+          const circleTextureState = textureState as WebCircleTextureState;
+          drawCircle(
             newMatrix,
+            circleTextureState,
             texture.props.color,
             texture.props.radius,
             gameWidth,
             gameHeight,
             pxPerPoint,
             texture.props.opacity * topStack.opacity,
-            false,
-            prevProgram
+            false
           );
           break;
+        }
 
         case "text": {
-          const { text, color, strokeColor, font } = texture.props;
-          let cacheKey = `${text}-${color}-${strokeColor}`;
-          if (font) {
-            cacheKey += `-${font.size}-${font.weight}-${font.style}-${font.align}`;
-          }
-
-          let cacheValue = textureMap[cacheKey];
-
-          if (!cacheValue) {
-            const align = handleTextTexture(
-              texture,
-              offscreenCanvas,
-              offscreenCanvasCtx,
-              defaultFont,
-              devicePixelRatio
-            );
-
-            cacheValue = {
-              texture: createCanvasTexture(gl, offscreenCanvas),
-              width: offscreenCanvas.width,
-              height: offscreenCanvas.height,
-              align,
-            };
-
-            textureMap[cacheKey] = cacheValue;
-          } else {
-            unusedTextures.delete(cacheKey);
-          }
-
-          const { align, width, height } = cacheValue;
-
-          const result = drawCanvas(
-            cacheValue.texture,
-            align === "center"
-              ? newMatrix
-              : m2d.multiply(
-                  newMatrix,
-                  m2d.getTranslateMatrix(
-                    (width / (2 * devicePixelRatio)) *
-                      (align === "left" ? 1 : -1),
-                    0
-                  )
-                ),
-            width,
-            height,
-            texture.props.opacity * topStack.opacity,
-            devicePixelRatio,
-            prevProgram
-          );
-          prevProgram = result.program;
-          prevTexture = result.texture;
+          handleTextTexture(texture.props, topStack.opacity);
           break;
         }
       }
@@ -491,11 +590,85 @@ export function draw(
     },
     endNativeSprite: () => {
       // Could have been reset by a Native Sprite rendering WebGL
-      prevProgram = null;
-      prevTexture = null;
+      mutRenderState.program = null;
+      mutRenderState.texture = null;
 
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    },
+    getInitTextureState: (texture) => {
+      switch (texture.type) {
+        case "imageArray":
+          return {
+            matrices: new Float32Array(),
+            opacities: new Float32Array(),
+          };
+
+        case "line":
+          return {
+            lineCaps: null,
+            linePath: new Float32Array(),
+            strokePath: new Float32Array(),
+          };
+
+        case "circle":
+          return {
+            points: new Float32Array(),
+          };
+
+        case "rectangleArray":
+          return {
+            matrices: new Float32Array(),
+            colours: new Float32Array(),
+          };
+
+        case "circleArray":
+          return {
+            pointsByIndex: Array.from({
+              length: texture.array().length,
+            }).map(() => ({ points: new Float32Array() })),
+          };
+
+        case "lineArray":
+          return {
+            stateByIndex: Array.from({
+              length: texture.array().length,
+            }).map(() => ({
+              lineCaps: null,
+              linePath: new Float32Array(),
+              strokePath: new Float32Array(),
+            })),
+          };
+
+        default:
+          return null;
+      }
+    },
+    getInitMaskState: (maskShape) => {
+      if (maskShape === null) return { value: null };
+
+      switch (maskShape.type) {
+        case "lineMask":
+          return {
+            value: {
+              type: maskShape.type,
+              lineCaps: null,
+              linePath: new Float32Array(),
+              strokePath: new Float32Array(),
+            },
+          };
+
+        case "circleMask":
+          return {
+            value: {
+              type: maskShape.type,
+              points: new Float32Array(),
+            },
+          };
+
+        case "rectangleMask":
+          return { value: null };
+      }
     },
   };
 }
@@ -511,4 +684,20 @@ const getImage = (imageElements: AssetMap<ImageFileData>, fileName: string) => {
     );
   }
   return imageElement.data;
+};
+
+export type TextureState =
+  | WebCircleTextureState
+  | WebCircleArrayTextureState
+  | WebImageArrayTextureState
+  | WebLineTextureState
+  | WebLineArrayTextureState
+  | WebRectArrayTextureState
+  | null;
+
+export type MaskState = {
+  value:
+    | ({ type: "circleMask" } & WebCircleTextureState)
+    | ({ type: "lineMask" } & WebLineTextureState)
+    | null;
 };
