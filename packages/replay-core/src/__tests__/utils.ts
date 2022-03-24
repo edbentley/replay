@@ -179,6 +179,10 @@ export function getTestPlatform(customSize?: DeviceSize) {
       resume: jest.fn(),
       pause: jest.fn(),
     },
+    resolution: {
+      get: () => 1,
+      set: jest.fn(),
+    },
     now: () => new Date(Date.UTC(1995, 12, 17, 3, 24, 0)),
     audio: () => audio,
     assetUtils: {

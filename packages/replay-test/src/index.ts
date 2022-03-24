@@ -401,6 +401,10 @@ export function testSprite<P, S, I>(
       random,
       timer,
       now: () => new Date(Date.UTC(2000, 1, 1)),
+      resolution: {
+        get: () => 1,
+        set: jest.fn(),
+      },
       audio: audioFn,
       assetUtils: {
         audioElements,

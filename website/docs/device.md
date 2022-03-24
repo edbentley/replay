@@ -21,6 +21,7 @@ The `device` and `getInputs` parameters of the Sprite methods can be used to int
       alert,
       clipboard,
       isTouchScreen,
+      resolution,
     } = device;
 
     ...
@@ -309,3 +310,25 @@ Boolean to indicate if the device is a touch screen device.
 ```js
 const text = isTouchScreen ? "Tap to Start" : "Space Bar to Start";
 ```
+
+### `resolution`
+
+Change the resolution the game is rendered at (# pixels drawn in shaders).
+
+Should be a scalar - `1` is full size, `0.5` is half device size.
+
+#### `get()`
+
+Returns the resolution as a number.
+
+```js
+const resolution = resolution.get();
+```
+
+#### `set(resolution)`
+
+Set the resolution. This value is automatically saved to local storage.
+
+```js
+resolution.set(0.5);
+`````
