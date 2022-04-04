@@ -1,17 +1,17 @@
 {
   "name": "test-game",
   "private": true,
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "A test game for iOS tests",
   "main": "src/index.ts",
   "scripts": {
     "build": "webpack --config webpack.swift.js"
   },
   "dependecies": {
-    "@replay/core": "0.10.0"
+    "@replay/core": "0.11.0"
   },
   "devDependencies": {
-    "@replay/swift": "0.10.0",
+    "@replay/swift": "0.11.0",
     "webpack": "^5.20.1",
     "webpack-cli": "^4.5.0"
   }

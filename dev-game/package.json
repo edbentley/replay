@@ -1,7 +1,7 @@
 {
   "name": "dev-game",
   "private": true,
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "An example game for developing Replay",
   "main": "src/index.ts",
   "scripts": {
@@ -15,7 +15,7 @@
     "test:watch": "jest --watch"
   },
   "devDependencies": {
-    "@replay/text-input": "0.10.0",
+    "@replay/text-input": "0.11.0",
     "jest": "^26.6.3",
     "serve": "^11.3.2",
     "webpack": "^5.20.1",
