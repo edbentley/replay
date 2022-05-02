@@ -307,7 +307,7 @@ export function replayCore<S, I, T, M>(
       prevTime = time;
       currentLag += timeSinceLastCall;
 
-      let framesToCatchup = Math.floor(currentLag / REPLAY_TIME_PER_UPDATE_MS);
+      let framesToCatchup = Math.round(currentLag / REPLAY_TIME_PER_UPDATE_MS);
 
       if (nativeSpriteSettings.nativeSpriteUtils.didResize) {
         // Resize

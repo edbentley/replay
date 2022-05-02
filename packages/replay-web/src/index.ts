@@ -367,8 +367,8 @@ export function renderCanvas<S>(
         isInFocus = false;
         for (let i = 0; i < e.changedTouches.length; i++) {
           const touch = e.changedTouches[i];
-          const x = getX({ clientX: touch.screenX });
-          const y = getY({ clientY: touch.screenY });
+          const x = getX(touch.screenX);
+          const y = getY(touch.screenY);
           if (isPointerOutsideGame(x, y)) {
             continue;
           }
@@ -378,8 +378,8 @@ export function renderCanvas<S>(
         return;
       }
 
-      const x = getX(e);
-      const y = getY(e);
+      const x = getX(e.clientX);
+      const y = getY(e.clientY);
       if (isPointerOutsideGame(x, y)) {
         isInFocus = false;
         return;
@@ -391,8 +391,8 @@ export function renderCanvas<S>(
       if ("changedTouches" in e) {
         for (let i = 0; i < e.changedTouches.length; i++) {
           const touch = e.changedTouches[i];
-          const x = getX({ clientX: touch.screenX });
-          const y = getY({ clientY: touch.screenY });
+          const x = getX(touch.screenX);
+          const y = getY(touch.screenY);
           if (isPointerOutsideGame(x, y)) {
             continue;
           }
@@ -400,9 +400,8 @@ export function renderCanvas<S>(
         }
         return;
       }
-
-      const x = getX(e);
-      const y = getY(e);
+      const x = getX(e.clientX);
+      const y = getY(e.clientY);
       if (isPointerOutsideGame(x, y)) {
         return;
       }
@@ -412,8 +411,8 @@ export function renderCanvas<S>(
       if ("changedTouches" in e) {
         for (let i = 0; i < e.changedTouches.length; i++) {
           const touch = e.changedTouches[i];
-          const x = getX({ clientX: touch.screenX });
-          const y = getY({ clientY: touch.screenY });
+          const x = getX(touch.screenX);
+          const y = getY(touch.screenY);
           if (isPointerOutsideGame(x, y)) {
             pointerCancelHandler(touch.identifier);
             continue;
@@ -423,8 +422,8 @@ export function renderCanvas<S>(
         return;
       }
 
-      const x = getX(e);
-      const y = getY(e);
+      const x = getX(e.clientX);
+      const y = getY(e.clientY);
       if (isPointerOutsideGame(x, y)) {
         pointerCancelHandler(e.pointerId);
         return;
@@ -628,9 +627,9 @@ export function renderCanvas<S>(
       }
       lastTimeValue = time;
 
-      runNextFrame(time - initTime - totalPageNotVisibleTime, resetInputs);
-
       loop();
+
+      runNextFrame(time - initTime - totalPageNotVisibleTime, resetInputs);
     }
 
     loop();
