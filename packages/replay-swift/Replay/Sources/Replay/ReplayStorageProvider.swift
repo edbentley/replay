@@ -54,15 +54,20 @@ class ReplayStorageProvider {
                 
                 let messageId = "\(internalMessageKey)\(getItemKey)\(key)"
                 
+                var jsArg = ""
+                
+                if let errorMessage = error?.localizedDescription {
+                    jsArg = "{ error: `\(errorMessage)` }"
+                } else if let jsString = value {
+                    // String interp can be slow if big value so keep in background
+                    jsArg = "{ value: `\(jsString)` }"
+                } else {
+                    jsArg = "{ value: null }"
+                }
+                
                 // Back on UI thread
                 DispatchQueue.main.async {
-                    if let errorMessage = error?.localizedDescription {
-                        webView.jsBridge(messageId: messageId, jsArg: "{ error: `\(errorMessage)` }")
-                    } else if let jsString = value {
-                        webView.jsBridge(messageId: messageId, jsArg: "{ value: `\(jsString)` }")
-                    } else {
-                        webView.jsBridge(messageId: messageId, jsArg: "{ value: null }")
-                    }
+                    webView.jsBridge(messageId: messageId, jsArg: jsArg)
                 }
             }
             

@@ -277,7 +277,7 @@ Called when the device renders to screen. Returns an array of Sprites to render.
 #### Additional Parameters
 
 - `state`: The current state of the Sprite.
-- `extrapolateFactor`: A value between 0 and 1 representing how much time has passed before the next frame is scheduled. See [Game Loop](game-loop.md) for more.
+- `extrapolateFactor`: A value between -0.5 and 0.5 representing how much time has passed or overshot on the frame. See [Game Loop](game-loop.md) for more.
 
 ### `renderP`
 

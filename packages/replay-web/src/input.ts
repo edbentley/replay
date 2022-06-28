@@ -118,8 +118,8 @@ export const clientXToGameX = ({
   widthMargin: number;
   scale: number;
   width: number;
-}) => (e: { clientX: number }) =>
-  (e.clientX - canvasOffsetLeft + scrollX) / scale - widthMargin - width / 2;
+}) => (clientX: number) =>
+  (clientX - canvasOffsetLeft + scrollX) / scale - widthMargin - width / 2;
 
 /**
  * Convert browser `clientY` to game's `y` coordinate
@@ -136,8 +136,8 @@ export const clientYToGameY = ({
   heightMargin: number;
   scale: number;
   height: number;
-}) => (e: { clientY: number }) =>
-  -(e.clientY - canvasOffsetTop + scrollY) / scale + heightMargin + height / 2;
+}) => (clientY: number) =>
+  -(clientY - canvasOffsetTop + scrollY) / scale + heightMargin + height / 2;
 
 export function pointerDownHandler(x: number, y: number, pointerId: number) {
   if (!pointerIds.includes(pointerId)) {
