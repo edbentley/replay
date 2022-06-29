@@ -16,6 +16,7 @@ The `device` and `getInputs` parameters of the Sprite methods can be used to int
       timer,
       now,
       audio,
+      globalAudio,
       network,
       storage,
       alert,
@@ -210,6 +211,25 @@ Get the volume of the sound. 1 is maximum, 0 is muted.
 ```js
 const volume = mySound.getVolume();
 ```
+
+### `globalAudio`
+
+#### `volume`
+
+Returns the global volume as a number `0 - 1`.
+
+```js
+const volume = globalAudio.volume;
+```
+
+#### `setVolume(volume)`
+
+Set the global volume, between `0 - 1`. This value is automatically saved to local storage.
+
+```js
+globalAudio.setVolume(0.5);
+`````
+
 
 ### `network`
 

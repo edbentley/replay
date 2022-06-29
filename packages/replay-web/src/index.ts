@@ -34,6 +34,8 @@ import {
   ImageFileData,
   getClipboard,
   RESOLUTION_KEY,
+  GLOBAL_VOLUME_KEY,
+  setAllVolumes,
 } from "./device";
 import { isTouchDevice } from "./isTouchDevice";
 import { draw, MaskState, TextureState } from "./webGL/drawGL";
@@ -164,6 +166,22 @@ export function renderCanvas<S>(
 
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   const audioContext = new AudioContext();
+  const globalAudio: Device["globalAudio"] = {
+    volume: 1,
+    setVolume(volume: number) {
+      const volumeValue = Math.min(1, Math.max(0, volume));
+      this.volume = volumeValue;
+
+      // Debounce
+      window.clearTimeout(volumeTimeout);
+      volumeTimeout = window.setTimeout(() => {
+        mutDevice.storage.setItem(GLOBAL_VOLUME_KEY, String(volumeValue));
+      }, 1000);
+
+      setAllVolumes(audioContext, audioElements, volumeValue);
+    },
+  };
+  let volumeTimeout: number | undefined = undefined;
 
   let isInFocus = true;
 
@@ -518,6 +536,7 @@ export function renderCanvas<S>(
 
   const mutDevice = mutDeviceCreator(
     audioContext,
+    globalAudio,
     calculateDeviceSize(
       windowSize?.width || window.innerWidth,
       windowSize?.height || window.innerHeight,
@@ -534,6 +553,15 @@ export function renderCanvas<S>(
       const resolution = Number(value);
       if (!isNaN(resolution)) {
         mutResolution.set(resolution);
+      }
+    }
+  });
+
+  mutDevice.storage.getItem(GLOBAL_VOLUME_KEY).then((value) => {
+    if (value !== null) {
+      const volume = Number(value);
+      if (!isNaN(volume) && volume >= 0 && volume <= 1) {
+        globalAudio.setVolume(volume);
       }
     }
   });
@@ -668,6 +696,7 @@ export function renderCanvas<S>(
 
 function mutDeviceCreator(
   audioContext: AudioContext,
+  globalAudio: Device["globalAudio"],
   size: DeviceSize,
   assetUtils: AssetUtils<AudioData, ImageFileData>,
   platformOverrides: Partial<Device>,
@@ -678,7 +707,8 @@ function mutDeviceCreator(
     log: console.log,
     random: Math.random,
     timer: getTimer(),
-    audio: getAudio(audioContext, assetUtils.audioElements),
+    audio: getAudio(audioContext, globalAudio, assetUtils.audioElements),
+    globalAudio,
     assetUtils: assetUtils as AssetUtils<unknown, unknown>,
     network: getNetwork(),
     storage: getStorage(),

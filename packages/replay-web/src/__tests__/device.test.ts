@@ -246,6 +246,7 @@ test("Can play audio, pause and get position", async () => {
     sample: expect.any(Object),
     playTime: 5.016,
     gainNode: expect.any(Object),
+    volume: 1,
   });
 
   clickPointer(102, 0);

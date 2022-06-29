@@ -25,6 +25,7 @@ export type AudioData = {
     playTime: number; // seconds
     alreadyPlayedTime: number;
     sample: AudioBufferSourceNode;
+    volume: number;
     gainNode: GainNode;
   };
 };
@@ -36,6 +37,7 @@ export type ImageFileData = {
 
 export function getAudio(
   audioContext: AudioContext,
+  globalAudio: Device["globalAudio"],
   audioElements: AssetMap<AudioData>
 ): Device["audio"] {
   return (fileName) => {
@@ -79,6 +81,12 @@ export function getAudio(
         sampleSource.connect(gainNode);
         gainNode.connect(audioContext.destination);
 
+        // Global volume
+        gainNode.gain.setValueAtTime(
+          globalAudio.volume,
+          audioContext.currentTime
+        );
+
         const alreadyPlayedTime =
           fromPosition ?? getAudioPosition(audioContext, playState);
 
@@ -116,6 +124,7 @@ export function getAudio(
             alreadyPlayedTime,
             isPaused: false,
             gainNode,
+            volume: 1,
           };
         }
       },
@@ -141,7 +150,7 @@ export function getAudio(
       },
       getVolume: () => {
         if (data.playState) {
-          return data.playState.gainNode.gain.value;
+          return data.playState.volume;
         }
         return 1;
       },
@@ -150,21 +159,24 @@ export function getAudio(
         if (!playState) return;
 
         if (typeof newVolume === "number") {
+          const volumeVal = Math.max(Math.min(1, newVolume), 0);
+          playState.volume = volumeVal;
           playState.gainNode.gain.setValueAtTime(
-            Math.max(Math.min(1, newVolume), 0),
+            volumeVal * globalAudio.volume,
             audioContext.currentTime
           );
         } else {
           const { type, fadeTo, fadeTime } = newVolume;
           const volumeVal = Math.max(Math.min(1, fadeTo), 0);
+          playState.volume = volumeVal;
           if (type === "linear") {
             playState.gainNode.gain.linearRampToValueAtTime(
-              volumeVal,
+              volumeVal * globalAudio.volume,
               audioContext.currentTime + fadeTime
             );
           } else {
             playState.gainNode.gain.exponentialRampToValueAtTime(
-              volumeVal,
+              volumeVal * globalAudio.volume,
               audioContext.currentTime + fadeTime
             );
           }
@@ -172,6 +184,22 @@ export function getAudio(
       },
     };
   };
+}
+
+export function setAllVolumes(
+  audioContext: AudioContext,
+  audioElements: AssetMap<AudioData>,
+  globalVolume: number
+) {
+  for (const fileName in audioElements) {
+    const data = audioElements[fileName].data;
+    if (!("then" in data)) {
+      data.playState?.gainNode.gain.setValueAtTime(
+        data.playState.volume * globalVolume,
+        audioContext.currentTime
+      );
+    }
+  }
 }
 
 function getAudioPosition(
@@ -240,6 +268,7 @@ export function getStorage(): Device["storage"] {
 }
 
 export const RESOLUTION_KEY = "__replay_resolution_v1__";
+export const GLOBAL_VOLUME_KEY = "__replay_global_volume_v1__";
 
 export function getClipboard(): Device["clipboard"] {
   return {

@@ -185,6 +185,10 @@ export function getTestPlatform(customSize?: DeviceSize) {
     },
     now: () => new Date(Date.UTC(1995, 12, 17, 3, 24, 0)),
     audio: () => audio,
+    globalAudio: {
+      volume: 1,
+      setVolume: jest.fn(),
+    },
     assetUtils: {
       imageElements: {},
       audioElements: {},
