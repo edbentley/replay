@@ -34,7 +34,7 @@ const MySprite = makeSprite({
 import { TextInputWeb } from "@replay/text-input";
 
 export const options = {
-  { TextInput: TextInputWeb }
+  nativeSpriteMap: { TextInput: TextInputWeb }
 };
 ```
 
