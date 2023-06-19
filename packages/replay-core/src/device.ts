@@ -88,6 +88,11 @@ export interface Device {
     getDuration: () => number;
   };
 
+  globalAudio: {
+    volume: number;
+    setVolume: (volume: number) => void;
+  };
+
   /**
    * Make network calls
    */

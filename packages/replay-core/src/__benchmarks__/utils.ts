@@ -85,6 +85,10 @@ function getBenchmarkPlatform() {
       get: () => 1,
       set: jest.fn(),
     },
+    globalAudio: {
+      volume: 1,
+      setVolume: jest.fn(),
+    },
     now: () => new Date(Date.UTC(1995, 12, 17, 3, 24, 0)),
     audio: () => ({
       getPosition: () => 50,

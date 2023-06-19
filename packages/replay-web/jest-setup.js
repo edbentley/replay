@@ -49,6 +49,7 @@ Object.defineProperty(window, "AudioContext", {
       connect: jest.fn,
       gain: {
         value: 1,
+        setValueAtTime: jest.fn(),
       },
     })),
   })),

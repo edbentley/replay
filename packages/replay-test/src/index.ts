@@ -405,6 +405,10 @@ export function testSprite<P, S, I>(
         get: () => 1,
         set: jest.fn(),
       },
+      globalAudio: {
+        volume: 1,
+        setVolume: jest.fn(),
+      },
       audio: audioFn,
       assetUtils: {
         audioElements,
