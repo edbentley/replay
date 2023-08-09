@@ -544,7 +544,23 @@ export function renderCanvas<S>(
       gameSprite.props.size
     ),
     assetUtils,
-    platformOptions?.device || {},
+    platformOptions?.device || {
+      // Pause game loop on sync alerts
+      alert: {
+        ok: (message, onResponse) => {
+          lastPageNotVisibleTime = lastTimeValue;
+          alert(message);
+          needsToUpdateNotVisibleTime = true;
+          onResponse?.();
+        },
+        okCancel: (message, onResponse) => {
+          lastPageNotVisibleTime = lastTimeValue;
+          const wasOk = confirm(message);
+          needsToUpdateNotVisibleTime = true;
+          onResponse(wasOk);
+        },
+      },
+    },
     mutResolution
   );
 

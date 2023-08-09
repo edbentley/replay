@@ -118,13 +118,11 @@ export interface Device {
 
   alert: {
     /**
-     * An alert dialog with an OK button. Game loop will be paused on some
-     * platforms.
+     * An alert dialog with an OK button.
      */
     ok: (message: string, onResponse?: () => void) => void;
     /**
-     * An alert dialog with an OK and cancel button. Game loop will be paused on
-     * some platforms.
+     * An alert dialog with an OK and cancel button.
      */
     okCancel: (message: string, onResponse: (wasOk: boolean) => void) => void;
   };
