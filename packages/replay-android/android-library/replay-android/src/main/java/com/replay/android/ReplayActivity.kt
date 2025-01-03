@@ -9,7 +9,9 @@ import android.view.WindowManager
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
+import androidx.webkit.WebViewAssetLoader
 
 open class ReplayActivity : AppCompatActivity() {
     lateinit var webView: WebView
@@ -24,13 +26,27 @@ open class ReplayActivity : AppCompatActivity() {
             window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
 
+        val assetLoader = WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .addPathHandler("/res/", WebViewAssetLoader.ResourcesPathHandler(this))
+            .build()
+
         webView = WebView(this)
+        webView.settings.allowFileAccess = true
+        webView.settings.allowContentAccess = true
         webView.settings.javaScriptEnabled = true
-        webView.settings.allowFileAccessFromFileURLs = true
-        webView.settings.allowUniversalAccessFromFileURLs = true
         webView.settings.domStorageEnabled = true
         webView.settings.useWideViewPort = true
         webView.isHapticFeedbackEnabled = false
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(
+                view: WebView?,
+                request: android.webkit.WebResourceRequest?
+            ): android.webkit.WebResourceResponse? {
+                return request?.url?.let { assetLoader.shouldInterceptRequest(it) }
+            }
+        }
 
         webView.webChromeClient = object : WebChromeClient() {
 
@@ -51,7 +67,7 @@ open class ReplayActivity : AppCompatActivity() {
 
         setContentView(webView)
 
-        webView.loadUrl("file:///android_asset/index.html");
+        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html")
     }
 
     open fun onJsCallback(
